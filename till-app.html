@@ -1,0 +1,3117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Till App — Hardware Shop</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
+
+:root {
+  --bg: #1a1916;
+  --surface: #242220;
+  --surface2: #2e2c29;
+  --surface3: #383530;
+  --border: #3a3733;
+  --border2: #4a4743;
+  --text: #f0ede8;
+  --text2: #a09d96;
+  --text3: #6b6860;
+  --accent: #52b788;
+  --accent-dark: #2d6a4f;
+  --accent-light: rgba(82,183,136,0.12);
+  --warn: #f59e0b;
+  --warn-light: rgba(245,158,11,0.12);
+  --danger: #ef4444;
+  --danger-light: rgba(239,68,68,0.12);
+  --gold: #d4a843;
+  --radius: 8px;
+  --radius-lg: 12px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); font-size: 14px; height: 100vh; overflow: hidden; }
+
+/* ── LAYOUT: left panel (products) + right panel (cart) ── */
+.shell { display: grid; grid-template-columns: 1fr 380px; height: 100vh; gap: 0; }
+
+/* ── LEFT PANEL ── */
+.left-panel { display: flex; flex-direction: column; border-right: 1px solid var(--border); overflow: hidden; }
+
+.topbar {
+  padding: 12px 16px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 12px;
+  flex-shrink: 0;
+}
+.shop-name { font-size: 15px; font-weight: 700; letter-spacing: -0.3px; color: var(--text); }
+.till-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--accent); font-weight: 600; }
+.topbar-date { margin-left: auto; font-size: 12px; color: var(--text3); }
+
+/* ── SEARCH ── */
+.search-area {
+  padding: 12px 14px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.search-wrap { position: relative; }
+.search-wrap svg { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; color: var(--text3); pointer-events: none; }
+.search-input {
+  width: 100%;
+  padding: 10px 12px 10px 36px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  font-family: inherit; font-size: 14px;
+  transition: border-color 0.15s;
+}
+.search-input:focus { outline: none; border-color: var(--accent); }
+.search-input::placeholder { color: var(--text3); }
+
+/* ── CATEGORY TABS ── */
+.cat-tabs {
+  display: flex; gap: 6px; padding: 10px 14px;
+  overflow-x: auto; flex-shrink: 0;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  scrollbar-width: none;
+}
+.cat-tabs::-webkit-scrollbar { display: none; }
+.cat-tab {
+  padding: 5px 13px;
+  border-radius: 20px;
+  font-size: 12px; font-weight: 500;
+  cursor: pointer; white-space: nowrap;
+  background: var(--surface2);
+  color: var(--text2);
+  border: 1px solid var(--border);
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+.cat-tab:hover { color: var(--text); border-color: var(--border2); }
+.cat-tab.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+/* ── PRODUCT GRID ── */
+.product-grid {
+  flex: 1; overflow-y: auto;
+  padding: 12px 14px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 8px;
+  align-content: start;
+}
+.product-grid::-webkit-scrollbar { width: 4px; }
+.product-grid::-webkit-scrollbar-track { background: transparent; }
+.product-grid::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
+
+.product-card {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px 10px;
+  cursor: pointer;
+  transition: all 0.12s;
+  display: flex; flex-direction: column; gap: 6px;
+  user-select: none;
+}
+.product-card:hover { border-color: var(--accent); background: var(--surface3); transform: translateY(-1px); }
+.product-card:active { transform: translateY(0); }
+.product-card.low-stock { border-color: var(--warn); }
+.product-card.out-stock { opacity: 0.45; pointer-events: none; }
+
+.pc-cat { font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text3); font-weight: 600; }
+.pc-name { font-size: 13px; font-weight: 600; color: var(--text); line-height: 1.3; }
+.pc-unit { font-size: 11px; color: var(--text3); }
+.pc-price { font-size: 14px; font-weight: 700; color: var(--accent); font-family: 'DM Mono', monospace; margin-top: auto; }
+.pc-stock { font-size: 11px; }
+.pc-stock.ok { color: var(--text3); }
+.pc-stock.low { color: var(--warn); }
+.pc-stock.out { color: var(--danger); }
+
+.empty-state { grid-column: 1/-1; text-align: center; padding: 48px 20px; color: var(--text3); }
+
+/* ── RIGHT PANEL (CART) ── */
+.right-panel { display: flex; flex-direction: column; background: var(--surface); overflow: hidden; }
+
+.cart-header {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  flex-shrink: 0;
+}
+.cart-header h2 { font-size: 14px; font-weight: 700; letter-spacing: -0.2px; }
+.cart-count { background: var(--accent); color: #fff; font-size: 11px; font-weight: 700; padding: 2px 7px; border-radius: 20px; }
+
+/* ── CART ITEMS ── */
+.cart-items { flex: 1; overflow-y: auto; padding: 8px 0; }
+.cart-items::-webkit-scrollbar { width: 3px; }
+.cart-items::-webkit-scrollbar-thumb { background: var(--border2); }
+
+.cart-item {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 4px 10px;
+  align-items: center;
+}
+.cart-item:last-child { border-bottom: none; }
+.ci-name { font-size: 13px; font-weight: 500; color: var(--text); }
+.ci-unit-price { font-size: 11.5px; color: var(--text3); }
+.ci-total { font-size: 13.5px; font-weight: 700; color: var(--text); font-family: 'DM Mono', monospace; text-align: right; }
+.ci-controls { display: flex; align-items: center; gap: 4px; }
+.qty-btn {
+  width: 26px; height: 26px;
+  background: var(--surface3); border: 1px solid var(--border2);
+  border-radius: 6px; color: var(--text); font-size: 15px;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  transition: all 0.12s; font-weight: 500;
+}
+.qty-btn:hover { background: var(--border2); }
+.qty-input {
+  width: 54px; height: 26px;
+  background: var(--surface3); border: 1px solid var(--border2);
+  border-radius: 6px; text-align: center;
+  font-family: 'DM Mono', monospace; font-size: 13px; color: var(--text);
+}
+.qty-input:focus { outline: none; border-color: var(--accent); }
+.ci-remove {
+  background: none; border: none; color: var(--text3);
+  cursor: pointer; font-size: 16px; padding: 2px 4px;
+  transition: color 0.12s; line-height: 1;
+}
+.ci-remove:hover { color: var(--danger); }
+
+.cart-empty { padding: 48px 20px; text-align: center; color: var(--text3); }
+.cart-empty svg { width: 40px; height: 40px; margin-bottom: 10px; opacity: 0.3; }
+
+/* ── CART FOOTER (totals + payment) ── */
+.cart-footer { border-top: 1px solid var(--border); flex-shrink: 0; }
+
+.discount-row {
+  padding: 10px 14px;
+  display: flex; align-items: center; gap: 8px;
+  border-bottom: 1px solid var(--border);
+}
+.discount-row label { font-size: 12px; color: var(--text2); white-space: nowrap; }
+.discount-input {
+  width: 70px; padding: 5px 8px;
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 6px; text-align: center;
+  font-family: 'DM Mono', monospace; font-size: 13px; color: var(--text);
+}
+.discount-input:focus { outline: none; border-color: var(--accent); }
+.discount-type {
+  padding: 5px 8px;
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 6px; font-family: inherit; font-size: 12px; color: var(--text);
+  cursor: pointer;
+}
+
+.totals { padding: 12px 14px; border-bottom: 1px solid var(--border); }
+.total-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 5px; }
+.total-row .tl { font-size: 12.5px; color: var(--text2); }
+.total-row .tv { font-family: 'DM Mono', monospace; font-size: 13px; color: var(--text); }
+.total-row.grand { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border); }
+.total-row.grand .tl { font-size: 14px; font-weight: 700; color: var(--text); }
+.total-row.grand .tv { font-size: 20px; font-weight: 700; color: var(--accent); }
+
+/* ── PAYMENT METHODS ── */
+.payment-methods { padding: 10px 14px; border-bottom: 1px solid var(--border); }
+.pm-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text3); margin-bottom: 7px; font-weight: 600; }
+.pm-btns { display: flex; gap: 6px; }
+.pm-btn {
+  flex: 1; padding: 8px 6px;
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: var(--radius); font-family: inherit; font-size: 12px;
+  font-weight: 500; color: var(--text2); cursor: pointer;
+  transition: all 0.15s; text-align: center;
+}
+.pm-btn:hover { color: var(--text); border-color: var(--border2); }
+.pm-btn.active { background: var(--accent-light); border-color: var(--accent); color: var(--accent); }
+
+.cash-input-row {
+  padding: 0 14px 10px;
+  display: none; align-items: center; gap: 8px;
+}
+.cash-input-row.show { display: flex; }
+.cash-input-row label { font-size: 12px; color: var(--text2); white-space: nowrap; }
+.cash-input {
+  flex: 1; padding: 7px 10px;
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 6px; font-family: 'DM Mono', monospace; font-size: 14px; color: var(--text);
+}
+.cash-input:focus { outline: none; border-color: var(--accent); }
+.change-display {
+  padding: 8px 14px; font-size: 14px;
+  display: none; justify-content: space-between; align-items: baseline;
+  border-top: 1px solid var(--border);
+}
+.change-display.show { display: flex; }
+.change-display .cl { font-size: 14px; font-weight: 700; color: var(--text); }
+.change-display .cv { font-family: 'DM Mono', monospace; font-size: 20px; font-weight: 700; color: var(--gold); }
+
+/* ── CHARGE BTN ── */
+.charge-btn {
+  margin: 10px 14px 14px;
+  width: calc(100% - 28px);
+  padding: 14px;
+  background: var(--accent);
+  color: #fff; font-family: inherit;
+  font-size: 16px; font-weight: 700;
+  border: none; border-radius: var(--radius);
+  cursor: pointer; transition: all 0.15s;
+  letter-spacing: -0.2px;
+}
+.charge-btn:hover { background: var(--accent-dark); }
+.charge-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+/* ── RECEIPT MODAL ── */
+.modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.6);
+  display: none; align-items: center; justify-content: center;
+  z-index: 100; padding: 20px;
+}
+.modal-overlay.open { display: flex; }
+
+.receipt {
+  background: #fff; color: #111;
+  width: 320px; border-radius: 4px;
+  font-family: 'DM Mono', monospace;
+  font-size: 12.5px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+}
+.receipt-inner { padding: 20px 20px 10px; }
+.receipt-shop { text-align: center; font-size: 15px; font-weight: 700; margin-bottom: 2px; letter-spacing: 0.5px; }
+.receipt-sub { text-align: center; font-size: 11px; color: #666; margin-bottom: 14px; }
+.receipt-divider { border: none; border-top: 1px dashed #ccc; margin: 8px 0; }
+.receipt-row { display: flex; justify-content: space-between; margin-bottom: 3px; font-size: 12px; }
+.receipt-row.header { color: #666; font-size: 11px; margin-bottom: 5px; }
+.receipt-row.total { font-size: 13px; font-weight: 700; margin-top: 4px; }
+.receipt-row.grand { font-size: 15px; font-weight: 700; }
+.receipt-row.change { color: #2d6a4f; font-weight: 700; }
+.receipt-footer { text-align: center; color: #666; font-size: 10.5px; margin-top: 12px; padding-bottom: 16px; }
+.receipt-actions { padding: 12px 20px; border-top: 1px solid #eee; display: flex; gap: 8px; }
+.receipt-btn {
+  flex: 1; padding: 10px;
+  border-radius: 6px; font-family: inherit; font-size: 13px;
+  font-weight: 600; cursor: pointer; border: none; transition: all 0.15s;
+}
+.receipt-btn.print { background: #1a1916; color: #fff; }
+.receipt-btn.print:hover { background: #333; }
+.receipt-btn.new { background: #52b788; color: #fff; }
+.receipt-btn.new:hover { background: #2d6a4f; }
+
+/* ── QUICK QTY MODAL ── */
+.qty-modal {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  width: 280px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+}
+.qty-modal h3 { font-size: 14px; font-weight: 600; margin-bottom: 14px; }
+.qty-modal-input {
+  width: 100%; padding: 12px;
+  background: var(--surface2); border: 1px solid var(--border2);
+  border-radius: var(--radius); font-family: 'DM Mono', monospace;
+  font-size: 22px; font-weight: 600; color: var(--text); text-align: center;
+  margin-bottom: 12px;
+}
+.qty-modal-input:focus { outline: none; border-color: var(--accent); }
+.qty-numpad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 12px; }
+.np-btn {
+  padding: 12px; background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 6px; font-family: 'DM Mono', monospace; font-size: 16px;
+  font-weight: 500; color: var(--text); cursor: pointer; transition: all 0.12s;
+}
+.np-btn:hover { background: var(--surface3); border-color: var(--border2); }
+.np-btn.wide { grid-column: span 2; }
+.np-btn.accent { background: var(--accent); border-color: var(--accent); color: #fff; }
+.np-btn.accent:hover { background: var(--accent-dark); }
+.np-btn.cancel-btn { background: var(--danger-light); border-color: var(--danger); color: var(--danger); }
+.qty-modal-footer { display: flex; gap: 8px; }
+.qty-confirm {
+  flex: 1; padding: 10px;
+  background: var(--accent); border: none; border-radius: 6px;
+  font-family: inherit; font-size: 14px; font-weight: 700; color: #fff;
+  cursor: pointer;
+}
+
+/* ── UNIT SELECTOR ── */
+.unit-select-btn {
+  width: 100%;
+  padding: 14px 16px;
+  background: var(--surface2);
+  border: 1.5px solid var(--border2);
+  border-radius: var(--radius);
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.12s;
+  text-align: left;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.unit-select-btn:hover {
+  border-color: var(--accent);
+  background: var(--accent-light);
+}
+.unit-select-btn .usb-unit {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+}
+.unit-select-btn .usb-price {
+  font-family: 'DM Mono', monospace;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--accent);
+}
+.unit-select-btn .usb-desc {
+  font-size: 12px;
+  color: var(--text3);
+  margin-top: 2px;
+}
+
+/* ── STARTUP / LOCK SCREEN ── */
+#startupScreen {
+  position: fixed;
+  inset: 0;
+  background: var(--bg);
+  z-index: 500;
+  display: flex;
+  flex-direction: row;
+  overflow: hidden;
+}
+.startup-left {
+  flex: 1;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  padding: 32px 28px;
+  overflow: hidden;
+}
+.startup-right {
+  width: 360px;
+  display: flex;
+  flex-direction: column;
+  padding: 32px 24px;
+  background: var(--surface2);
+}
+.startup-brand {
+  margin-bottom: 28px;
+}
+.startup-shop-name {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.5px;
+}
+.startup-subtitle {
+  font-size: 12px;
+  color: var(--text3);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-top: 3px;
+}
+.startup-clock {
+  font-size: 48px;
+  font-weight: 700;
+  font-family: 'DM Mono', monospace;
+  color: var(--text);
+  letter-spacing: -2px;
+  margin-bottom: 4px;
+}
+.startup-date {
+  font-size: 14px;
+  color: var(--text2);
+  margin-bottom: 28px;
+}
+.startup-recent-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text3);
+  margin-bottom: 12px;
+}
+.startup-bills {
+  flex: 1;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+.startup-bill {
+  padding: 10px 12px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: 8px;
+}
+.startup-bill-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 4px;
+}
+.startup-bill-id {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--text3);
+}
+.startup-bill-total {
+  font-family: 'DM Mono', monospace;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--accent);
+}
+.startup-bill-items {
+  font-size: 12px;
+  color: var(--text2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.startup-bill-time {
+  font-size: 11px;
+  color: var(--text3);
+  margin-top: 2px;
+}
+/* Right side — user select */
+.startup-greet {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+.startup-greet-sub {
+  font-size: 13px;
+  color: var(--text3);
+  margin-bottom: 24px;
+}
+.startup-users {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: 1;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+.startup-user-btn {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: inherit;
+  text-align: left;
+  width: 100%;
+}
+.startup-user-btn:hover {
+  border-color: var(--accent);
+  background: var(--accent-light);
+}
+.startup-user-avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: var(--accent-light);
+  color: var(--accent);
+  font-size: 17px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.startup-user-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+}
+.startup-user-role {
+  font-size: 12px;
+  color: var(--text3);
+  margin-top: 2px;
+}
+.startup-footer {
+  margin-top: 20px;
+  font-size: 11px;
+  color: var(--text3);
+  text-align: center;
+}
+
+/* ── MAX DISCOUNT BADGE ── */
+.max-discount-badge {
+  display: none;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--accent);
+  background: var(--accent-light);
+  border: 1px solid #b7e4c7;
+  border-radius: 20px;
+  padding: 3px 10px;
+  white-space: nowrap;
+  cursor: help;
+}
+.max-discount-badge.show { display: inline-block; }
+.max-discount-badge.no-discount {
+  color: var(--danger);
+  background: var(--danger-light);
+  border-color: #fca5a5;
+}
+
+/* ── CASH NOTE TILES ── */
+.cash-notes {
+  padding: 0 14px 10px;
+  display: none;
+}
+.cash-notes.show { display: block; }
+.cash-notes-label {
+  font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px;
+  color: var(--text3); font-weight: 600; margin-bottom: 6px;
+}
+.cash-note-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 5px;
+}
+.cash-note {
+  padding: 7px 4px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-family: 'DM Mono', monospace;
+  font-size: 12px; font-weight: 600;
+  color: var(--text2);
+  cursor: pointer; text-align: center;
+  transition: all 0.12s;
+  user-select: none;
+}
+.cash-note:hover { background: var(--surface3); border-color: var(--accent); color: var(--accent); }
+.cash-note.active { background: var(--accent-light); border-color: var(--accent); color: var(--accent); }
+
+/* ── TOAST ── */
+#toast {
+  position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+  background: var(--surface3); color: var(--text); padding: 8px 18px;
+  border-radius: 20px; font-size: 13px; font-weight: 500;
+  opacity: 0; transition: opacity 0.2s; z-index: 999;
+  border: 1px solid var(--border2); white-space: nowrap;
+  pointer-events: none;
+}
+
+/* ── SALES HISTORY PANEL ── */
+.history-toggle {
+  position: fixed; bottom: 20px; right: 400px;
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 20px; padding: 6px 14px;
+  font-size: 12px; color: var(--text2); cursor: pointer;
+  z-index: 50; transition: all 0.15s;
+}
+.history-toggle:hover { color: var(--text); border-color: var(--border2); }
+
+
+/* ── TRANSACTIONS PANEL ── */
+.txn-panel {
+  position: fixed; inset: 0;
+  z-index: 200;
+  display: none;
+  align-items: stretch;
+}
+.txn-panel.open { display: flex; }
+.txn-backdrop {
+  flex: 1;
+  background: rgba(0,0,0,0.55);
+}
+.txn-drawer {
+  width: 520px;
+  background: var(--surface);
+  border-left: 1px solid var(--border);
+  display: flex; flex-direction: column;
+  overflow: hidden;
+  box-shadow: -8px 0 32px rgba(0,0,0,0.4);
+}
+.txn-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  flex-shrink: 0;
+}
+.txn-header h2 { font-size: 15px; font-weight: 700; }
+.txn-close {
+  background: none; border: 1px solid var(--border);
+  color: var(--text2); border-radius: 6px;
+  padding: 4px 10px; cursor: pointer; font-size: 14px;
+  transition: all 0.12s;
+}
+.txn-close:hover { color: var(--danger); border-color: var(--danger); }
+.txn-search-row {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  display: flex; gap: 8px; flex-shrink: 0;
+}
+.txn-search {
+  flex: 1; padding: 7px 11px;
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 6px; font-family: inherit; font-size: 13px; color: var(--text);
+}
+.txn-search:focus { outline: none; border-color: var(--accent); }
+.txn-filter {
+  padding: 7px 10px;
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 6px; font-family: inherit; font-size: 12px; color: var(--text);
+  cursor: pointer;
+}
+.txn-list { flex: 1; overflow-y: auto; padding: 8px 0; }
+.txn-list::-webkit-scrollbar { width: 3px; }
+.txn-list::-webkit-scrollbar-thumb { background: var(--border2); }
+.txn-item {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer; transition: background 0.1s;
+}
+.txn-item:hover { background: var(--surface2); }
+.txn-item.refunded { opacity: 0.5; }
+.txn-item-top { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px; }
+.txn-id { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--text3); }
+.txn-total { font-family: 'DM Mono', monospace; font-size: 15px; font-weight: 700; color: var(--accent); }
+.txn-item-mid { display: flex; gap: 10px; align-items: center; margin-bottom: 4px; }
+.txn-datetime { font-size: 12px; color: var(--text3); }
+.txn-badge {
+  font-size: 10px; font-weight: 600; text-transform: uppercase;
+  padding: 1px 7px; border-radius: 20px; letter-spacing: 0.3px;
+}
+.txn-badge-cash { background: rgba(82,183,136,0.15); color: var(--accent); }
+.txn-badge-card { background: rgba(96,165,250,0.15); color: #60a5fa; }
+.txn-badge-transfer { background: rgba(167,139,250,0.15); color: #a78bfa; }
+.txn-badge-credit { background: rgba(251,191,36,0.15); color: var(--warn); }
+.txn-badge-refunded { background: rgba(239,68,68,0.15); color: var(--danger); }
+.txn-items-preview { font-size: 12px; color: var(--text3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* ── TXN DETAIL MODAL ── */
+.txn-detail {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  width: 460px; max-height: 88vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+}
+.txn-detail-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.txn-detail-header h3 { font-size: 14px; font-weight: 700; }
+.txn-detail-body { padding: 18px 20px; }
+.txn-detail-row {
+  display: flex; justify-content: space-between;
+  font-size: 13px; padding: 5px 0;
+  border-bottom: 1px solid var(--border);
+}
+.txn-detail-row:last-child { border-bottom: none; }
+.txn-detail-row .dl { color: var(--text2); }
+.txn-detail-row .dv { font-family: 'DM Mono', monospace; font-weight: 500; }
+.txn-detail-row.grand-row .dl { font-weight: 700; color: var(--text); }
+.txn-detail-row.grand-row .dv { color: var(--accent); font-size: 16px; font-weight: 700; }
+.txn-actions { padding: 14px 20px; border-top: 1px solid var(--border); display: flex; gap: 8px; }
+.txn-action-btn {
+  flex: 1; padding: 10px;
+  border-radius: 6px; font-family: inherit; font-size: 13px;
+  font-weight: 600; cursor: pointer; border: none; transition: all 0.15s;
+}
+.btn-reprint { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+.btn-reprint:hover { border-color: var(--border2); }
+.btn-edit { background: var(--warn-light); color: var(--warn); border: 1px solid rgba(245,158,11,0.3); }
+.btn-edit:hover { background: rgba(245,158,11,0.2); }
+.btn-refund { background: var(--danger-light); color: var(--danger); border: 1px solid rgba(239,68,68,0.3); }
+.btn-refund:hover { background: rgba(239,68,68,0.2); }
+.btn-refund:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* ── EDIT QTY ROW ── */
+.edit-qty-input {
+  width: 60px; padding: 3px 6px;
+  background: var(--surface2); border: 1px solid var(--border2);
+  border-radius: 4px; font-family: 'DM Mono', monospace; font-size: 12px; color: var(--text);
+  text-align: center;
+}
+.edit-price-input {
+  width: 90px; padding: 3px 6px;
+  background: var(--surface2); border: 1px solid var(--border2);
+  border-radius: 4px; font-family: 'DM Mono', monospace; font-size: 12px; color: var(--text);
+  text-align: right;
+}
+
+/* ── CASH NUMPAD POPUP ── */
+.cash-numpad-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.6);
+  z-index: 300;
+  display: none; align-items: center; justify-content: center;
+}
+.cash-numpad-overlay.open { display: flex; }
+.cash-numpad-popup {
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-radius: 16px;
+  padding: 20px;
+  width: 300px;
+  box-shadow: 0 24px 64px rgba(0,0,0,0.7);
+  animation: popIn 0.15s ease-out;
+}
+@keyframes popIn {
+  from { transform: scale(0.92); opacity: 0; }
+  to   { transform: scale(1);    opacity: 1; }
+}
+.cnp-display {
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  border-radius: 10px;
+  padding: 12px 16px;
+  margin-bottom: 12px;
+  display: flex; align-items: baseline; justify-content: space-between;
+}
+.cnp-display-label { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.5px; }
+.cnp-display-val {
+  font-family: 'DM Mono', monospace;
+  font-size: 28px; font-weight: 700; color: var(--accent);
+  letter-spacing: -1px;
+}
+.cnp-change-row {
+  display: flex; justify-content: space-between;
+  font-size: 12px; color: var(--text3);
+  margin-bottom: 12px; padding: 0 2px;
+}
+.cnp-change-val { font-family: 'DM Mono', monospace; font-weight: 600; }
+.cnp-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 7px;
+  margin-bottom: 10px;
+}
+.cnp-btn {
+  padding: 14px 8px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-family: 'DM Mono', monospace;
+  font-size: 18px; font-weight: 600;
+  color: var(--text);
+  cursor: pointer;
+  transition: all 0.1s;
+  text-align: center;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.cnp-btn:active { background: var(--surface3); transform: scale(0.96); }
+.cnp-btn.del { font-size: 16px; color: var(--text2); }
+.cnp-btn.del:active { background: var(--danger-light); color: var(--danger); }
+.cnp-btn.zero { grid-column: span 2; }
+.cnp-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
+.cnp-cancel {
+  padding: 12px;
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 8px; font-family: inherit; font-size: 14px;
+  font-weight: 600; color: var(--text2); cursor: pointer;
+  transition: all 0.1s;
+}
+.cnp-cancel:active { background: var(--surface3); }
+.cnp-confirm {
+  padding: 12px;
+  background: var(--accent); border: none;
+  border-radius: 8px; font-family: inherit; font-size: 14px;
+  font-weight: 700; color: #fff; cursor: pointer;
+  transition: all 0.1s;
+}
+.cnp-confirm:active { background: var(--accent-dark); }
+
+/* ── ADMIN TAB / DAY END ── */
+.admin-panel {
+  position: fixed; inset: 0;
+  background: var(--bg);
+  z-index: 250;
+  display: none; flex-direction: column;
+  overflow-y: auto;
+}
+.admin-panel.open { display: flex; }
+.admin-topbar {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 14px 24px;
+  display: flex; align-items: center; gap: 14px;
+  flex-shrink: 0;
+  position: sticky; top: 0; z-index: 10;
+}
+.admin-topbar h2 { font-size: 16px; font-weight: 700; }
+.admin-close {
+  margin-left: auto;
+  background: none; border: 1px solid var(--border);
+  color: var(--text2); border-radius: 6px;
+  padding: 6px 14px; cursor: pointer; font-size: 13px;
+  font-family: inherit; transition: all 0.12s;
+}
+.admin-close:hover { color: var(--danger); border-color: var(--danger); }
+.admin-body { padding: 24px; max-width: 780px; margin: 0 auto; width: 100%; }
+.admin-section {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  margin-bottom: 18px;
+  overflow: hidden;
+}
+.admin-section-header {
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.admin-section-header h3 { font-size: 14px; font-weight: 700; }
+.admin-section-body { padding: 18px 20px; }
+.admin-stat {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 14px;
+}
+.admin-stat-dual {
+  display: flex;
+  gap: 0;
+  padding: 0;
+  overflow: hidden;
+}
+.admin-stat-half {
+  flex: 1;
+  padding: 12px 13px;
+}
+.admin-stat-divider {
+  width: 1px;
+  background: var(--border);
+  flex-shrink: 0;
+}
+.admin-stat-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.4px; color: var(--text3); font-weight: 600; margin-bottom: 5px; }
+.admin-stat-value { font-family: 'DM Mono', monospace; font-size: 16px; font-weight: 700; color: var(--text); }
+.admin-stat-value.green { color: var(--accent); }
+.admin-stat-value.warn { color: var(--warn); }
+.admin-stat-value.danger { color: var(--danger); }
+.admin-stat-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; }
+.admin-input {
+  width: 100%; padding: 10px 12px;
+  background: var(--surface2); border: 1px solid var(--border2);
+  border-radius: 8px; font-family: 'DM Mono', monospace;
+  font-size: 18px; color: var(--text); text-align: right;
+  transition: border-color 0.15s;
+}
+.admin-input:focus { outline: none; border-color: var(--accent); }
+.admin-form-row { display: flex; flex-direction: column; gap: 5px; margin-bottom: 12px; }
+.admin-form-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.4px; color: var(--text3); font-weight: 600; }
+.admin-btn {
+  padding: 12px 22px; border-radius: 8px;
+  font-family: inherit; font-size: 14px; font-weight: 700;
+  cursor: pointer; border: none; transition: all 0.15s;
+}
+.admin-btn-primary { background: var(--accent); color: #fff; }
+.admin-btn-primary:hover { background: var(--accent-dark); }
+.admin-btn-ghost { background: var(--surface2); color: var(--text2); border: 1px solid var(--border); }
+.admin-btn-ghost:hover { color: var(--text); border-color: var(--border2); }
+.day-end-report {
+  display: none;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px;
+  margin-top: 16px;
+  font-family: 'DM Mono', monospace;
+  font-size: 13px;
+}
+.day-end-report.show { display: block; }
+.der-title { font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 14px; text-align: center; letter-spacing: 0.5px; }
+.der-row { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid var(--border); color: var(--text2); }
+.der-row:last-child { border-bottom: none; }
+.der-row.section-head { color: var(--text3); font-size: 10px; text-transform: uppercase; letter-spacing: 0.8px; margin-top: 10px; border-bottom: 1px solid var(--border2); padding-bottom: 3px; }
+.der-row.total { color: var(--text); font-weight: 700; font-size: 14px; }
+.der-row.over { color: var(--accent); }
+.der-row.under { color: var(--danger); }
+.der-row .dv { color: var(--text); }
+.saved-reports-list { max-height: 280px; overflow-y: auto; }
+.saved-report-item {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  cursor: pointer; transition: background 0.1s;
+}
+.saved-report-item:hover { background: var(--surface2); }
+.saved-report-item:last-child { border-bottom: none; }
+
+@media print {
+  body * { visibility: hidden; }
+  .receipt, .receipt * { visibility: visible; }
+  .receipt { position: fixed; top: 0; left: 0; box-shadow: none; }
+  .receipt-actions { display: none; }
+}
+</style>
+<script src="gs-api.js"></script>
+</head>
+<body>
+
+<!-- ═══════════════ STARTUP / LOCK SCREEN ═══════════════ -->
+<div id="startupScreen">
+
+  <!-- LEFT: clock + recent bills -->
+  <div class="startup-left">
+    <div class="startup-brand">
+      <div class="startup-shop-name" id="startupShopName">Hardware Shop</div>
+      <div class="startup-subtitle">Point of Sale</div>
+    </div>
+    <div class="startup-clock" id="startupClock">00:00</div>
+    <div class="startup-date" id="startupDate"></div>
+    <div class="startup-recent-label">Recent bills</div>
+    <div class="startup-bills" id="startupBills">
+      <div style="color:var(--text3);font-size:13px;">No sales yet today</div>
+    </div>
+  </div>
+
+  <!-- RIGHT: user select -->
+  <div class="startup-right">
+    <div class="startup-greet">Who is serving?</div>
+    <div class="startup-greet-sub">Tap your name to start</div>
+    <div class="startup-users" id="startupUsers"></div>
+    <div class="startup-footer" id="startupFooter">
+      Users are set in the Admin app
+    </div>
+  </div>
+
+</div>
+
+<div class="shell">
+
+  <!-- ═══════════════ LEFT: PRODUCTS ═══════════════ -->
+  <div class="left-panel">
+
+    <div class="topbar">
+      <div>
+        <div class="shop-name" id="shopNameDisplay">Hardware Shop</div>
+        <div class="till-label">Till</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;margin-left:auto;">
+        <span id="topbarUser" style="font-size:12px;font-weight:600;color:var(--accent);padding:4px 10px;background:var(--accent-light);border-radius:20px;"></span>
+        <button onclick="lockScreen()" style="display:flex;align-items:center;gap:5px;padding:5px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text3);font-family:inherit;font-size:11px;cursor:pointer;" title="Lock till">
+          <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+          Lock
+        </button>
+        <button onclick="openTxnPanel()" style="display:flex;align-items:center;gap:6px;padding:7px 13px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text2);font-family:inherit;font-size:12.5px;font-weight:500;cursor:pointer;transition:all 0.15s;" onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text2)'">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+          Recent bills
+        </button>
+        <button onclick="openAdminPanel()" style="display:flex;align-items:center;gap:6px;padding:7px 13px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text2);font-family:inherit;font-size:12.5px;font-weight:500;cursor:pointer;transition:all 0.15s;" onmouseover="this.style.borderColor='var(--gold)';this.style.color='var(--gold)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text2)'">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+          Admin
+        </button>
+        <div class="topbar-date" id="topbarDate"></div>
+      </div>
+    </div>
+
+    <div class="search-area">
+      <div class="search-wrap">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" class="search-input" id="searchInput" placeholder="Search by name, category, SKU…" oninput="renderProducts()" autofocus>
+      </div>
+    </div>
+
+    <div class="cat-tabs" id="catTabs"></div>
+
+    <div class="product-grid" id="productGrid">
+      <div class="empty-state">Loading products…</div>
+    </div>
+
+  </div>
+
+  <!-- ═══════════════ RIGHT: CART ═══════════════ -->
+  <div class="right-panel">
+
+    <div class="cart-header">
+      <h2>Current sale</h2>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span class="cart-count" id="cartCount">0</span>
+        <button onclick="clearCart()" style="background:none;border:none;color:var(--text3);font-size:12px;cursor:pointer;padding:2px 6px;border-radius:4px;border:1px solid var(--border);" title="Clear cart">Clear</button>
+      </div>
+    </div>
+
+    <div class="cart-items" id="cartItems">
+      <div class="cart-empty">
+        <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+        <div>Tap a product to add it</div>
+      </div>
+    </div>
+
+    <div class="cart-footer">
+
+      <!-- Discount — Admin/Manager only -->
+      <div class="discount-row" id="discountSection" style="display:none;">
+        <label>Discount</label>
+        <input type="number" class="discount-input" id="discountVal" value="0" min="0" oninput="updateTotals()">
+        <select class="discount-type" id="discountType" onchange="updateTotals()">
+          <option value="pct">%</option>
+          <option value="amt">LKR</option>
+        </select>
+        <span class="max-discount-badge" id="maxDiscountBadge" title="Maximum discount before selling below today's cost"></span>
+      </div>
+      <!-- Cashier: ask manager -->
+      <div id="discountCashierNote" style="display:none;padding:8px 14px;font-size:12px;color:var(--text3);border-bottom:1px solid var(--border);">
+        For a discount ask a Manager or Admin to log in
+      </div>
+
+      <!-- Totals -->
+      <div class="totals">
+        <div class="total-row">
+          <span class="tl">Subtotal</span>
+          <span class="tv" id="subtotal">LKR 0.00</span>
+        </div>
+        <div class="total-row" id="discountRow" style="display:none;">
+          <span class="tl">Discount</span>
+          <span class="tv" style="color:var(--warn);" id="discountAmt">— LKR 0.00</span>
+        </div>
+        <div class="total-row grand">
+          <span class="tl">Total</span>
+          <span class="tv" id="grandTotal">LKR 0.00</span>
+        </div>
+      </div>
+
+      <!-- Payment method -->
+      <div class="payment-methods">
+        <div class="pm-label">Payment method</div>
+        <div class="pm-btns">
+          <button class="pm-btn active" id="pm-cash" onclick="selectPayment('cash')">Cash</button>
+          <button class="pm-btn" id="pm-card" onclick="selectPayment('card')">Card</button>
+          <button class="pm-btn" id="pm-transfer" onclick="selectPayment('transfer')">Transfer</button>
+          <button class="pm-btn" id="pm-credit" onclick="selectPayment('credit')">Credit</button>
+        </div>
+      </div>
+
+      <!-- Cash tendered -->
+      <div class="cash-input-row" id="cashInputRow">
+        <label>Cash received</label>
+        <input type="text" class="cash-input" id="cashReceived" placeholder="Tap to enter…" readonly onclick="openCashNumpad()" style="cursor:pointer;">
+        <button onclick="clearCashInput()" title="Clear" style="background:none;border:1px solid var(--border);color:var(--text3);border-radius:6px;padding:4px 9px;cursor:pointer;font-size:13px;flex-shrink:0;transition:all 0.12s;" onmouseover="this.style.color='var(--danger)';this.style.borderColor='var(--danger)'" onmouseout="this.style.color='var(--text3)';this.style.borderColor='var(--border)'">✕</button>
+      </div>
+
+      <!-- Cash note tiles -->
+      <div class="cash-notes" id="cashNotes">
+        <div class="cash-notes-label">Quick notes — tap to add</div>
+        <div class="cash-note-grid" id="cashNoteGrid"></div>
+      </div>
+
+      <div class="change-display" id="changeDisplay">
+        <span class="cl">Change due</span>
+        <span class="cv" id="changeDue">LKR 0.00</span>
+      </div>
+
+      <button class="charge-btn" id="chargeBtn" onclick="processPayment()">
+        Charge — LKR 0.00
+      </button>
+
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══════════════ UNIT SELECTOR MODAL ═══════════════ -->
+<div class="modal-overlay" id="unitModal">
+  <div class="qty-modal" style="width:300px;">
+    <h3 id="unitModalTitle" style="margin-bottom:6px;">Select unit</h3>
+    <p id="unitModalProduct" style="font-size:13px;color:var(--text2);margin-bottom:16px;"></p>
+    <div id="unitModalBtns" style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px;"></div>
+    <button class="np-btn cancel-btn" style="width:100%;padding:10px;" onclick="closeUnitModal()">Cancel</button>
+  </div>
+</div>
+
+<!-- ═══════════════ QTY MODAL ═══════════════ -->
+<div class="modal-overlay" id="qtyModal">
+  <div class="qty-modal">
+    <h3 id="qtyModalTitle">Enter quantity</h3>
+    <input type="number" class="qty-modal-input" id="qtyModalInput" min="0" step="any" value="1" oninput="qtyInputChanged()">
+    <div class="qty-numpad" id="numpad">
+      <button class="np-btn" onclick="numpad('7')">7</button>
+      <button class="np-btn" onclick="numpad('8')">8</button>
+      <button class="np-btn" onclick="numpad('9')">9</button>
+      <button class="np-btn" onclick="numpad('4')">4</button>
+      <button class="np-btn" onclick="numpad('5')">5</button>
+      <button class="np-btn" onclick="numpad('6')">6</button>
+      <button class="np-btn" onclick="numpad('1')">1</button>
+      <button class="np-btn" onclick="numpad('2')">2</button>
+      <button class="np-btn" onclick="numpad('3')">3</button>
+      <button class="np-btn" onclick="numpad('.')">.</button>
+      <button class="np-btn" onclick="numpad('0')">0</button>
+      <button class="np-btn cancel-btn" onclick="numpad('del')">⌫</button>
+    </div>
+    <div class="qty-modal-footer">
+      <button class="np-btn cancel-btn" style="padding:10px 16px;" onclick="closeQtyModal()">Cancel</button>
+      <button class="qty-confirm" onclick="confirmQty()">Add to cart</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ RECEIPT MODAL ═══════════════ -->
+<div class="modal-overlay" id="receiptModal">
+  <div class="receipt">
+    <div class="receipt-inner" id="receiptContent"></div>
+    <div class="receipt-actions">
+      <button class="receipt-btn print" onclick="printReceipt()">🖨 Print</button>
+      <button class="receipt-btn new" onclick="newSale()">New sale →</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════ CASH NUMPAD ═══════════════ -->
+<div class="cash-numpad-overlay" id="cashNumpadOverlay" onclick="if(event.target===this)closeCashNumpad()">
+  <div class="cash-numpad-popup">
+    <div class="cnp-display">
+      <span class="cnp-display-label">Cash received</span>
+      <span class="cnp-display-val" id="cnpDisplay">0</span>
+    </div>
+    <div class="cnp-change-row">
+      <span>Change due</span>
+      <span class="cnp-change-val" id="cnpChange" style="color:var(--gold)">—</span>
+    </div>
+    <div class="cnp-grid">
+      <button class="cnp-btn" onclick="cnpPress('7')">7</button>
+      <button class="cnp-btn" onclick="cnpPress('8')">8</button>
+      <button class="cnp-btn" onclick="cnpPress('9')">9</button>
+      <button class="cnp-btn" onclick="cnpPress('4')">4</button>
+      <button class="cnp-btn" onclick="cnpPress('5')">5</button>
+      <button class="cnp-btn" onclick="cnpPress('6')">6</button>
+      <button class="cnp-btn" onclick="cnpPress('1')">1</button>
+      <button class="cnp-btn" onclick="cnpPress('2')">2</button>
+      <button class="cnp-btn" onclick="cnpPress('3')">3</button>
+      <button class="cnp-btn cnp-btn del" onclick="cnpPress('del')">⌫</button>
+      <button class="cnp-btn zero" onclick="cnpPress('0')">0</button>
+    </div>
+    <div class="cnp-actions">
+      <button class="cnp-cancel" onclick="closeCashNumpad()">Cancel</button>
+      <button class="cnp-confirm" onclick="cnpConfirm()">✓ Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ ADMIN / DAY END PANEL ═══════════════ -->
+<div class="admin-panel" id="adminPanel">
+  <div class="admin-topbar">
+    <svg width="18" height="18" fill="none" stroke="var(--gold)" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+    <h2>Admin — Day end</h2>
+    <button class="admin-close" onclick="closeAdminPanel()">✕ Close</button>
+  </div>
+
+  <div class="admin-body">
+
+    <!-- Today summary stats -->
+    <div class="admin-section">
+      <div class="admin-section-header">
+        <h3>Today's trading summary</h3>
+        <span id="adminDateLabel" style="font-size:12px;color:var(--text3);font-family:'DM Mono',monospace;"></span>
+      </div>
+      <div class="admin-section-body">
+        <div class="admin-stat-grid">
+
+          <!-- Tile 1: Total sales + Customers -->
+          <div class="admin-stat admin-stat-dual">
+            <div class="admin-stat-half">
+              <div class="admin-stat-label">Total sales</div>
+              <div class="admin-stat-value green" id="adTotalSales">LKR 0.00</div>
+            </div>
+            <div class="admin-stat-divider"></div>
+            <div class="admin-stat-half">
+              <div class="admin-stat-label">Customers</div>
+              <div class="admin-stat-value" id="adBillCount">0</div>
+              <div class="admin-stat-sub" id="adAvgBill" style="color:var(--text3);font-size:11px;margin-top:2px;">avg LKR 0.00</div>
+            </div>
+          </div>
+
+          <!-- Tile 2: Cash — amount + count -->
+          <div class="admin-stat admin-stat-dual">
+            <div class="admin-stat-half">
+              <div class="admin-stat-label">Cash amount</div>
+              <div class="admin-stat-value green" id="adCashSales">LKR 0.00</div>
+            </div>
+            <div class="admin-stat-divider"></div>
+            <div class="admin-stat-half">
+              <div class="admin-stat-label">Cash customers</div>
+              <div class="admin-stat-value" id="adCashCount">0</div>
+            </div>
+          </div>
+
+          <!-- Tile 3: Card — amount + count -->
+          <div class="admin-stat admin-stat-dual">
+            <div class="admin-stat-half">
+              <div class="admin-stat-label">Card / transfer</div>
+              <div class="admin-stat-value" id="adCardSales">LKR 0.00</div>
+            </div>
+            <div class="admin-stat-divider"></div>
+            <div class="admin-stat-half">
+              <div class="admin-stat-label">Card customers</div>
+              <div class="admin-stat-value" id="adCardCount">0</div>
+            </div>
+          </div>
+
+          <!-- Tile 4: Credit — amount + count -->
+          <div class="admin-stat admin-stat-dual">
+            <div class="admin-stat-half">
+              <div class="admin-stat-label">Credit amount</div>
+              <div class="admin-stat-value warn" id="adCreditSales">LKR 0.00</div>
+            </div>
+            <div class="admin-stat-divider"></div>
+            <div class="admin-stat-half">
+              <div class="admin-stat-label">Credit customers</div>
+              <div class="admin-stat-value warn" id="adCreditCount">0</div>
+            </div>
+          </div>
+
+          <!-- Tile 5: Refunds — amount + count -->
+          <div class="admin-stat admin-stat-dual">
+            <div class="admin-stat-half">
+              <div class="admin-stat-label">Refund amount</div>
+              <div class="admin-stat-value danger" id="adRefunds">LKR 0.00</div>
+            </div>
+            <div class="admin-stat-divider"></div>
+            <div class="admin-stat-half">
+              <div class="admin-stat-label">Refund count</div>
+              <div class="admin-stat-value danger" id="adRefundCount">0</div>
+            </div>
+          </div>
+
+          <!-- Tile 6: Discounts count+amount / Items sold -->
+          <div class="admin-stat admin-stat-dual">
+            <div class="admin-stat-half">
+              <div class="admin-stat-label">Discounts given</div>
+              <div class="admin-stat-value warn" id="adDiscountCount">0</div>
+              <div class="admin-stat-sub" id="adDiscounts" style="color:var(--warn);font-size:11px;font-family:'DM Mono',monospace;font-weight:600;margin-top:2px;">LKR 0.00</div>
+            </div>
+            <div class="admin-stat-divider"></div>
+            <div class="admin-stat-half">
+              <div class="admin-stat-label">Items sold</div>
+              <div class="admin-stat-value" id="adItemsSold">0</div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- Top products today -->
+    <div class="admin-section">
+      <div class="admin-section-header"><h3>Top products today</h3></div>
+      <div class="admin-section-body" style="padding:0;">
+        <table style="width:100%;border-collapse:collapse;">
+          <thead>
+            <tr style="border-bottom:1px solid var(--border);">
+              <th style="padding:10px 16px;font-size:11px;color:var(--text3);text-align:left;font-weight:500;">Product</th>
+              <th style="padding:10px 16px;font-size:11px;color:var(--text3);text-align:center;font-weight:500;">Qty sold</th>
+              <th style="padding:10px 16px;font-size:11px;color:var(--text3);text-align:right;font-weight:500;">Revenue</th>
+            </tr>
+          </thead>
+          <tbody id="adTopProducts"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Cash balance entry -->
+    <div class="admin-section">
+      <div class="admin-section-header"><h3>Cash balance — day end</h3></div>
+      <div class="admin-section-body">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;">
+          <div class="admin-form-row">
+            <label class="admin-form-label">Expected cash in till</label>
+            <input type="text" class="admin-input" id="adExpectedCash" readonly style="color:var(--accent);">
+          </div>
+          <div class="admin-form-row">
+            <label class="admin-form-label">Opening float (LKR)</label>
+            <input type="number" class="admin-input" id="adOpeningFloat" placeholder="0.00" style="font-size:16px;" oninput="recalcCashBalance()">
+          </div>
+        </div>
+        <div class="admin-form-row" style="margin-bottom:6px;">
+          <label class="admin-form-label">Actual cash counted in till (LKR)</label>
+          <input type="number" class="admin-input" id="adActualCash" placeholder="Count the drawer and enter total…" style="font-size:16px;" oninput="recalcCashBalance()">
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px;" id="cashVarianceDisplay">
+          <div class="admin-stat">
+            <div class="admin-stat-label">Variance</div>
+            <div class="admin-stat-value" id="adVariance" style="font-size:20px;">—</div>
+          </div>
+          <div class="admin-stat">
+            <div class="admin-stat-label">Status</div>
+            <div class="admin-stat-value" id="adVarianceStatus" style="font-size:15px;">—</div>
+          </div>
+        </div>
+        <div class="admin-form-row" style="margin-top:14px;">
+          <label class="admin-form-label">Notes / reason for variance</label>
+          <input type="text" id="adDayNotes" placeholder="Optional notes…"
+            style="width:100%;padding:9px 11px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;font-family:inherit;font-size:13px;color:var(--text);">
+        </div>
+      </div>
+    </div>
+
+    <!-- Generate day end report -->
+    <div style="display:flex;gap:10px;margin-bottom:18px;">
+      <button class="admin-btn admin-btn-primary" onclick="generateDayEnd()">
+        Generate day-end report
+      </button>
+      <button class="admin-btn admin-btn-ghost" onclick="printDayEnd()">
+        🖨 Print report
+      </button>
+    </div>
+
+    <!-- Day end report output -->
+    <div class="day-end-report" id="dayEndReport"></div>
+
+    <!-- Past day-end reports -->
+    <div class="admin-section" style="margin-top:18px;">
+      <div class="admin-section-header">
+        <h3>Past day-end reports</h3>
+        <span style="font-size:12px;color:var(--text3);" id="adSavedCount"></span>
+      </div>
+      <div class="saved-reports-list" id="savedReportsList"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════ TRANSACTIONS PANEL ═══════════════ -->
+<div class="txn-panel" id="txnPanel">
+  <div class="txn-backdrop" onclick="closeTxnPanel()"></div>
+  <div class="txn-drawer">
+    <div class="txn-header">
+      <h2>Recent bills</h2>
+      <button class="txn-close" onclick="closeTxnPanel()">✕ Close</button>
+    </div>
+    <div class="txn-search-row">
+      <input type="text" class="txn-search" id="txnSearch" placeholder="Search by receipt #, product…" oninput="renderTxnList()">
+      <select class="txn-filter" id="txnFilter" onchange="renderTxnList()">
+        <option value="all">All</option>
+        <option value="today">Today</option>
+        <option value="active">Active only</option>
+        <option value="refunded">Refunded</option>
+      </select>
+    </div>
+    <div class="txn-list" id="txnList"></div>
+  </div>
+</div>
+
+<!-- ═══════════════ TXN DETAIL MODAL ═══════════════ -->
+<div class="modal-overlay" id="txnDetailModal">
+  <div class="txn-detail">
+    <div class="txn-detail-header">
+      <h3 id="txnDetailTitle">Bill detail</h3>
+      <button class="txn-close" onclick="closeTxnDetail()">✕</button>
+    </div>
+    <div class="txn-detail-body" id="txnDetailBody"></div>
+    <div class="txn-actions" id="txnDetailActions"></div>
+  </div>
+</div>
+
+<!-- ═══════════════ REFUND CONFIRM ═══════════════ -->
+<div class="modal-overlay" id="refundModal">
+  <div class="qty-modal" style="width:340px;">
+    <h3 style="margin-bottom:10px;">Confirm refund</h3>
+    <div id="refundInfo" style="font-size:13px;color:var(--text2);margin-bottom:14px;line-height:1.6;"></div>
+    <div class="form-group" style="margin-bottom:12px;">
+      <label style="font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:var(--text3);font-weight:600;">Refund reason</label>
+      <input type="text" id="refundReason" placeholder="e.g. Wrong item, customer return…"
+        style="width:100%;padding:8px 10px;background:var(--surface2);border:1px solid var(--border2);border-radius:6px;font-family:inherit;font-size:13px;color:var(--text);margin-top:5px;">
+    </div>
+    <div style="display:flex;gap:8px;">
+      <button class="np-btn cancel-btn" style="flex:1;padding:10px;" onclick="closeRefundModal()">Cancel</button>
+      <button class="qty-confirm" style="flex:1;" onclick="confirmRefund()">Confirm refund</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════
+// SHARED STORAGE (same keys as store app)
+// ══════════════════════════════════════════
+const KEYS = {
+  products: 'hs_products',
+  stock:    'hs_stock',
+  settings: 'hs_settings',
+  sales:    'hs_sales',
+  movements:'hs_movements'
+};
+
+function load(key) { try { return JSON.parse(localStorage.getItem(key)) || []; } catch { return []; } }
+function loadObj(key, def) { try { return JSON.parse(localStorage.getItem(key)) || def; } catch { return def; } }
+function save(key, val) { localStorage.setItem(key, JSON.stringify(val)); }
+
+let products  = load(KEYS.products);
+let stock     = load(KEYS.stock);
+let sales     = load(KEYS.sales);
+let movements = load(KEYS.movements);
+let settings  = loadObj(KEYS.settings, { shopName:'Hardware Shop', inflation:12, margin:25, reorder:10, floorDays:7 });
+
+// ── All module state (declared here to avoid temporal dead zone) ──
+let cart            = [];
+let activeCat       = 'ALL';
+let selectedPayment = 'cash';
+let pendingSku      = null;
+let numpadStr       = '';
+const NOTES         = [5, 10, 20, 50, 100, 500, 1000, 5000];
+let noteCounts      = {};
+let cnpStr          = '';
+let currentTxnSale  = null;
+// refundingSaleId declared at top
+let   refundingSaleId = null;
+const KEYS_REPORTS  = 'hs_day_reports';
+let pendingUnit     = null;
+let pendingUnit2    = null;
+let pendingConv     = 0;
+
+// ══════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════
+// (all state vars declared at top of script)
+
+// ══════════════════════════════════════════
+// HELPERS
+// ══════════════════════════════════════════
+function lkr(n) {
+  return 'LKR ' + Number(n).toLocaleString('en-LK', { minimumFractionDigits:2, maximumFractionDigits:2 });
+}
+function num(n, dp) {
+  dp = dp !== undefined ? dp : 2;
+  if (isNaN(n) || n === null) return '—';
+  return Number(n).toLocaleString('en-LK', { minimumFractionDigits:dp, maximumFractionDigits:dp });
+}
+function today() { return new Date().toISOString().split('T')[0]; }
+function nowTime() { return new Date().toTimeString().slice(0,5); }
+function daysBetween(dateStr) {
+  if (!dateStr) return 0;
+  const d = new Date(dateStr); d.setHours(0,0,0,0);
+  const t = new Date(); t.setHours(0,0,0,0);
+  return Math.max(0, Math.floor((t - d) / 86400000));
+}
+function inflFactor(days) {
+  return Math.pow(1 + settings.inflation / 100, days / 365);
+}
+// ── FIFO lot helpers ──
+function getActiveLots(sku) {
+  // Read lots from goodsIn records that have qtyRemaining > 0
+  var goodsIn = JSON.parse(localStorage.getItem('hs_goodsin') || '[]');
+  return goodsIn
+    .filter(function(r) { return r.sku === sku && (r.qtyRemaining || r.qty || 0) > 0; })
+    .sort(function(a, b) { return a.date < b.date ? -1 : 1; }); // oldest first
+}
+
+function lotInflValue(lot) {
+  if (!lot) return 0;
+  var cost = lot.effCostUnit || lot.purchaseCost || lot.cost || 0;
+  var days = daysBetween(lot.date);
+  return cost * inflFactor(days);
+}
+
+function sellingPrice(p) {
+  // 1. Check active lots for set selling prices
+  var lots   = getActiveLots(p.sku);
+  var prices = lots.map(function(l) { return l.sellingPrice || 0; }).filter(function(v) { return v > 0; });
+
+  if (prices.length > 0) return Math.max.apply(null, prices);
+
+  // 2. Fall back to product last_selling_price cache
+  if (p.lastSellingPrice && p.lastSellingPrice > 0) return p.lastSellingPrice;
+
+  // 3. Suggested from oldest active lot
+  if (lots.length > 0) {
+    var cv = lotInflValue(lots[0]);
+    return cv * (1 + (settings.margin||25) / 100);
+  }
+
+  // 4. Legacy fallback
+  if (p.sellingPrice && p.sellingPrice > 0) return p.sellingPrice;
+  var days = daysBetween(p.costDate);
+  var cv   = (p.costPrice||0) * inflFactor(days);
+  return cv * (1 + (settings.margin||25) / 100);
+}
+function getStockQty(sku) {
+  const s = stock.find(x => x.sku === sku);
+  return s ? ((s.floorQty || 0)) : 0; // till sells from floor stock
+}
+function reloadData() {
+  products = load(KEYS.products);
+  stock    = load(KEYS.stock);
+  settings = loadObj(KEYS.settings, { shopName:'Hardware Shop', inflation:12, margin:25, reorder:10, floorDays:7 });
+  document.getElementById('shopNameDisplay').textContent = settings.shopName || 'Hardware Shop';
+}
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.style.opacity = '1';
+  setTimeout(() => el.style.opacity = '0', 2000);
+}
+
+// ══════════════════════════════════════════
+// PRODUCT GRID
+// ══════════════════════════════════════════
+function getCategories() {
+  const cats = [...new Set(products.map(p => p.category).filter(Boolean))].sort();
+  return cats;
+}
+
+function renderCatTabs() {
+  const cats = getCategories();
+  const tabs = document.getElementById('catTabs');
+  tabs.innerHTML = `<div class="cat-tab ${activeCat === 'ALL' ? 'active' : ''}" data-cat="ALL">All</div>`
+    + cats.map(c => {
+        const safe = c.replace(/&/g,'&amp;').replace(/"/g,'&quot;');
+        return `<div class="cat-tab ${activeCat === c ? 'active' : ''}" data-cat="${safe}">${c}</div>`;
+      }).join('');
+}
+
+// Category click via event delegation — no inline onclick, no quote issues
+document.getElementById('catTabs').addEventListener('click', function(e) {
+  const tab = e.target.closest('.cat-tab');
+  if (!tab) return;
+  activeCat = tab.dataset.cat;
+  renderCatTabs();
+  renderProducts();
+});
+
+function renderProducts() {
+  reloadData();
+  renderCatTabs();
+
+  const q = (document.getElementById('searchInput').value || '').toLowerCase().trim();
+  let filtered = products.filter(p => {
+    if (activeCat !== 'ALL' && p.category !== activeCat) return false;
+    if (!q) return true;
+    return (p.name||'').toLowerCase().includes(q)
+      || (p.category||'').toLowerCase().includes(q)
+      || (p.sku||'').toLowerCase().includes(q);
+  });
+
+  const grid = document.getElementById('productGrid');
+  if (!filtered.length) {
+    grid.innerHTML = `<div class="empty-state">${q ? 'No products match "'+q+'"' : 'No products — add them in the Store app'}</div>`;
+    return;
+  }
+
+  grid.innerHTML = filtered.map(p => {
+    const price = sellingPrice(p);
+    const floorQty = getStockQty(p.sku);
+    const reorder = (stock.find(s => s.sku === p.sku)||{}).reorderLevel || settings.reorder;
+    const isOut = floorQty <= 0;
+    const isLow = !isOut && floorQty < reorder;
+
+    const price2 = (p.unit2 && p.sellingPrice2 > 0) ? p.sellingPrice2 : 0;
+    const stockLine = isOut
+      ? '<span style="color:var(--danger)">&#10005; Out</span>'
+      : isLow
+        ? '<span style="color:var(--warn)">&#9888; Low: ' + floorQty + ' ' + p.unit + '</span>'
+        : '<span>&#10003; ' + floorQty + ' ' + p.unit + '</span>';
+    const dualPrices = (p.unit2 && p.sellingPrice2 > 0)
+      ? '<div style="font-size:11px;color:var(--text3);margin-top:2px">' + lkr(price2) + ' / ' + p.unit2 + '</div>'
+      : '';
+    return '<div class="product-card' + (isOut ? ' out-stock' : isLow ? ' low-stock' : '') + '"'
+      + ' data-sku="' + p.sku + '" onclick="addToCart(this.dataset.sku)">'
+      + '<div class="pc-cat">' + (p.category || '') + '</div>'
+      + '<div class="pc-name">' + p.name + '</div>'
+      + '<div class="pc-unit">per ' + p.unit + (p.unit2 ? ' / ' + p.unit2 : '') + '</div>'
+      + '<div class="pc-price">' + lkr(price) + dualPrices + '</div>'
+      + '<div class="pc-stock">' + stockLine + '</div>'
+      + '</div>';
+  }).join('');
+}
+
+// ══════════════════════════════════════════
+// CART
+// ══════════════════════════════════════════
+function addToCart(sku) {
+  const p = products.find(function(x) { return x.sku === sku; });
+  if (!p) return;
+
+  // If product has a second unit, always show unit selector first
+  if (p.unit2) {
+    openUnitModal(sku);
+    return;
+  }
+
+  // Single-unit flow
+  const inCart = cart.find(function(x) { return x.sku === sku && x.unit === p.unit; });
+  if (p.unit === 'pc' && inCart) {
+    inCart.qty += 1;
+    renderCart(); updateTotals();
+    toast('+1 ' + p.name);
+    return;
+  }
+  pendingSku   = sku;
+  pendingUnit  = 'primary';
+  pendingUnit2 = null;
+  pendingConv  = 0;
+  numpadStr    = inCart ? String(inCart.qty) : (p.unit === 'pc' ? '1' : '');
+  document.getElementById('qtyModalInput').value = numpadStr || '';
+  document.getElementById('qtyModalTitle').textContent = p.name + ' — qty (' + p.unit + ')';
+  document.getElementById('qtyModal').classList.add('open');
+  setTimeout(function() { document.getElementById('qtyModalInput').focus(); }, 50);
+}
+
+// ── UNIT SELECTOR MODAL ──
+function openUnitModal(sku) {
+  pendingSku = sku;
+  const p = products.find(function(x) { return x.sku === sku; });
+  if (!p) return;
+
+  document.getElementById('unitModalTitle').textContent = 'How are you selling this?';
+  document.getElementById('unitModalProduct').textContent = p.name;
+
+  // Use manager-set prices directly — no calculation
+  const price1 = p.sellingPrice  > 0 ? p.sellingPrice  : sellingPrice(p);
+  const price2 = p.sellingPrice2 > 0 ? p.sellingPrice2 : 0;
+
+  const s = reloadStock(sku);
+  const floorQty = s ? (s.floorQty || 0) : 0;
+
+  const price2Display = price2 > 0 ? lkr(price2) : '<span style="color:var(--warn);font-size:12px">price not set</span>';
+
+  const btns = document.getElementById('unitModalBtns');
+  btns.innerHTML =
+    '<button class="unit-select-btn" data-which="primary" onclick="selectUnit(this.dataset.which)">'
+    + '<div>'
+    +   '<div class="usb-unit">' + p.unit + '</div>'
+    +   '<div class="usb-desc">Floor stock: ' + num(floorQty, 2) + ' ' + p.unit + '</div>'
+    + '</div>'
+    + '<div class="usb-price">' + lkr(price1) + '</div>'
+    + '</button>'
+    + '<button class="unit-select-btn' + (price2 <= 0 ? ' low-stock' : '') + '"'
+    + ' data-which="secondary" onclick="selectUnit(this.dataset.which)">'
+    + '<div>'
+    +   '<div class="usb-unit">' + p.unit2 + '</div>'
+    +   '<div class="usb-desc">Sell by ' + p.unit2 + '</div>'
+    + '</div>'
+    + '<div class="usb-price">' + price2Display + '</div>'
+    + '</button>';
+
+  document.getElementById('unitModal').classList.add('open');
+}
+
+function reloadStock(sku) {
+  const st = JSON.parse(localStorage.getItem('hs_stock') || '[]');
+  return st.find(function(s) { return s.sku === sku; }) || null;
+}
+
+function closeUnitModal() {
+  document.getElementById('unitModal').classList.remove('open');
+  pendingSku = null;
+}
+
+function selectUnit(which) {
+  document.getElementById('unitModal').classList.remove('open');
+  const p = products.find(function(x) { return x.sku === pendingSku; });
+  if (!p) return;
+
+  pendingUnit  = which;
+  pendingUnit2 = which === 'secondary' ? p.unit2 : null;
+
+  const unitLabel = which === 'primary' ? p.unit : p.unit2;
+  numpadStr = '';
+  document.getElementById('qtyModalInput').value = '';
+  document.getElementById('qtyModalTitle').textContent = p.name + ' — qty (' + unitLabel + ')';
+  document.getElementById('qtyModal').classList.add('open');
+  setTimeout(function() { document.getElementById('qtyModalInput').focus(); }, 50);
+}
+
+function numpad(val) {
+  const input = document.getElementById('qtyModalInput');
+  if (val === 'del') {
+    numpadStr = numpadStr.slice(0, -1);
+  } else if (val === '.' && numpadStr.includes('.')) {
+    return;
+  } else {
+    numpadStr += val;
+  }
+  input.value = numpadStr;
+}
+function qtyInputChanged() {
+  numpadStr = document.getElementById('qtyModalInput').value;
+}
+function closeQtyModal() {
+  document.getElementById('qtyModal').classList.remove('open');
+  pendingSku = null; numpadStr = '';
+}
+function confirmQty() {
+  const qty = parseFloat(document.getElementById('qtyModalInput').value);
+  if (!qty || qty <= 0) { toast('Enter a valid quantity'); return; }
+
+  const p = products.find(function(x) { return x.sku === pendingSku; });
+  if (!p) { closeQtyModal(); return; }
+
+  // Determine which unit is being sold and its price — no conversion calculation
+  const isSec = (pendingUnit === 'secondary' && pendingUnit2);
+  const unit  = isSec ? pendingUnit2 : p.unit;
+  const price = isSec
+    ? (p.sellingPrice2 > 0 ? p.sellingPrice2 : sellingPrice(p))
+    : (p.sellingPrice  > 0 ? p.sellingPrice  : sellingPrice(p));
+
+  // Cart key: sku + unit so bag and kg sit as separate cart lines
+  const cartKey  = pendingSku + '|' + unit;
+  const existing = cart.find(function(x) { return x.cartKey === cartKey; });
+
+  if (existing) {
+    existing.qty   = qty;
+    existing.price = price;
+  } else {
+    cart.push({
+      cartKey,
+      sku:      pendingSku,
+      name:     p.name,
+      unit,
+      qty,
+      price,
+      category: p.category,
+      isSec
+    });
+  }
+
+  renderCart();
+  updateTotals();
+  closeQtyModal();
+  pendingUnit  = null;
+  pendingUnit2 = null;
+  pendingConv  = 0;
+  toast('Added: ' + p.name + ' (' + qty + ' ' + unit + ')');
+}
+
+function removeFromCart(cartKey) {
+  cart = cart.filter(function(x) { return x.cartKey !== cartKey; });
+  renderCart();
+  updateTotals();
+}
+
+function changeQty(cartKey, delta) {
+  const item = cart.find(function(x) { return x.cartKey === cartKey; });
+  if (!item) return;
+  const p = products.find(function(x) { return x.sku === item.sku; });
+  if (item.unit !== 'pc') {
+    // Open qty modal for non-piece units
+    pendingSku   = item.sku;
+    pendingUnit  = item.isSec ? 'secondary' : 'primary';
+    pendingUnit2 = item.isSec ? item.unit : null;
+    numpadStr    = String(item.qty);
+    document.getElementById('qtyModalInput').value = numpadStr;
+    document.getElementById('qtyModalTitle').textContent = p.name + ' — qty (' + item.unit + ')';
+    document.getElementById('qtyModal').classList.add('open');
+    return;
+  }
+  item.qty = Math.max(1, (item.qty || 1) + delta);
+  renderCart();
+  updateTotals();
+}
+
+function updateCartQty(cartKey, val) {
+  const qty = parseFloat(val);
+  if (!qty || qty <= 0) { removeFromCart(cartKey); return; }
+  const item = cart.find(function(x) { return x.cartKey === cartKey; });
+  if (item) { item.qty = qty; }
+  updateTotals();
+}
+
+function clearCart() {
+  if (cart.length === 0) return;
+  if (!confirm('Clear the current sale?')) return;
+  cart = [];
+  renderCart();
+  updateTotals();
+}
+
+function renderCart() {
+  const el = document.getElementById('cartItems');
+  const count = cart.reduce((s, i) => s + i.qty, 0);
+  document.getElementById('cartCount').textContent = cart.length;
+
+  if (!cart.length) {
+    el.innerHTML = `<div class="cart-empty">
+      <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+      <div>Tap a product to add it</div></div>`;
+    return;
+  }
+
+  el.innerHTML = cart.map(function(item) {
+    return '<div class="cart-item">'
+      + '<div>'
+      +   '<div class="ci-name">' + item.name + '</div>'
+      +   '<div class="ci-unit-price">' + lkr(item.price) + ' / ' + item.unit + '</div>'
+      + '</div>'
+      + '<div class="ci-total">' + lkr(item.qty * item.price) + '</div>'
+      + '<div class="ci-controls">'
+      +   '<button class="qty-btn" data-key="' + item.cartKey + '" onclick="changeQty(this.dataset.key,-1)">&#8722;</button>'
+      +   '<input class="qty-input" type="number" value="' + item.qty + '" min="0" step="any"'
+      +     ' data-key="' + item.cartKey + '" onchange="updateCartQty(this.dataset.key, this.value)"'
+      +     ' onfocus="this.select()">'
+      +   '<button class="qty-btn" data-key="' + item.cartKey + '" onclick="changeQty(this.dataset.key,1)">+</button>'
+      + '</div>'
+      + '<button class="ci-remove" data-key="' + item.cartKey + '" onclick="removeFromCart(this.dataset.key)">&#10005;</button>'
+      + '</div>';
+  }).join('');
+}
+
+// ══════════════════════════════════════════
+// TOTALS
+// ══════════════════════════════════════════
+function calcSubtotal() {
+  return cart.reduce((s, i) => s + i.qty * i.price, 0);
+}
+function isDiscountAllowed() {
+  return currentUser && (currentUser.role === 'Admin' || currentUser.role === 'Manager');
+}
+
+function calcDiscount(subtotal) {
+  if (!isDiscountAllowed()) return 0;
+  const val = parseFloat(document.getElementById('discountVal').value) || 0;
+  const type = document.getElementById('discountType').value;
+  if (type === 'pct') return subtotal * (val / 100);
+  return Math.min(val, subtotal);
+}
+function calcGrand() {
+  const sub = calcSubtotal();
+  return Math.max(0, sub - calcDiscount(sub));
+}
+
+function calcMaxDiscount() {
+  // Only show for Admin or Manager roles
+  var badge = document.getElementById('maxDiscountBadge');
+  if (!badge) return;
+
+  var isAdminUser = currentUser && (currentUser.role === 'Admin' || currentUser.role === 'Manager');
+  if (!isAdminUser || cart.length === 0) {
+    badge.classList.remove('show');
+    return;
+  }
+
+  // Calculate cart sell total and inflation cost total
+  var cartSellTotal = 0;
+  var cartInflTotal = 0;
+
+  cart.forEach(function(item) {
+    var p    = products.find(function(x) { return x.sku === item.sku; });
+    if (!p) return;
+    var lots = getActiveLots(item.sku);
+    var inflCost;
+    if (lots.length > 0) {
+      inflCost = lotInflValue(lots[0]);
+    } else {
+      var days = daysBetween(p.costDate);
+      inflCost = (p.lastEffectiveCost || p.costPrice || 0) * inflFactor(days);
+    }
+    cartSellTotal += item.qty * item.price;
+    cartInflTotal += item.qty * inflCost;
+  });
+
+  if (cartSellTotal <= 0) { badge.classList.remove('show'); return; }
+
+  var rawPct = ((cartSellTotal - cartInflTotal) / cartSellTotal) * 100;
+  // Floor to nearest 5
+  var maxPct = Math.floor(rawPct / 5) * 5;
+
+  badge.classList.add('show');
+  if (maxPct <= 0) {
+    badge.textContent = 'no discount';
+    badge.classList.add('no-discount');
+  } else {
+    badge.textContent = 'max ' + maxPct + '%';
+    badge.classList.remove('no-discount');
+  }
+}
+
+function updateTotals() {
+  const sub   = calcSubtotal();
+  const disc  = calcDiscount(sub);
+  const grand = Math.max(0, sub - disc);
+
+  document.getElementById('subtotal').textContent    = lkr(sub);
+  document.getElementById('grandTotal').textContent  = lkr(grand);
+  document.getElementById('chargeBtn').textContent   = 'Charge — ' + lkr(grand);
+  document.getElementById('chargeBtn').disabled      = cart.length === 0;
+
+  if (disc > 0) {
+    document.getElementById('discountRow').style.display = 'flex';
+    document.getElementById('discountAmt').textContent   = '− ' + lkr(disc);
+  } else {
+    document.getElementById('discountRow').style.display = 'none';
+  }
+
+  calcMaxDiscount();
+  calcChange();
+}
+
+// ══════════════════════════════════════════
+// PAYMENT
+// ══════════════════════════════════════════
+
+function noteTotal() {
+  return Object.entries(noteCounts).reduce((s, [n, c]) => s + Number(n) * c, 0);
+}
+
+function renderCashNotes() {
+  const grid = document.getElementById('cashNoteGrid');
+  grid.innerHTML = NOTES.map(n => {
+    const count = noteCounts[n] || 0;
+    const isActive = count > 0;
+    const label = n >= 1000 ? (n/1000)+'K' : n;
+    const badge = count > 1 ? `<span style="position:absolute;top:2px;right:4px;font-size:9px;background:var(--accent);color:#fff;border-radius:8px;padding:0 4px;line-height:14px;">${count}</span>` : '';
+    return `<div class="cash-note${isActive ? ' active' : ''}" data-note="${n}" onclick="tapNote(${n})" style="position:relative;">
+      ${label}${badge}
+    </div>`;
+  }).join('');
+}
+
+function tapNote(note) {
+  // Each tap adds one of that note (accumulates), right-click or long-press removes
+  noteCounts[note] = (noteCounts[note] || 0) + 1;
+  const total = noteTotal();
+  document.getElementById('cashReceived').value = total > 0 ? total : '';
+  renderCashNotes();
+  calcChange();
+}
+
+function clearCashInput() {
+  noteCounts = {};
+  cnpStr = '';
+  document.getElementById('cashReceived').value = '';
+  renderCashNotes();
+  calcChange();
+}
+
+function onCashInput() {
+  // When user types manually, clear note selection
+  noteCounts = {};
+  renderCashNotes();
+  calcChange();
+}
+
+function selectPayment(method) {
+  selectedPayment = method;
+  ['cash','card','transfer','credit'].forEach(m => {
+    document.getElementById('pm-'+m).classList.toggle('active', m === method);
+  });
+  const isCash = method === 'cash';
+  document.getElementById('cashInputRow').classList.toggle('show', isCash);
+  document.getElementById('cashNotes').classList.toggle('show', isCash);
+  document.getElementById('changeDisplay').classList.toggle('show', isCash);
+  if (isCash) {
+    noteCounts = {};
+    document.getElementById('cashReceived').value = '';
+    renderCashNotes();
+    calcChange();
+    // numpad only opens when user taps the input — not automatically
+  }
+}
+
+function calcChange() {
+  const grand = calcGrand();
+  const cash = parseFloat(document.getElementById('cashReceived').value) || 0;
+  const change = cash - grand;
+  const changeEl = document.getElementById('changeDue');
+  if (change >= 0) {
+    changeEl.textContent = lkr(change);
+    changeEl.style.color = 'var(--gold)';
+  } else if (cash > 0) {
+    changeEl.textContent = '− ' + lkr(Math.abs(change)) + ' short';
+    changeEl.style.color = 'var(--danger)';
+  } else {
+    changeEl.textContent = lkr(0);
+    changeEl.style.color = 'var(--gold)';
+  }
+}
+
+function processPayment() {
+  if (cart.length === 0) return;
+  const grand = calcGrand();
+  const cash = parseFloat(document.getElementById('cashReceived').value) || 0;
+
+  if (selectedPayment === 'cash' && cash < grand && cash > 0) {
+    toast('Cash received is less than total');
+    return;
+  }
+  if (selectedPayment === 'cash' && cash === 0) {
+    openCashNumpad();
+    toast('Enter cash received');
+    return;
+  }
+
+  const sub = calcSubtotal();
+  const disc = calcDiscount(sub);
+  const saleId = 'S' + Date.now().toString(36).toUpperCase();
+  const todayStr = today();
+  const timeStr = nowTime();
+  const change = selectedPayment === 'cash' ? Math.max(0, cash - grand) : 0;
+
+  // Build sale record
+  const saleRecord = {
+    id: saleId,
+    date: todayStr,
+    time: timeStr,
+    items: cart.map(function(i) { return { sku: i.sku, name: i.name, unit: i.unit, qty: i.qty, price: i.price, lineTotal: i.qty * i.price }; }),
+    subtotal: sub,
+    discount: disc,
+    total: grand,
+    payment: selectedPayment,
+    cashReceived: selectedPayment === 'cash' ? cash : 0,
+    change,
+  };
+
+  // Save sale
+  sales.push(saleRecord);
+  save(KEYS.sales, sales);
+
+  // Deduct from floor stock — qty is always in primary unit (stock tracked in primary)
+  // For secondary-unit sales, the store decides what to deduct — floor shows primary qty
+  stock = load(KEYS.stock);
+  // Group by sku to combine deductions from same product sold in different units
+  var deductions = {};
+  cart.forEach(function(item) {
+    deductions[item.sku] = (deductions[item.sku] || 0) + item.qty;
+  });
+  Object.keys(deductions).forEach(function(sku) {
+    const idx = stock.findIndex(function(s) { return s.sku === sku; });
+    if (idx >= 0) {
+      stock[idx].floorQty = Math.max(0, (stock[idx].floorQty || 0) - deductions[sku]);
+    }
+  });
+  save(KEYS.stock, stock);
+
+  // Log movement
+  cart.forEach(item => {
+    movements.push({
+      id: Date.now() + Math.random(),
+      date: todayStr, time: timeStr,
+      type: 'sale',
+      sku: item.sku, productName: item.name,
+      qty: item.qty, from: 'floor', to: 'sold',
+      note: saleId
+    });
+  });
+  save(KEYS.movements, movements);
+
+  showReceipt(saleRecord);
+}
+
+// ══════════════════════════════════════════
+// RECEIPT
+// ══════════════════════════════════════════
+function showReceipt(sale) {
+  const change = sale.change || 0;
+  const payLabel = { cash:'Cash', card:'Card', transfer:'Bank transfer', credit:'Credit' }[sale.payment] || sale.payment;
+
+  let html = `
+    <div class="receipt-shop">${settings.shopName || 'Hardware Shop'}</div>
+    <div class="receipt-sub">Sale receipt</div>
+    <hr class="receipt-divider">
+    <div class="receipt-row header"><span>ITEM</span><span>TOTAL</span></div>`;
+
+  sale.items.forEach(item => {
+    html += `<div class="receipt-row">
+      <span>${item.name}<br><small style="color:#888">${item.qty} ${item.unit} × ${lkr(item.price)}</small></span>
+      <span>${lkr(item.lineTotal)}</span>
+    </div>`;
+  });
+
+  html += `<hr class="receipt-divider">
+    <div class="receipt-row total"><span>Subtotal</span><span>${lkr(sale.subtotal)}</span></div>`;
+
+  if (sale.discount > 0) {
+    html += `<div class="receipt-row"><span>Discount</span><span>− ${lkr(sale.discount)}</span></div>`;
+  }
+
+  html += `<div class="receipt-row grand"><span>TOTAL</span><span>${lkr(sale.total)}</span></div>
+    <hr class="receipt-divider">
+    <div class="receipt-row"><span>Payment</span><span>${payLabel}</span></div>`;
+
+  if (sale.payment === 'cash') {
+    html += `<div class="receipt-row"><span>Cash</span><span>${lkr(sale.cashReceived)}</span></div>
+      <div class="receipt-row change"><span>Change</span><span>${lkr(change)}</span></div>`;
+  }
+
+  html += `<hr class="receipt-divider">
+    <div class="receipt-row" style="font-size:11px;color:#888"><span>Receipt #</span><span>${sale.id}</span></div>
+    <div class="receipt-row" style="font-size:11px;color:#888"><span>Date / Time</span><span>${sale.date} ${sale.time}</span></div>
+    <div class="receipt-footer">Thank you for your business!</div>`;
+
+  document.getElementById('receiptContent').innerHTML = html;
+  document.getElementById('receiptModal').classList.add('open');
+}
+
+function printReceipt() {
+  window.print();
+}
+
+function newSale() {
+  document.getElementById('receiptModal').classList.remove('open');
+  cart = [];
+  document.getElementById('discountVal').value = '0';
+  renderCart();
+  updateTotals();
+  renderProducts();
+  document.getElementById('cashReceived').value = '';
+  noteCounts = {};
+  selectPayment('cash');
+  document.getElementById('searchInput').value = '';
+  activeCat = 'ALL';
+}
+
+// ══════════════════════════════════════════
+// KEYBOARD SHORTCUTS
+// ══════════════════════════════════════════
+document.addEventListener('keydown', e => {
+  if (document.getElementById('qtyModal').classList.contains('open')) {
+    if (e.key === 'Enter') confirmQty();
+    if (e.key === 'Escape') closeQtyModal();
+    return;
+  }
+  if (document.getElementById('receiptModal').classList.contains('open')) {
+    if (e.key === 'Enter' || e.key === 'Escape') newSale();
+    return;
+  }
+  // Focus search on any letter key (not in an input)
+  if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'SELECT' && !e.ctrlKey && !e.metaKey) {
+    if (e.key.length === 1) {
+      document.getElementById('searchInput').focus();
+    }
+    if (e.key === 'Escape') {
+      document.getElementById('searchInput').value = '';
+      activeCat = 'ALL';
+      renderProducts();
+    }
+  }
+});
+
+// ══════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════
+// ══════════════════════════════════════════
+// STARTUP / LOCK SCREEN
+// ══════════════════════════════════════════
+const KEYS_USERS = 'hs_users'; // set by admin app
+let currentUser  = null;
+let startupClockInterval = null;
+
+const DEFAULT_USERS = [
+  { id: 'cashier1', name: 'Cashier',  role: 'Cashier' },
+  { id: 'manager1', name: 'Manager',  role: 'Manager' },
+];
+
+function getUsers() {
+  try {
+    const u = JSON.parse(localStorage.getItem(KEYS_USERS) || '[]');
+    return u.length ? u : DEFAULT_USERS;
+  } catch(e) { return DEFAULT_USERS; }
+}
+
+function startupTick() {
+  const now  = new Date();
+  const time = now.toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit' });
+  const date = now.toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+  const clk  = document.getElementById('startupClock');
+  const dat  = document.getElementById('startupDate');
+  if (clk) clk.textContent = time;
+  if (dat) dat.textContent = date;
+}
+
+function renderStartupBills() {
+  const todayStr = new Date().toISOString().split('T')[0];
+  const allSales = JSON.parse(localStorage.getItem('hs_sales') || '[]');
+  const todayBills = allSales.filter(function(s) { return s.date === todayStr && !s.refunded; })
+    .slice(-6).reverse();
+
+  const el = document.getElementById('startupBills');
+  if (!todayBills.length) {
+    el.innerHTML = '<div style="color:var(--text3);font-size:13px;">No sales yet today</div>';
+    return;
+  }
+  el.innerHTML = todayBills.map(function(s) {
+    const preview = (s.items||[]).map(function(i) { return i.qty + ' × ' + i.name; }).join(', ');
+    return '<div class="startup-bill">'
+      + '<div class="startup-bill-top">'
+      +   '<span class="startup-bill-id">' + s.id + '</span>'
+      +   '<span class="startup-bill-total">' + lkr(s.total) + '</span>'
+      + '</div>'
+      + '<div class="startup-bill-items">' + preview + '</div>'
+      + '<div class="startup-bill-time">' + (s.time || '') + ' · ' + (s.payment || '') + '</div>'
+      + '</div>';
+  }).join('');
+}
+
+function renderStartupUsers() {
+  const users = getUsers();
+  const el    = document.getElementById('startupUsers');
+  const footer = document.getElementById('startupFooter');
+
+  el.innerHTML = users.map(function(u) {
+    const initials = u.name.split(' ').map(function(w) { return w[0]; }).join('').toUpperCase().slice(0,2);
+    return '<button class="startup-user-btn" data-uid="' + u.id + '" onclick="loginUser(this.dataset.uid)">'
+      + '<div class="startup-user-avatar">' + initials + '</div>'
+      + '<div>'
+      +   '<div class="startup-user-name">' + u.name + '</div>'
+      +   '<div class="startup-user-role">' + (u.role || 'Cashier') + '</div>'
+      + '</div>'
+      + '</button>';
+  }).join('');
+
+  footer.textContent = 'Users are managed in the Admin app';
+}
+
+function loginUser(uid) {
+  const users = getUsers();
+  currentUser = users.find(function(u) { return u.id === uid; }) || { id: uid, name: uid, role: 'Cashier' };
+
+  // Hide startup screen with a quick fade
+  const screen = document.getElementById('startupScreen');
+  screen.style.transition = 'opacity 0.2s';
+  screen.style.opacity    = '0';
+  setTimeout(function() {
+    screen.style.display = 'none';
+    clearInterval(startupClockInterval);
+  }, 200);
+
+  // Update topbar with user name
+  const userBadge = document.getElementById('topbarUser');
+  if (userBadge) userBadge.textContent = currentUser.name;
+
+  // Show discount section only for Admin/Manager
+  const canDiscount = currentUser.role === 'Admin' || currentUser.role === 'Manager';
+  const discSection = document.getElementById('discountSection');
+  const discNote    = document.getElementById('discountCashierNote');
+  if (discSection) discSection.style.display    = canDiscount ? 'flex'  : 'none';
+  if (discNote)    discNote.style.display        = canDiscount ? 'none' : 'flex';
+  // Reset discount when switching users
+  const discInput = document.getElementById('discountVal');
+  if (discInput) { discInput.value = '0'; }
+  updateTotals();
+}
+
+function lockScreen() {
+  // Reset discount before locking
+  var discInput = document.getElementById('discountVal');
+  if (discInput) discInput.value = '0';
+  var discSection = document.getElementById('discountSection');
+  var discNote    = document.getElementById('discountCashierNote');
+  if (discSection) discSection.style.display = 'none';
+  if (discNote)    discNote.style.display    = 'none';
+
+  currentUser = null;
+  const screen = document.getElementById('startupScreen');
+  screen.style.display = '';
+  screen.style.opacity = '0';
+  setTimeout(function() { screen.style.opacity = '1'; }, 10);
+  renderStartupBills();
+  renderStartupUsers();
+  startupTick();
+  startupClockInterval = setInterval(startupTick, 10000);
+}
+
+function showStartup() {
+  reloadData();
+  document.getElementById('startupShopName').textContent = settings.shopName || 'Hardware Shop';
+  renderStartupBills();
+  renderStartupUsers();
+  startupTick();
+  startupClockInterval = setInterval(startupTick, 10000);
+}
+
+function updateSyncTill(state) {
+  var el = document.getElementById('syncIndicatorTill');
+  if (!el) return;
+  var colors = { connected:'#52b788', syncing:'#60a5fa', offline:'#6b6860' };
+  var labels = { connected:'Synced', syncing:'Syncing…', offline:'Offline' };
+  var c = colors[state] || colors.offline;
+  el.innerHTML = '<span style="width:6px;height:6px;border-radius:50%;background:' + c + ';display:inline-block;"></span>'
+    + '<span style="color:' + c + ';font-size:11px">' + (labels[state]||'') + '</span>';
+}
+
+async function initGSTill() {
+  if (typeof GS === 'undefined') return;
+  var connected = await GS.init();
+  updateSyncTill(connected ? 'syncing' : 'offline');
+  if (!connected) return;
+
+  try {
+    // Load products from Sheets
+    var prods = await GS.read('Products');
+    if (prods.length) {
+      products = prods.map(function(r) { return {
+        sku: r.sku, name: r.product_name, category: r.category,
+        unit: r.unit, unit2: r.unit2||'', unit2Conv: parseFloat(r.unit2_conv)||0,
+        unit3: r.unit3||'', unit3Conv: parseFloat(r.unit3_conv)||0,
+        reorderLevel: parseFloat(r.reorder_level)||0,
+        lastSellingPrice: parseFloat(r.last_selling_price)||0,
+        lastEffectiveCost: parseFloat(r.last_effective_cost)||0,
+        sellingPrice: parseFloat(r.last_selling_price)||0,
+        notes: r.notes||''
+      }; });
+      localStorage.setItem('hs_products', JSON.stringify(products));
+    }
+
+    // Load stock levels (derived from Stock_Lots)
+    var lots = await GS.read('Stock_Lots');
+    if (lots.length) {
+      localStorage.setItem('hs_goodsin', JSON.stringify(lots.map(function(r) { return {
+        lotId: r.lot_id, deliveryId: r.delivery_id, date: r.goods_in_date,
+        sku: r.sku, productName: r.product_name, unit: r.unit,
+        qty: parseFloat(r.qty_received)||0,
+        qtyRemaining: parseFloat(r.qty_remaining)||0,
+        purchaseCost: parseFloat(r.purchase_cost)||0,
+        effCostUnit: parseFloat(r.eff_cost_unit)||0,
+        sellingPrice: parseFloat(r.selling_price)||0,
+        sellingPrice2: parseFloat(r.selling_price2)||0,
+        sellingPrice3: parseFloat(r.selling_price3)||0,
+      }; })));
+
+      var stockMap = {};
+      lots.forEach(function(r) {
+        if (!stockMap[r.sku]) stockMap[r.sku] = { sku: r.sku, storeQty: 0, floorQty: 0 };
+        stockMap[r.sku].floorQty += parseFloat(r.qty_remaining)||0;
+      });
+      stock = Object.values(stockMap);
+      localStorage.setItem('hs_stock', JSON.stringify(stock));
+    }
+
+    // Load settings
+    var sRows = await GS.readSettings();
+    if (sRows.shop_name) {
+      settings = {
+        shopName: sRows.shop_name, inflation: parseFloat(sRows.inflation)||12,
+        margin: parseFloat(sRows.margin)||25, reorder: parseFloat(sRows.reorder)||10,
+        floorDays: parseFloat(sRows.floor_days)||7,
+        targetDays: parseFloat(sRows.target_days)||30,
+        leadTime: parseFloat(sRows.lead_time)||7,
+      };
+      localStorage.setItem('hs_settings', JSON.stringify(settings));
+      document.getElementById('shopNameDisplay').textContent = settings.shopName;
+      document.getElementById('startupShopName').textContent = settings.shopName;
+    }
+
+    // Load users for startup screen
+    var usersData = await GS.read('Users');
+    if (usersData.length) {
+      var u = usersData.map(function(r) { return { id:r.id, name:r.name, role:r.role, pin:r.pin||'' }; });
+      localStorage.setItem('hs_users', JSON.stringify(u));
+    }
+
+    // Refresh startup bills
+    renderStartupBills();
+    renderProducts();
+    updateSyncTill('connected');
+
+  } catch(e) {
+    console.warn('Till GS init error:', e);
+    updateSyncTill('offline');
+  }
+}
+
+// Override processPayment to also push to Sheets
+var _origProcessPayment = processPayment;
+function processPayment() {
+  _origProcessPayment();
+  // Push most recent sale to Sheets after a short delay (let localStorage settle)
+  setTimeout(function() { pushLastSaleToSheets(); }, 300);
+}
+
+async function pushLastSaleToSheets() {
+  if (!GS || !GS.isOnline()) return;
+  var allSales = JSON.parse(localStorage.getItem('hs_sales')||'[]');
+  var sale = allSales[allSales.length - 1];
+  if (!sale) return;
+
+  updateSyncTill('syncing');
+  try {
+    // Write sale header
+    await GS.append('Sales', {
+      sale_id: sale.id, date: sale.date, time: sale.time||'',
+      cashier: currentUser ? currentUser.name : '',
+      subtotal: sale.subtotal||0, discount: sale.discount||0, total: sale.total||0,
+      payment: sale.payment||'', cash_received: sale.cashReceived||0,
+      change: sale.change||0, refunded: 'false', refund_reason: '', refund_date: ''
+    });
+
+    // Write sale items
+    for (var i = 0; i < (sale.items||[]).length; i++) {
+      var item = sale.items[i];
+      await GS.append('Sale_Items', {
+        sale_id: sale.id, sku: item.sku, product_name: item.name,
+        unit: item.unit, qty: item.qty, price: item.price, line_total: item.lineTotal
+      });
+    }
+
+    // Update lot qty_remaining (FIFO) in Sheets
+    var goodsIn = JSON.parse(localStorage.getItem('hs_goodsin')||'[]');
+    for (var j = 0; j < (sale.items||[]).length; j++) {
+      var si   = sale.items[j];
+      var lots = goodsIn.filter(function(r) { return r.sku === si.sku && (r.qtyRemaining||0) >= 0; })
+                        .sort(function(a,b) { return a.date < b.date ? -1 : 1; });
+      var remaining = si.qty;
+      for (var k = 0; k < lots.length && remaining > 0; k++) {
+        var deduct = Math.min(remaining, lots[k].qtyRemaining||0);
+        remaining -= deduct;
+        lots[k].qtyRemaining = (lots[k].qtyRemaining||0) - deduct;
+        // Update in Sheets
+        var found = GS.findRow('Stock_Lots', 'lot_id', lots[k].lotId);
+        if (found) {
+          await GS.updateField('Stock_Lots', 'lot_id', lots[k].lotId, 'qty_remaining', lots[k].qtyRemaining);
+        }
+      }
+    }
+    localStorage.setItem('hs_goodsin', JSON.stringify(goodsIn));
+    updateSyncTill('connected');
+
+  } catch(e) {
+    console.warn('pushLastSaleToSheets error:', e);
+    updateSyncTill('offline');
+  }
+}
+
+function init() {
+  const d = new Date();
+  document.getElementById('topbarDate').textContent =
+    d.toLocaleDateString('en-GB', { weekday:'short', day:'numeric', month:'short', year:'numeric' })
+    + ' · ' + d.toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit' });
+  document.getElementById('shopNameDisplay').textContent = settings.shopName || 'Hardware Shop';
+  renderProducts();
+  updateTotals();
+  selectPayment('cash');
+
+  setInterval(function() {
+    var now = new Date();
+    document.getElementById('topbarDate').textContent =
+      now.toLocaleDateString('en-GB', { weekday:'short', day:'numeric', month:'short', year:'numeric' })
+      + ' · ' + now.toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit' });
+  }, 60000);
+
+  // Init Google Sheets then show startup
+  initGSTill().then(function() { showStartup(); });
+}
+
+init();
+
+
+// ══════════════════════════════════════════
+// TRANSACTIONS PANEL
+// ══════════════════════════════════════════
+// currentTxnSale declared at top
+
+function openTxnPanel() {
+  sales = load(KEYS.sales);
+  renderTxnList();
+  document.getElementById('txnPanel').classList.add('open');
+}
+function closeTxnPanel() {
+  document.getElementById('txnPanel').classList.remove('open');
+}
+
+function txnBadge(sale) {
+  if (sale.refunded) return '<span class="txn-badge txn-badge-refunded">Refunded</span>';
+  const cls = { cash:'txn-badge-cash', card:'txn-badge-card', transfer:'txn-badge-transfer', credit:'txn-badge-credit' }[sale.payment] || 'txn-badge-cash';
+  const label = { cash:'Cash', card:'Card', transfer:'Transfer', credit:'Credit' }[sale.payment] || sale.payment;
+  return `<span class="txn-badge ${cls}">${label}</span>`;
+}
+
+function renderTxnList() {
+  const q = (document.getElementById('txnSearch').value || '').toLowerCase();
+  const filter = document.getElementById('txnFilter').value;
+  const todayStr = today();
+
+  let list = [...sales].reverse(); // newest first
+
+  if (filter === 'today') list = list.filter(s => s.date === todayStr);
+  else if (filter === 'active') list = list.filter(s => !s.refunded);
+  else if (filter === 'refunded') list = list.filter(s => s.refunded);
+
+  if (q) {
+    list = list.filter(s =>
+      s.id.toLowerCase().includes(q) ||
+      (s.items || []).some(i => i.name.toLowerCase().includes(q))
+    );
+  }
+
+  const el = document.getElementById('txnList');
+  if (!list.length) {
+    el.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text3);">No transactions found</div>';
+    return;
+  }
+
+  el.innerHTML = list.map(sale => {
+    const preview = (sale.items || []).map(i => `${i.qty}×${i.name}`).join(', ');
+    return `<div class="txn-item${sale.refunded ? ' refunded' : ''}" onclick="openTxnDetail('${sale.id}')">
+      <div class="txn-item-top">
+        <span class="txn-id">${sale.id}</span>
+        <span class="txn-total">${lkr(sale.total)}</span>
+      </div>
+      <div class="txn-item-mid">
+        <span class="txn-datetime">${sale.date} ${sale.time || ''}</span>
+        ${txnBadge(sale)}
+        ${sale.refunded ? '<span class="txn-badge txn-badge-refunded">Refunded</span>' : ''}
+      </div>
+      <div class="txn-items-preview">${preview}</div>
+    </div>`;
+  }).join('');
+}
+
+function openTxnDetail(saleId) {
+  sales = load(KEYS.sales);
+  const sale = sales.find(s => s.id === saleId);
+  if (!sale) return;
+  currentTxnSale = sale;
+
+  document.getElementById('txnDetailTitle').textContent = 'Bill — ' + sale.id;
+
+  // Build detail body
+  let body = `<div style="margin-bottom:14px;">`;
+
+  // Items table (editable if not refunded)
+  body += `<div style="font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:var(--text3);font-weight:600;margin-bottom:8px;">Items</div>`;
+  body += `<table style="width:100%;border-collapse:collapse;margin-bottom:14px;" id="editItemsTable">
+    <thead>
+      <tr style="border-bottom:1px solid var(--border);">
+        <th style="font-size:11px;color:var(--text3);padding:5px 8px;text-align:left;font-weight:500;">Product</th>
+        <th style="font-size:11px;color:var(--text3);padding:5px 8px;text-align:center;font-weight:500;">Qty</th>
+        <th style="font-size:11px;color:var(--text3);padding:5px 8px;text-align:right;font-weight:500;">Price</th>
+        <th style="font-size:11px;color:var(--text3);padding:5px 8px;text-align:right;font-weight:500;">Line total</th>
+      </tr>
+    </thead>
+    <tbody id="editItemsBody">`;
+
+  (sale.items || []).forEach((item, idx) => {
+    if (sale.refunded) {
+      body += `<tr style="border-bottom:1px solid var(--border);">
+        <td style="padding:7px 8px;font-size:13px;">${item.name}<div style="font-size:11px;color:var(--text3)">per ${item.unit}</div></td>
+        <td style="padding:7px 8px;text-align:center;font-family:'DM Mono',monospace;font-size:13px;">${item.qty}</td>
+        <td style="padding:7px 8px;text-align:right;font-family:'DM Mono',monospace;font-size:13px;">${lkr(item.price)}</td>
+        <td style="padding:7px 8px;text-align:right;font-family:'DM Mono',monospace;font-size:13px;font-weight:600;">${lkr(item.lineTotal)}</td>
+      </tr>`;
+    } else {
+      body += `<tr style="border-bottom:1px solid var(--border);" id="editRow${idx}">
+        <td style="padding:7px 8px;font-size:13px;">${item.name}<div style="font-size:11px;color:var(--text3)">per ${item.unit}</div></td>
+        <td style="padding:7px 8px;text-align:center;">
+          <input class="edit-qty-input" type="number" value="${item.qty}" min="0" step="any"
+            data-idx="${idx}" oninput="recalcEditTotals()">
+        </td>
+        <td style="padding:7px 8px;text-align:right;">
+          <input class="edit-price-input" type="number" value="${item.price.toFixed(2)}" min="0" step="any"
+            data-idx="${idx}" oninput="recalcEditTotals()">
+        </td>
+        <td style="padding:7px 8px;text-align:right;font-family:'DM Mono',monospace;font-size:13px;font-weight:600;" id="editLineTotal${idx}">${lkr(item.lineTotal)}</td>
+      </tr>`;
+    }
+  });
+
+  body += `</tbody></table>`;
+
+  // Totals summary
+  body += `<div style="background:var(--surface2);border-radius:8px;padding:12px 14px;">`;
+  body += `<div class="txn-detail-row"><span class="dl">Date / Time</span><span class="dv">${sale.date} ${sale.time||''}</span></div>`;
+  body += `<div class="txn-detail-row"><span class="dl">Payment</span><span class="dv">${sale.payment}</span></div>`;
+  if (sale.discount > 0)
+    body += `<div class="txn-detail-row"><span class="dl">Discount</span><span class="dv">− ${lkr(sale.discount)}</span></div>`;
+  if (sale.payment === 'cash') {
+    body += `<div class="txn-detail-row"><span class="dl">Cash received</span><span class="dv">${lkr(sale.cashReceived)}</span></div>`;
+    body += `<div class="txn-detail-row"><span class="dl">Change given</span><span class="dv">${lkr(sale.change||0)}</span></div>`;
+  }
+  body += `<div class="txn-detail-row grand-row" id="editGrandRow"><span class="dl">Total</span><span class="dv">${lkr(sale.total)}</span></div>`;
+  body += `</div>`;
+
+  if (sale.refunded) {
+    body += `<div style="margin-top:12px;padding:10px 12px;background:var(--danger-light);border-radius:8px;font-size:12.5px;color:var(--danger);">
+      <strong>Refunded</strong>${sale.refundReason ? ' — ' + sale.refundReason : ''}
+    </div>`;
+  }
+
+  body += `</div>`;
+  document.getElementById('txnDetailBody').innerHTML = body;
+
+  // Actions
+  const actions = document.getElementById('txnDetailActions');
+  if (sale.refunded) {
+    actions.innerHTML = `
+      <button class="txn-action-btn btn-reprint" onclick="reprintReceipt('${sale.id}')">🖨 Reprint</button>`;
+  } else {
+    actions.innerHTML = `
+      <button class="txn-action-btn btn-reprint" onclick="reprintReceipt('${sale.id}')">🖨 Reprint</button>
+      <button class="txn-action-btn btn-edit" onclick="saveBillEdit('${sale.id}')">✏ Save edits</button>
+      <button class="txn-action-btn btn-refund" onclick="openRefundModal('${sale.id}')">↩ Refund</button>`;
+  }
+
+  document.getElementById('txnDetailModal').classList.add('open');
+}
+
+function closeTxnDetail() {
+  document.getElementById('txnDetailModal').classList.remove('open');
+  currentTxnSale = null;
+}
+
+// ── EDIT: recalc totals live as qty/price change ──
+function recalcEditTotals() {
+  if (!currentTxnSale) return;
+  let newTotal = 0;
+  (currentTxnSale.items || []).forEach((item, idx) => {
+    const qtyEl = document.querySelector(`.edit-qty-input[data-idx="${idx}"]`);
+    const priceEl = document.querySelector(`.edit-price-input[data-idx="${idx}"]`);
+    if (!qtyEl || !priceEl) return;
+    const qty = parseFloat(qtyEl.value) || 0;
+    const price = parseFloat(priceEl.value) || 0;
+    const line = qty * price;
+    const ltEl = document.getElementById('editLineTotal' + idx);
+    if (ltEl) ltEl.textContent = lkr(line);
+    newTotal += line;
+  });
+  const disc = currentTxnSale.discount || 0;
+  const grand = Math.max(0, newTotal - disc);
+  const grandEl = document.getElementById('editGrandRow');
+  if (grandEl) grandEl.querySelector('.dv').textContent = lkr(grand);
+}
+
+// ── SAVE EDITS ──
+function saveBillEdit(saleId) {
+  const saleIdx = sales.findIndex(s => s.id === saleId);
+  if (saleIdx < 0) return;
+  const sale = sales[saleIdx];
+
+  // Read edited values
+  let newSubtotal = 0;
+  const updatedItems = sale.items.map((item, idx) => {
+    const qtyEl = document.querySelector(`.edit-qty-input[data-idx="${idx}"]`);
+    const priceEl = document.querySelector(`.edit-price-input[data-idx="${idx}"]`);
+    const qty = qtyEl ? (parseFloat(qtyEl.value) || 0) : item.qty;
+    const price = priceEl ? (parseFloat(priceEl.value) || 0) : item.price;
+    const lineTotal = qty * price;
+    newSubtotal += lineTotal;
+    return { ...item, qty, price, lineTotal };
+  });
+
+  const disc = sale.discount || 0;
+  const newTotal = Math.max(0, newSubtotal - disc);
+
+  // Adjust floor stock for qty differences
+  stock = load(KEYS.stock);
+  sale.items.forEach((oldItem, idx) => {
+    const newItem = updatedItems[idx];
+    const diff = newItem.qty - oldItem.qty; // positive = more sold, negative = less sold
+    const si = stock.findIndex(s => s.sku === oldItem.sku);
+    if (si >= 0) {
+      stock[si].floorQty = Math.max(0, (stock[si].floorQty || 0) - diff);
+    }
+  });
+  save(KEYS.stock, stock);
+
+  // Update sale record
+  sales[saleIdx] = { ...sale, items: updatedItems, subtotal: newSubtotal, total: newTotal, edited: true, editedAt: today() + ' ' + nowTime() };
+  save(KEYS.sales, sales);
+
+  closeTxnDetail();
+  renderTxnList();
+  toast('Bill ' + saleId + ' updated');
+}
+
+// ── REPRINT ──
+function reprintReceipt(saleId) {
+  const sale = sales.find(s => s.id === saleId);
+  if (!sale) return;
+  closeTxnDetail();
+  closeTxnPanel();
+  showReceipt(sale);
+}
+
+// ── REFUND ──
+// refundingSaleId declared at top
+function openRefundModal(saleId) {
+  refundingSaleId = saleId;
+  const sale = sales.find(s => s.id === saleId);
+  document.getElementById('refundInfo').innerHTML =
+    `<strong>${sale.id}</strong> — ${lkr(sale.total)}<br>
+    ${(sale.items||[]).map(i => i.qty + ' × ' + i.name).join(', ')}<br><br>
+    This will restore stock and mark the bill as refunded.`;
+  document.getElementById('refundReason').value = '';
+  document.getElementById('refundModal').classList.add('open');
+}
+function closeRefundModal() {
+  document.getElementById('refundModal').classList.remove('open');
+  refundingSaleId = null;
+}
+function confirmRefund() {
+  if (!refundingSaleId) return;
+  const reason = document.getElementById('refundReason').value.trim();
+  const saleIdx = sales.findIndex(s => s.id === refundingSaleId);
+  if (saleIdx < 0) return;
+  const sale = sales[saleIdx];
+
+  // Restore floor stock
+  stock = load(KEYS.stock);
+  (sale.items || []).forEach(item => {
+    const si = stock.findIndex(s => s.sku === item.sku);
+    if (si >= 0) stock[si].floorQty = (stock[si].floorQty || 0) + item.qty;
+  });
+  save(KEYS.stock, stock);
+
+  // Mark sale as refunded
+  sales[saleIdx] = { ...sale, refunded: true, refundReason: reason, refundedAt: today() + ' ' + nowTime() };
+  save(KEYS.sales, sales);
+
+  // Log movement
+  (sale.items || []).forEach(item => {
+    movements.push({
+      id: Date.now() + Math.random(),
+      date: today(), time: nowTime(),
+      type: 'refund',
+      sku: item.sku, productName: item.name,
+      qty: item.qty, from: 'sold', to: 'floor',
+      note: 'Refund of ' + sale.id + (reason ? ' — ' + reason : '')
+    });
+  });
+  save(KEYS.movements, movements);
+
+  closeRefundModal();
+  closeTxnDetail();
+  renderTxnList();
+  toast('Refund processed — ' + sale.id);
+}
+
+// Close txn panel on Escape
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    if (document.getElementById('unitModal').classList.contains('open')) { closeUnitModal(); return; }
+    if (document.getElementById('refundModal').classList.contains('open')) { closeRefundModal(); return; }
+    if (document.getElementById('txnDetailModal').classList.contains('open')) { closeTxnDetail(); return; }
+    if (document.getElementById('txnPanel').classList.contains('open')) { closeTxnPanel(); return; }
+  }
+});
+
+
+
+// ══════════════════════════════════════════
+// CASH NUMPAD
+// ══════════════════════════════════════════
+
+function openCashNumpad() {
+  cnpStr = document.getElementById('cashReceived').value || '';
+  document.getElementById('cnpDisplay').textContent = cnpStr || '0';
+  cnpUpdateChange();
+  document.getElementById('cashNumpadOverlay').classList.add('open');
+}
+function closeCashNumpad() {
+  document.getElementById('cashNumpadOverlay').classList.remove('open');
+}
+function cnpPress(val) {
+  if (val === 'del') {
+    cnpStr = cnpStr.slice(0, -1);
+  } else if (val === '.' && cnpStr.includes('.')) {
+    return; // only one decimal
+  } else if (val === '.' && cnpStr === '') {
+    cnpStr = '0.';
+  } else {
+    if (cnpStr === '0' && val !== '.') cnpStr = val;
+    else cnpStr += val;
+  }
+  document.getElementById('cnpDisplay').textContent = cnpStr || '0';
+  cnpUpdateChange();
+}
+function cnpUpdateChange() {
+  const grand = calcGrand();
+  const cash = parseFloat(cnpStr) || 0;
+  const change = cash - grand;
+  const el = document.getElementById('cnpChange');
+  if (cnpStr === '') { el.textContent = '—'; el.style.color = 'var(--gold)'; return; }
+  if (change >= 0) {
+    el.textContent = lkr(change);
+    el.style.color = 'var(--gold)';
+  } else {
+    el.textContent = '− ' + lkr(Math.abs(change)) + ' short';
+    el.style.color = 'var(--danger)';
+  }
+}
+function cnpConfirm() {
+  const val = parseFloat(cnpStr) || 0;
+  document.getElementById('cashReceived').value = val > 0 ? val : '';
+  noteCounts = {};
+  renderCashNotes();
+  calcChange();
+  closeCashNumpad();
+}
+
+// Also open numpad when cash note tiles area is tapped if nothing typed yet
+function openCashNumpadIfEmpty() {
+  if (!document.getElementById('cashReceived').value) openCashNumpad();
+}
+
+// ══════════════════════════════════════════
+// ADMIN / DAY END
+// ══════════════════════════════════════════
+
+function openAdminPanel() {
+  sales = load(KEYS.sales);
+  document.getElementById('adminDateLabel').textContent = today();
+  calcAdminStats();
+  recalcCashBalance();
+  renderSavedReports();
+  document.getElementById('dayEndReport').classList.remove('show');
+  document.getElementById('adminPanel').classList.add('open');
+}
+function closeAdminPanel() {
+  document.getElementById('adminPanel').classList.remove('open');
+}
+
+function getTodaySales() {
+  const todayStr = today();
+  return sales.filter(s => s.date === todayStr && !s.refunded);
+}
+function getTodayRefunds() {
+  const todayStr = today();
+  return sales.filter(s => s.date === todayStr && s.refunded);
+}
+
+function calcAdminStats() {
+  const todaySales   = getTodaySales();
+  const todayRefunds = getTodayRefunds();
+
+  const totalSales   = todaySales.reduce((s, x) => s + x.total, 0);
+  const custCount    = todaySales.length;
+  const avgBill      = custCount > 0 ? totalSales / custCount : 0;
+
+  const cashTxns     = todaySales.filter(s => s.payment === 'cash');
+  const cardTxns     = todaySales.filter(s => s.payment === 'card' || s.payment === 'transfer');
+  const creditTxns   = todaySales.filter(s => s.payment === 'credit');
+
+  const cashSales    = cashTxns.reduce((s, x) => s + x.total, 0);
+  const cardSales    = cardTxns.reduce((s, x) => s + x.total, 0);
+  const creditSales  = creditTxns.reduce((s, x) => s + x.total, 0);
+  const refundAmt    = todayRefunds.reduce((s, x) => s + x.total, 0);
+  const discounts    = todaySales.reduce((s, x) => s + (x.discount || 0), 0);
+  const itemsSold    = todaySales.reduce((s, x) => s + (x.items||[]).reduce((a, i) => a + i.qty, 0), 0);
+
+  // Tile 1: total + customers
+  document.getElementById('adTotalSales').textContent = lkr(totalSales);
+  document.getElementById('adBillCount').textContent  = custCount;
+  document.getElementById('adAvgBill').textContent    = 'avg ' + lkr(avgBill);
+  // Tile 2: cash
+  document.getElementById('adCashSales').textContent  = lkr(cashSales);
+  document.getElementById('adCashCount').textContent  = cashTxns.length;
+  // Tile 3: card
+  document.getElementById('adCardSales').textContent  = lkr(cardSales);
+  document.getElementById('adCardCount').textContent  = cardTxns.length;
+  // Tile 4: credit
+  document.getElementById('adCreditSales').textContent = lkr(creditSales);
+  document.getElementById('adCreditCount').textContent = creditTxns.length;
+  // Tile 5: refunds
+  document.getElementById('adRefunds').textContent     = lkr(refundAmt);
+  document.getElementById('adRefundCount').textContent = todayRefunds.length;
+  // Tile 6: discounts count+amount + items
+  const discountCount = todaySales.filter(s => (s.discount||0) > 0).length;
+  document.getElementById('adDiscountCount').textContent = discountCount;
+  document.getElementById('adDiscounts').textContent     = lkr(discounts);
+  document.getElementById('adItemsSold').textContent     = Number(itemsSold).toLocaleString('en-LK', {maximumFractionDigits:2});
+
+  // Expected cash = opening float + cash sales - change given
+  const changeGiven = cashTxns.reduce((s, x) => s + (x.change||0), 0);
+  const openFloat   = parseFloat(document.getElementById('adOpeningFloat').value) || 0;
+  const expected    = openFloat + cashSales - changeGiven;
+  document.getElementById('adExpectedCash').value = expected.toFixed(2);
+
+  // Top products
+  const productTotals = {};
+  todaySales.forEach(s => (s.items||[]).forEach(i => {
+    if (!productTotals[i.name]) productTotals[i.name] = { qty:0, rev:0, unit: i.unit };
+    productTotals[i.name].qty += i.qty;
+    productTotals[i.name].rev += i.lineTotal;
+  }));
+  const sorted = Object.entries(productTotals).sort((a,b) => b[1].rev - a[1].rev).slice(0, 8);
+  document.getElementById('adTopProducts').innerHTML = sorted.length
+    ? sorted.map(([name, d]) => `<tr style="border-bottom:1px solid var(--border);">
+        <td style="padding:9px 16px;font-size:13px;font-weight:500;">${name}</td>
+        <td style="padding:9px 16px;text-align:center;font-family:'DM Mono',monospace;font-size:13px;">${Number(d.qty).toLocaleString('en-LK',{maximumFractionDigits:2})} ${d.unit}</td>
+        <td style="padding:9px 16px;text-align:right;font-family:'DM Mono',monospace;font-size:13px;font-weight:600;color:var(--accent);">${lkr(d.rev)}</td>
+      </tr>`).join('')
+    : '<tr><td colspan="3" style="padding:20px;text-align:center;color:var(--text3);">No sales today</td></tr>';
+}
+
+function recalcCashBalance() {
+  calcAdminStats(); // refresh expected
+  const expected = parseFloat(document.getElementById('adExpectedCash').value) || 0;
+  const actual   = parseFloat(document.getElementById('adActualCash').value);
+  if (isNaN(actual)) {
+    document.getElementById('adVariance').textContent = '—';
+    document.getElementById('adVarianceStatus').textContent = 'Not counted yet';
+    document.getElementById('adVarianceStatus').style.color = 'var(--text3)';
+    return;
+  }
+  const variance = actual - expected;
+  const varEl = document.getElementById('adVariance');
+  const statEl = document.getElementById('adVarianceStatus');
+  varEl.textContent = (variance >= 0 ? '+' : '') + lkr(variance);
+  if (Math.abs(variance) < 1) {
+    varEl.style.color = 'var(--accent)';
+    statEl.textContent = '✓ Balanced';
+    statEl.style.color = 'var(--accent)';
+  } else if (variance > 0) {
+    varEl.style.color = 'var(--gold)';
+    statEl.textContent = 'Over by ' + lkr(variance);
+    statEl.style.color = 'var(--gold)';
+  } else {
+    varEl.style.color = 'var(--danger)';
+    statEl.textContent = 'Short by ' + lkr(Math.abs(variance));
+    statEl.style.color = 'var(--danger)';
+  }
+}
+
+function generateDayEnd() {
+  calcAdminStats();
+  const todaySales  = getTodaySales();
+  const todayRefunds = getTodayRefunds();
+  const shopName    = settings.shopName || 'Hardware Shop';
+  const dateStr     = today();
+  const timeStr     = nowTime();
+
+  const totalSales  = todaySales.reduce((s,x) => s+x.total, 0);
+  const cashSales   = todaySales.filter(s=>s.payment==='cash').reduce((s,x)=>s+x.total,0);
+  const cardSales   = todaySales.filter(s=>s.payment==='card'||s.payment==='transfer').reduce((s,x)=>s+x.total,0);
+  const creditSales = todaySales.filter(s=>s.payment==='credit').reduce((s,x)=>s+x.total,0);
+  const changeGiven = todaySales.filter(s=>s.payment==='cash').reduce((s,x)=>s+(x.change||0),0);
+  const discounts   = todaySales.reduce((s,x)=>s+(x.discount||0),0);
+  const refundAmt   = todayRefunds.reduce((s,x)=>s+x.total,0);
+  const openFloat   = parseFloat(document.getElementById('adOpeningFloat').value) || 0;
+  const expectedCash = openFloat + cashSales - changeGiven;
+  const actualCash  = parseFloat(document.getElementById('adActualCash').value) || 0;
+  const variance    = actualCash - expectedCash;
+  const notes       = document.getElementById('adDayNotes').value.trim();
+
+  const varClass = Math.abs(variance) < 1 ? 'over' : variance > 0 ? 'over' : 'under';
+  const varLabel = Math.abs(variance) < 1 ? 'Balanced ✓' : variance > 0 ? `Over + ${lkr(variance)}` : `Short ${lkr(Math.abs(variance))}`;
+
+  const report = {
+    id: 'DR-' + dateStr,
+    date: dateStr,
+    time: timeStr,
+    shopName,
+    totalSales, cashSales, cardSales, creditSales,
+    changeGiven, discounts, refundAmt,
+    billCount: todaySales.length,
+    custCount: todaySales.length,
+    cashCount: todaySales.filter(s=>s.payment==='cash').length,
+    cardCount: todaySales.filter(s=>s.payment==='card'||s.payment==='transfer').length,
+    creditCount: todaySales.filter(s=>s.payment==='credit').length,
+    refundCount: todayRefunds.length,
+    discountCount: todaySales.filter(s=>(s.discount||0)>0).length,
+    itemsSold: todaySales.reduce((s,x)=>s+(x.items||[]).reduce((a,i)=>a+i.qty,0),0),
+    openFloat, expectedCash, actualCash, variance, notes,
+    items: todaySales.reduce((a,s)=>(s.items||[]).reduce((b,i)=>{
+      const ex = b.find(x=>x.name===i.name);
+      if(ex){ex.qty+=i.qty;ex.rev+=i.lineTotal;}
+      else b.push({name:i.name,unit:i.unit,qty:i.qty,rev:i.lineTotal});
+      return b;
+    },a),[]).sort((a,b)=>b.rev-a.rev)
+  };
+
+  // Save report
+  let reports = load(KEYS_REPORTS);
+  const existIdx = reports.findIndex(r => r.id === report.id);
+  if (existIdx >= 0) reports[existIdx] = report;
+  else reports.push(report);
+  save(KEYS_REPORTS, reports);
+
+  // Render report
+  showDayEndReport(report);
+  renderSavedReports();
+  toast('Day-end report generated');
+}
+
+function showDayEndReport(report) {
+  const varClass = Math.abs(report.variance) < 1 ? 'over' : report.variance > 0 ? 'over' : 'under';
+  const varLabel = Math.abs(report.variance) < 1 ? 'Balanced ✓' : report.variance > 0 ? `Over + ${lkr(report.variance)}` : `Short ${lkr(Math.abs(report.variance))}`;
+
+  let html = `
+    <div class="der-title">${report.shopName}<br>Day End Report — ${report.date}</div>
+    <div class="der-row section-head"><span>SALES SUMMARY</span></div>
+    <div class="der-row"><span>Customers</span><span class="dv">${report.billCount}</span></div>
+    <div class="der-row"><span>Avg sale</span><span class="dv">${report.billCount > 0 ? lkr(report.totalSales / report.billCount) : lkr(0)}</span></div>
+    <div class="der-row total"><span>TOTAL SALES</span><span>${lkr(report.totalSales)}</span></div>
+    <div class="der-row section-head"><span>PAYMENT BREAKDOWN</span></div>
+    <div class="der-row"><span>Cash sales</span><span class="dv">${report.cashCount||0} / ${lkr(report.cashSales)}</span></div>
+    <div class="der-row"><span>Card / Transfer</span><span class="dv">${report.cardCount||0} / ${lkr(report.cardSales)}</span></div>
+    <div class="der-row"><span>Credit</span><span class="dv">${report.creditCount||0} / ${lkr(report.creditSales)}</span></div>
+    <div class="der-row"><span>Discounts given</span><span class="dv">${report.discountCount||0} / − ${lkr(report.discounts)}</span></div>
+    <div class="der-row"><span>Refunds</span><span class="dv">${report.refundCount||0} / − ${lkr(report.refundAmt)}</span></div>
+    <div class="der-row"><span>Items sold</span><span class="dv">${report.itemsSold ? Number(report.itemsSold).toLocaleString('en-LK',{maximumFractionDigits:2}) : '—'}</span></div>
+    <div class="der-row section-head"><span>CASH RECONCILIATION</span></div>
+    <div class="der-row"><span>Opening float</span><span class="dv">${lkr(report.openFloat)}</span></div>
+    <div class="der-row"><span>Cash sales</span><span class="dv">+ ${lkr(report.cashSales)}</span></div>
+    <div class="der-row"><span>Change given</span><span class="dv">− ${lkr(report.changeGiven)}</span></div>
+    <div class="der-row total"><span>Expected in till</span><span>${lkr(report.expectedCash)}</span></div>
+    <div class="der-row"><span>Actual cash counted</span><span class="dv">${lkr(report.actualCash)}</span></div>
+    <div class="der-row ${varClass} total"><span>Variance</span><span>${varLabel}</span></div>`;
+
+  if (report.items && report.items.length) {
+    html += `<div class="der-row section-head"><span>TOP ITEMS SOLD</span></div>`;
+    report.items.slice(0,8).forEach(i => {
+      html += `<div class="der-row"><span>${i.name}</span><span class="dv">${Number(i.qty).toLocaleString('en-LK',{maximumFractionDigits:2})} ${i.unit} — ${lkr(i.rev)}</span></div>`;
+    });
+  }
+
+  if (report.notes) {
+    html += `<div class="der-row section-head"><span>NOTES</span></div>
+    <div class="der-row"><span>${report.notes}</span></div>`;
+  }
+
+  html += `<div class="der-row section-head" style="margin-top:14px;"><span>Generated: ${report.date} ${report.time}</span></div>`;
+
+  const reportEl = document.getElementById('dayEndReport');
+  reportEl.innerHTML = html;
+  reportEl.classList.add('show');
+  reportEl.scrollIntoView({ behavior:'smooth', block:'nearest' });
+}
+
+function printDayEnd() {
+  const reportEl = document.getElementById('dayEndReport');
+  if (!reportEl.classList.contains('show')) {
+    toast('Generate the report first');
+    return;
+  }
+  const w = window.open('', '_blank', 'width=400,height=700');
+  w.document.write(`<html><head><title>Day End Report</title>
+    <style>body{font-family:monospace;font-size:13px;padding:20px;color:#111;}
+    .der-row{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #eee;}
+    .der-row.total{font-weight:700;font-size:14px;}
+    .der-row.section-head{color:#999;font-size:10px;text-transform:uppercase;letter-spacing:0.8px;margin-top:8px;}
+    .der-title{text-align:center;font-weight:700;font-size:15px;margin-bottom:14px;}
+    </style></head><body>${reportEl.innerHTML}</body></html>`);
+  w.document.close();
+  w.print();
+}
+
+function renderSavedReports() {
+  const reports = load(KEYS_REPORTS).reverse();
+  document.getElementById('adSavedCount').textContent = reports.length + ' saved';
+  const el = document.getElementById('savedReportsList');
+  if (!reports.length) {
+    el.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text3);font-size:13px;">No reports yet</div>';
+    return;
+  }
+  el.innerHTML = reports.map(r => `
+    <div class="saved-report-item" onclick="showDayEndReport(${JSON.stringify(r).replace(/</g,'&lt;')})">
+      <div>
+        <div style="font-size:13px;font-weight:600;">${r.date}</div>
+        <div style="font-size:11.5px;color:var(--text3);">${r.billCount} bills · ${lkr(r.totalSales)}</div>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-family:'DM Mono',monospace;font-size:13px;font-weight:600;color:var(--accent);">${lkr(r.totalSales)}</div>
+        <div style="font-size:11px;color:${Math.abs(r.variance)<1?'var(--accent)':r.variance>0?'var(--gold)':'var(--danger)'}">
+          ${Math.abs(r.variance)<1?'Balanced':r.variance>0?'Over':'Short'}
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+</script>
+</body>
+</html>
