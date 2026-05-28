@@ -923,6 +923,8 @@ function saveUser() {
     users.push({ id: 'user_' + Date.now(), name, role, pin: pin || '' });
   }
   save(KEYS.users, users);
+  var savedUser = users.find(function(u) { return u.name === name; });
+  if (savedUser) syncUserToSheets(savedUser).catch(function(e) { console.warn('user sync:', e); });
   closeUserModal();
   renderUsers();
   toast((editingUserId ? 'Updated' : 'Added') + ': ' + name);
@@ -997,7 +999,7 @@ function openProductModal(sku) {
   onSuggestMethodChange();
   document.getElementById('productModal').classList.add('open');
 }
-function closeProductModal() { document.getElementById('productModal').classList.remove('open'); }
+function closeProductModal() { document.getElementById('productModal').classList.remove('open'); editingProductSku = null; }
 
 function onUnitChange() {
   var u1 = document.getElementById('pm-unit').value;
@@ -1072,9 +1074,18 @@ function saveProduct() {
     products.push(product);
   }
   save(KEYS.products, products);
+
+  // Write directly to Sheets (queued automatically if offline)
+  var savedProduct = products.find(function(x) { return x.sku === sku; });
+  if (savedProduct) {
+    updateSyncIndicator('syncing');
+    syncProductToSheets(savedProduct)
+      .then(function() { updateSyncIndicator('connected'); toast((editingProductSku ? 'Updated' : 'Added') + ': ' + name); })
+      .catch(function(e) { console.warn('Sheets sync error:', e); toast((editingProductSku ? 'Updated' : 'Added') + ': ' + name + ' (offline — will sync)'); });
+  }
+
   closeProductModal();
   renderAdminProducts();
-  toast((editingProductSku ? 'Updated' : 'Added') + ': ' + name);
 }
 
 function deleteProduct(sku) {
@@ -1209,6 +1220,8 @@ function saveSupplier() {
     if (idx >= 0) suppliers[idx] = obj;
   } else { suppliers.push(obj); }
   save(KEYS.suppliers, suppliers);
+  var savedSupp = suppliers.find(function(s) { return s.name === name; });
+  if (savedSupp) syncSupplierToSheets(savedSupp).catch(function(e) { console.warn('supplier sync:', e); });
   closeSupplierModal();
   renderSuppliers();
   toast((editingSupplierId ? 'Updated' : 'Added') + ': ' + name);
@@ -1244,7 +1257,29 @@ function saveSettings() {
   settings.leadTime   = parseFloat(document.getElementById('s-leadtime').value)   || 7;
   save(KEYS.settings, settings);
   document.getElementById('shopNameDisplay').textContent = settings.shopName;
-  toast('Settings saved — all apps will use updated values');
+
+  // Write all settings directly to Sheets
+  if (GS) {
+    updateSyncIndicator('syncing');
+    var s = settings;
+    Promise.all([
+      GS.writeSetting('shop_name',   s.shopName),
+      GS.writeSetting('inflation',   String(s.inflation)),
+      GS.writeSetting('margin',      String(s.margin)),
+      GS.writeSetting('reorder',     String(s.reorder)),
+      GS.writeSetting('floor_days',  String(s.floorDays)),
+      GS.writeSetting('target_days', String(s.targetDays)),
+      GS.writeSetting('lead_time',   String(s.leadTime)),
+    ]).then(function() {
+      updateSyncIndicator('connected');
+      toast('Settings saved to Google Sheets');
+    }).catch(function(e) {
+      console.warn('settings sync error:', e);
+      toast('Settings saved locally (will sync when online)');
+    });
+  } else {
+    toast('Settings saved');
+  }
 }
 
 // ══════════════════════════════════════════
@@ -1476,57 +1511,44 @@ function saveSettings() {
 }
 
 // Override saveProduct to also write to Sheets
-var _origSaveProduct = saveProduct;
-function saveProduct() {
-  _origSaveProduct();
-  if (GS && GS.isOnline()) {
-    var p = products[products.length - 1]; // last saved
-    GS.upsert('Products', 'sku', {
-      sku: p.sku, product_name: p.name, category: p.category,
-      unit: p.unit, unit2: p.unit2||'', unit2_conv: p.unit2Conv||0,
-      unit3: p.unit3||'', unit3_conv: p.unit3Conv||0,
-      barcode: p.barcode||'', reorder_level: p.reorderLevel||0,
-      suggest_method: p.suggestMethod||'days', suggest_val: p.suggestVal||0,
-      last_selling_price: p.lastSellingPrice||0,
-      last_effective_cost: p.lastEffectiveCost||0,
-      notes: p.notes||''
-    }).catch(function(e) { console.warn('product sync error:', e); });
-  }
+// ── DIRECT SHEETS-FIRST SAVE FUNCTIONS ──────────────────────────────
+// Each function saves to localStorage immediately (instant UI response)
+// then writes to Google Sheets. If offline, GS queues the write automatically.
+
+function syncProductToSheets(p) {
+  if (!GS) return Promise.resolve();
+  return GS.upsert('Products', 'sku', {
+    sku: p.sku, product_name: p.name, category: p.category,
+    unit: p.unit, unit2: p.unit2||'', unit2_conv: p.unit2Conv||0,
+    unit3: p.unit3||'', unit3_conv: p.unit3Conv||0,
+    barcode: p.barcode||'', reorder_level: p.reorderLevel||0,
+    suggest_method: p.suggestMethod||'days', suggest_val: p.suggestVal||0,
+    last_selling_price: p.lastSellingPrice||0,
+    last_effective_cost: p.lastEffectiveCost||0,
+    notes: p.notes||''
+  });
 }
 
-// Override saveUser to also write to Sheets
-var _origSaveUser = saveUser;
-function saveUser() {
-  _origSaveUser();
-  if (GS && GS.isOnline()) {
-    users.forEach(function(u) {
-      GS.upsert('Users', 'id', { id: u.id, name: u.name, role: u.role, pin: u.pin||'' })
-        .catch(function(e) { console.warn('user sync error:', e); });
-    });
-  }
+function syncUserToSheets(u) {
+  if (!GS) return Promise.resolve();
+  return GS.upsert('Users', 'id', {
+    id: u.id, name: u.name, role: u.role, pin: u.pin||''
+  });
 }
 
-// Override saveSupplier to also write to Sheets
-var _origSaveSupplier = saveSupplier;
-function saveSupplier() {
-  _origSaveSupplier();
-  if (GS && GS.isOnline()) {
-    suppliers.forEach(function(s) {
-      GS.upsert('Suppliers', 'id', { id: s.id, name: s.name, contact: s.contact||'', phone: s.phone||'', email: s.email||'', notes: s.notes||'' })
-        .catch(function(e) { console.warn('supplier sync error:', e); });
-    });
-  }
+function syncSupplierToSheets(s) {
+  if (!GS) return Promise.resolve();
+  return GS.upsert('Suppliers', 'id', {
+    id: s.id, name: s.name, contact: s.contact||'',
+    phone: s.phone||'', email: s.email||'', notes: s.notes||''
+  });
 }
 
-// Wire up admin key save to Sheets
-var _origSaveSettingsFn = saveSettings;
 function saveAdminKeyToSheets(key) {
-  if (GS && GS.isOnline()) {
-    GS.writeSetting('admin_key', key).catch(function(e) { console.warn('admin key sync error:', e); });
-  }
   var cfg = JSON.parse(localStorage.getItem('hs_config')||'{}');
   cfg.adminKey = key;
   localStorage.setItem('hs_config', JSON.stringify(cfg));
+  if (GS) GS.writeSetting('admin_key', key);
 }
 
 function init() {
