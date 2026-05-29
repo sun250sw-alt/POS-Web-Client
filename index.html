@@ -557,6 +557,7 @@ async function ensureSpreadsheet() {
   saveCfg();
   setSyncStatus('syncing', 'Initialising Settings sheet…');
   await writeSettings();
+  await writeSampleData();
   setSyncStatus('connected', 'Workspace ready');
 }
 
@@ -681,6 +682,49 @@ async function verifyKey() {
     document.getElementById('keyInput').value = '';
     document.getElementById('keyInput').focus();
   }
+}
+
+// ══════════════════════════════════════════
+// SAMPLE DATA (written once on first setup)
+// ══════════════════════════════════════════
+async function writeSampleData() {
+  // Sample products
+  var sampleProducts = [
+    ['SKU-CEM01','Cement','Building','bag','kg','50','','0','','10','days','30','','','50kg per bag'],
+    ['SKU-SAND01','River Sand','Building','kg','','0','','0','','50','days','14','','',''],
+    ['SKU-PIPE01','4 inch PVC Pipe','Plumbing','length','m','3','feet','9.84','','5','days','14','','','3m per length'],
+    ['SKU-NAIL01','3 inch Nail','Fasteners','kg','','0','','0','','5','days','7','','',''],
+    ['SKU-WIRE01','Binding Wire Roll','Building','roll','m','50','','0','','3','days','14','','','50m per roll'],
+  ];
+  var range = 'Products!A2:O' + (sampleProducts.length + 1);
+  await gFetch(
+    'https://sheets.googleapis.com/v4/spreadsheets/' + cfg.spreadsheetId
+    + '/values/' + encodeURIComponent(range) + '?valueInputOption=RAW',
+    { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ values: sampleProducts }) }
+  );
+
+  // Sample suppliers
+  var sampleSuppliers = [
+    ['sup_001','Lanka Cement Ltd','Mr. Perera','011-234-5678','info@lankacement.lk','Main cement supplier'],
+    ['sup_002','Colombo Hardware','Ms. Silva','077-123-4567','','General hardware'],
+  ];
+  var sRange = 'Suppliers!A2:F' + (sampleSuppliers.length + 1);
+  await gFetch(
+    'https://sheets.googleapis.com/v4/spreadsheets/' + cfg.spreadsheetId
+    + '/values/' + encodeURIComponent(sRange) + '?valueInputOption=RAW',
+    { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ values: sampleSuppliers }) }
+  );
+
+  // Sample user (cashier)
+  var sampleUsers = [
+    ['user_001','Cashier','Cashier',''],
+    ['user_002','Manager','Manager','1234'],
+  ];
+  await gFetch(
+    'https://sheets.googleapis.com/v4/spreadsheets/' + cfg.spreadsheetId
+    + '/values/Users!A2:D3?valueInputOption=RAW',
+    { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ values: sampleUsers }) }
+  );
 }
 
 // ══════════════════════════════════════════
