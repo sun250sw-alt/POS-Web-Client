@@ -935,6 +935,13 @@ function deleteUser(uid) {
   users = users.filter(function(u) { return u.id !== uid; });
   save(KEYS.users, users);
   renderUsers();
+  if (GS) {
+    GS.read('Users').then(function() {
+      var found = GS.findRow('Users', 'id', uid);
+      if (found) GS.deleteRow('Users', found.rowIndex)
+        .catch(function(e) { console.warn('deleteUser Sheets error:', e); });
+    });
+  }
   toast('User deleted');
 }
 
@@ -1093,6 +1100,13 @@ function deleteProduct(sku) {
   products = products.filter(function(p) { return p.sku !== sku; });
   save(KEYS.products, products);
   renderAdminProducts();
+  if (GS) {
+    GS.read('Products').then(function() {
+      var found = GS.findRow('Products', 'sku', sku);
+      if (found) GS.deleteRow('Products', found.rowIndex)
+        .catch(function(e) { console.warn('deleteProduct Sheets error:', e); });
+    });
+  }
   toast('Product deleted');
 }
 
@@ -1161,9 +1175,15 @@ function saveProductPrice(sku, field, val) {
   if (pi < 0) return;
   var parsed = parseFloat(val);
   products[pi][field] = (!val || isNaN(parsed)) ? 0 : parsed;
-  if (field === 'costPrice' && parsed > 0) products[pi].costDate = today();
   save(KEYS.products, products);
-  toast('Saved — ' + products[pi].name);
+  var p = products[pi];
+  if (GS) {
+    syncProductToSheets(p)
+      .then(function() { toast('Saved to sheet — ' + p.name); })
+      .catch(function(e) { console.warn('saveProductPrice sync error:', e); toast('Saved locally — ' + p.name); });
+  } else {
+    toast('Saved — ' + p.name);
+  }
 }
 
 // ══════════════════════════════════════════
@@ -1232,6 +1252,13 @@ function deleteSupplier(sid) {
   suppliers = suppliers.filter(function(s) { return s.id !== sid; });
   save(KEYS.suppliers, suppliers);
   renderSuppliers();
+  if (GS) {
+    GS.read('Suppliers').then(function() {
+      var found = GS.findRow('Suppliers', 'id', sid);
+      if (found) GS.deleteRow('Suppliers', found.rowIndex)
+        .catch(function(e) { console.warn('deleteSupplier Sheets error:', e); });
+    });
+  }
   toast('Supplier deleted');
 }
 
