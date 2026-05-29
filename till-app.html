@@ -1017,6 +1017,7 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
           <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
           Admin
         </button>
+        <span id="syncIndicatorTill" style="font-size:11px;display:inline-flex;align-items:center;gap:4px;margin-right:8px;"></span>
         <div class="topbar-date" id="topbarDate"></div>
       </div>
     </div>
@@ -2099,6 +2100,17 @@ function processPayment() {
   });
   save(KEYS.movements, movements);
 
+  // Push sale to Google Sheets
+  if (typeof GS !== 'undefined' && GS.isOnline()) {
+    updateSyncTill('syncing');
+    pushLastSaleToSheets().then(function() {
+      updateSyncTill('connected');
+    }).catch(function(e) {
+      console.warn('pushLastSaleToSheets error:', e);
+      updateSyncTill('offline');
+    });
+  }
+
   showReceipt(saleRecord);
 }
 
@@ -2414,13 +2426,7 @@ async function initGSTill() {
   }
 }
 
-// Override processPayment to also push to Sheets
-var _origProcessPayment = processPayment;
-function processPayment() {
-  _origProcessPayment();
-  // Push most recent sale to Sheets after a short delay (let localStorage settle)
-  setTimeout(function() { pushLastSaleToSheets(); }, 300);
-}
+// processPayment pushes to Sheets directly — see processPayment() function
 
 async function pushLastSaleToSheets() {
   if (!GS || !GS.isOnline()) return;
