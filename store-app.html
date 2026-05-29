@@ -1394,6 +1394,18 @@ function saveGoodsIn() {
 
   renderGoodsInHistory();
   toast('Delivery saved — ' + validLines.length + ' item' + (validLines.length > 1 ? 's' : '') + (extraCost > 0 ? ', delivery cost split' : ''));
+
+  // Push to Google Sheets
+  if (typeof GS !== 'undefined' && GS.isOnline()) {
+    updateSyncIndicator('syncing');
+    pushDeliveryToSheets().then(function() {
+      updateSyncIndicator('connected');
+    }).catch(function(e) {
+      console.warn('pushDeliveryToSheets error:', e);
+      updateSyncIndicator('offline');
+    });
+  }
+
   clearGoodsInForm();
 }
 
