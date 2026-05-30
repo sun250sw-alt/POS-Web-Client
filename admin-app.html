@@ -406,6 +406,16 @@ tbody tr:hover { background: var(--surface2); }
             </div>
           </div>
         </div>
+        <div class="card" style="margin-bottom:16px;">
+          <div class="card-header"><h3>Security</h3></div>
+          <div class="card-body">
+            <div class="form-group" style="max-width:300px;">
+              <label class="form-label">Admin key (6 digits)</label>
+              <input type="password" class="form-control" id="s-adminkey" maxlength="6" placeholder="Set or change 6-digit key">
+              <span class="form-hint">Required to open Admin app from the Welcome Hub</span>
+            </div>
+          </div>
+        </div>
         <button class="btn btn-primary" onclick="saveSettings()">Save settings</button>
       </div>
     </div>
@@ -923,7 +933,10 @@ function saveUser() {
     users.push({ id: 'user_' + Date.now(), name, role, pin: pin || '' });
   }
   save(KEYS.users, users);
-  var savedUser = users.find(function(u) { return u.name === name; });
+  // Find the user just saved — use editingUserId if editing, else the last one added
+  var savedUser = editingUserId
+    ? users.find(function(u) { return u.id === editingUserId; })
+    : users[users.length - 1];
   if (savedUser) syncUserToSheets(savedUser).catch(function(e) { console.warn('user sync:', e); });
   closeUserModal();
   renderUsers();
@@ -1240,7 +1253,9 @@ function saveSupplier() {
     if (idx >= 0) suppliers[idx] = obj;
   } else { suppliers.push(obj); }
   save(KEYS.suppliers, suppliers);
-  var savedSupp = suppliers.find(function(s) { return s.name === name; });
+  var savedSupp = editingSupplierId
+    ? suppliers.find(function(s) { return s.id === editingSupplierId; })
+    : suppliers[suppliers.length - 1];
   if (savedSupp) syncSupplierToSheets(savedSupp).catch(function(e) { console.warn('supplier sync:', e); });
   closeSupplierModal();
   renderSuppliers();
@@ -1273,6 +1288,10 @@ function loadSettings() {
   document.getElementById('s-floordays').value  = settings.floorDays  || 7;
   document.getElementById('s-targetdays').value = settings.targetDays || 30;
   document.getElementById('s-leadtime').value   = settings.leadTime   || 7;
+  // Load current admin key from config (masked)
+  var cfg = JSON.parse(localStorage.getItem('hs_config')||'{}');
+  var keyEl = document.getElementById('s-adminkey');
+  if (keyEl) keyEl.placeholder = cfg.adminKey ? 'Key set — enter new to change' : 'Set 6-digit key';
 }
 function saveSettings() {
   settings.shopName   = document.getElementById('s-shopname').value.trim()   || 'Hardware Shop';
@@ -1284,6 +1303,16 @@ function saveSettings() {
   settings.leadTime   = parseFloat(document.getElementById('s-leadtime').value)   || 7;
   save(KEYS.settings, settings);
   document.getElementById('shopNameDisplay').textContent = settings.shopName;
+
+  // Save admin key if entered
+  var keyInput = document.getElementById('s-adminkey');
+  if (keyInput && keyInput.value.trim()) {
+    var newKey = keyInput.value.trim();
+    if (!/^\d{6}$/.test(newKey)) { toast('Admin key must be exactly 6 digits'); return; }
+    saveAdminKeyToSheets(newKey);
+    keyInput.value = '';
+    keyInput.placeholder = 'Key set — enter new to change';
+  }
 
   // Write all settings directly to Sheets
   if (GS) {
