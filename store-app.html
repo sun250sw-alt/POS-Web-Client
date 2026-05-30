@@ -1127,8 +1127,17 @@ function updateCategoryList() {
   dl.innerHTML = getCategories().map(c => `<option value="${c}">`).join('');
 }
 function logMovement(type, sku, productName, qty, from, to, note) {
-  movements.push({ id: Date.now(), date: today(), time: new Date().toTimeString().slice(0,5), type, sku, productName, qty, from, to, note: note||'' });
+  var unit = (products.find(function(p){return p.sku===sku;})||{}).unit||'';
+  var m = { id: Date.now(), date: today(), time: new Date().toTimeString().slice(0,5), type, sku, productName, qty, unit, from, to, note: note||'' };
+  movements.push(m);
   save(KEYS.movements, movements);
+  if (typeof GS !== 'undefined' && GS.isOnline()) {
+    GS.append('Stock_Movements', {
+      id: m.id, date: m.date, time: m.time, type: m.type,
+      sku: m.sku, product_name: m.productName, qty: m.qty, unit: m.unit,
+      from_loc: m.from, to_loc: m.to, note: m.note
+    }).catch(function(e) { console.warn('movement sync:', e); });
+  }
 }
 
 // ══════════════════════════════════════════════
@@ -1875,7 +1884,7 @@ function loadSettings() {
   document.getElementById('s-leadtime').value   = settings.leadTime   || 7;
 }
 function saveSettings() {
-  settings.shopName   = document.getElementById('s-shopname').value.trim() || 'Hardware Shop';
+  settings.shopName   = document.getElementById('s-shopname').value.trim()   || 'Hardware Shop';
   settings.inflation  = parseFloat(document.getElementById('s-inflation').value)  || 12;
   settings.margin     = parseFloat(document.getElementById('s-margin').value)     || 25;
   settings.reorder    = parseFloat(document.getElementById('s-reorder').value)    || 10;
@@ -1884,7 +1893,21 @@ function saveSettings() {
   settings.leadTime   = parseFloat(document.getElementById('s-leadtime').value)   || 7;
   save(KEYS.settings, settings);
   document.getElementById('shopNameDisplay').textContent = settings.shopName;
-  toast('Settings saved');
+  if (typeof GS !== 'undefined' && GS.isOnline()) {
+    var s = settings;
+    Promise.all([
+      GS.writeSetting('shop_name',   s.shopName),
+      GS.writeSetting('inflation',   String(s.inflation)),
+      GS.writeSetting('margin',      String(s.margin)),
+      GS.writeSetting('reorder',     String(s.reorder)),
+      GS.writeSetting('floor_days',  String(s.floorDays)),
+      GS.writeSetting('target_days', String(s.targetDays)),
+      GS.writeSetting('lead_time',   String(s.leadTime)),
+    ]).then(function() { toast('Settings saved to Google Sheets'); })
+      .catch(function(e) { console.warn('settings sync error:', e); toast('Settings saved locally'); });
+  } else {
+    toast('Settings saved');
+  }
 }
 function clearAllData() {
   if (!confirm('This will delete ALL products, stock, and records. Are you sure?')) return;
@@ -1988,6 +2011,8 @@ function saveOptimOverride(sku, val) {
   const s = getStock(sku);
   const override = val === '' ? null : (parseFloat(val) || null);
   setStock(sku, { optimOverride: override });
+  // Sync optimum override to Products sheet via lastEffectiveCost field isn't ideal
+  // Store it in stock record — synced when stock is rebuilt from lots
   toast(override !== null ? 'Optimum override saved' : 'Override cleared — back to auto');
 }
 
