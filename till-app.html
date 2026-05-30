@@ -2282,7 +2282,10 @@ function loginUser(uid) {
   const users = getUsers();
   currentUser = users.find(function(u) { return u.id === uid; }) || { id: uid, name: uid, role: 'Cashier' };
 
-  // Hide startup screen with a quick fade
+  // Persist to session so user survives page refresh
+  try { sessionStorage.setItem('hs_current_user', JSON.stringify(currentUser)); } catch(e) {}
+
+  // Hide startup screen
   const screen = document.getElementById('startupScreen');
   screen.style.transition = 'opacity 0.2s';
   screen.style.opacity    = '0';
@@ -2291,32 +2294,22 @@ function loginUser(uid) {
     clearInterval(startupClockInterval);
   }, 200);
 
-  // Update topbar with user name
+  // Update topbar
   const userBadge = document.getElementById('topbarUser');
   if (userBadge) userBadge.textContent = currentUser.name;
 
-  // Show discount section only for Admin/Manager
-  const canDiscount = currentUser.role === 'Admin' || currentUser.role === 'Manager';
-  const discSection = document.getElementById('discountSection');
-  const discNote    = document.getElementById('discountCashierNote');
-  if (discSection) discSection.style.display    = canDiscount ? 'flex'  : 'none';
-  if (discNote)    discNote.style.display        = canDiscount ? 'none' : 'flex';
-  // Reset discount when switching users
-  const discInput = document.getElementById('discountVal');
-  if (discInput) { discInput.value = '0'; }
+  // Refresh discount badge visibility for this role
   updateTotals();
 }
 
 function lockScreen() {
-  // Reset discount before locking
-  var discInput = document.getElementById('discountVal');
-  if (discInput) discInput.value = '0';
-  var discSection = document.getElementById('discountSection');
-  var discNote    = document.getElementById('discountCashierNote');
-  if (discSection) discSection.style.display = 'none';
-  if (discNote)    discNote.style.display    = 'none';
-
+  // Confirm if cart has items
+  if (cart.length > 0 && !confirm('Lock till? Current cart will be cleared.')) return;
   currentUser = null;
+  cart = [];
+  try { sessionStorage.removeItem('hs_current_user'); } catch(e) {}
+  renderCart();
+  updateTotals();
   const screen = document.getElementById('startupScreen');
   screen.style.display = '';
   screen.style.opacity = '0';
@@ -2327,15 +2320,12 @@ function lockScreen() {
   startupClockInterval = setInterval(startupTick, 10000);
 }
 
-function showStartup() {
-  reloadData();
-  document.getElementById('startupShopName').textContent = settings.shopName || 'Hardware Shop';
-  renderStartupBills();
-  renderStartupUsers();
-  startupTick();
-  startupClockInterval = setInterval(startupTick, 10000);
-}
 
+
+
+// ══════════════════════════════════════════
+// GOOGLE SHEETS SYNC
+// ══════════════════════════════════════════
 function updateSyncTill(state) {
   var el = document.getElementById('syncIndicatorTill');
   if (!el) return;
@@ -2353,7 +2343,7 @@ async function initGSTill() {
   if (!connected) return;
 
   try {
-    // Load products from Sheets
+    // Products
     var prods = await GS.read('Products');
     if (prods.length) {
       products = prods.map(function(r) { return {
@@ -2369,7 +2359,7 @@ async function initGSTill() {
       localStorage.setItem('hs_products', JSON.stringify(products));
     }
 
-    // Load stock levels (derived from Stock_Lots)
+    // Stock Lots (for FIFO + qty)
     var lots = await GS.read('Stock_Lots');
     if (lots.length) {
       localStorage.setItem('hs_goodsin', JSON.stringify(lots.map(function(r) { return {
@@ -2381,9 +2371,10 @@ async function initGSTill() {
         effCostUnit: parseFloat(r.eff_cost_unit)||0,
         sellingPrice: parseFloat(r.selling_price)||0,
         sellingPrice2: parseFloat(r.selling_price2)||0,
-        sellingPrice3: parseFloat(r.selling_price3)||0,
+        sellingPrice3: parseFloat(r.selling_price3)||0
       }; })));
 
+      // Rebuild floor stock
       var stockMap = {};
       lots.forEach(function(r) {
         if (!stockMap[r.sku]) stockMap[r.sku] = { sku: r.sku, storeQty: 0, floorQty: 0 };
@@ -2393,7 +2384,7 @@ async function initGSTill() {
       localStorage.setItem('hs_stock', JSON.stringify(stock));
     }
 
-    // Load settings
+    // Settings
     var sRows = await GS.readSettings();
     if (sRows.shop_name) {
       settings = {
@@ -2405,17 +2396,17 @@ async function initGSTill() {
       };
       localStorage.setItem('hs_settings', JSON.stringify(settings));
       document.getElementById('shopNameDisplay').textContent = settings.shopName;
-      document.getElementById('startupShopName').textContent = settings.shopName;
+      var sn = document.getElementById('startupShopName');
+      if (sn) sn.textContent = settings.shopName;
     }
 
-    // Load users for startup screen
+    // Users for startup screen
     var usersData = await GS.read('Users');
     if (usersData.length) {
       var u = usersData.map(function(r) { return { id:r.id, name:r.name, role:r.role, pin:r.pin||'' }; });
       localStorage.setItem('hs_users', JSON.stringify(u));
     }
 
-    // Refresh startup bills
     renderStartupBills();
     renderProducts();
     updateSyncTill('connected');
@@ -2426,8 +2417,6 @@ async function initGSTill() {
   }
 }
 
-// processPayment pushes to Sheets directly — see processPayment() function
-
 async function pushLastSaleToSheets() {
   if (!GS || !GS.isOnline()) return;
   var allSales = JSON.parse(localStorage.getItem('hs_sales')||'[]');
@@ -2436,52 +2425,63 @@ async function pushLastSaleToSheets() {
 
   updateSyncTill('syncing');
   try {
-    // Write sale header
+    // Write sale header row
     await GS.append('Sales', {
       sale_id: sale.id, date: sale.date, time: sale.time||'',
       cashier: currentUser ? currentUser.name : '',
-      subtotal: sale.subtotal||0, discount: sale.discount||0, total: sale.total||0,
-      payment: sale.payment||'', cash_received: sale.cashReceived||0,
-      change: sale.change||0, refunded: 'false', refund_reason: '', refund_date: ''
+      subtotal: sale.subtotal||0, discount: sale.discount||0,
+      total: sale.total||0, payment: sale.payment||'',
+      cash_received: sale.cashReceived||0, change: sale.change||0,
+      refunded: 'false', refund_reason: '', refund_date: ''
     });
 
-    // Write sale items
+    // Write each line item
     for (var i = 0; i < (sale.items||[]).length; i++) {
       var item = sale.items[i];
       await GS.append('Sale_Items', {
         sale_id: sale.id, sku: item.sku, product_name: item.name,
-        unit: item.unit, qty: item.qty, price: item.price, line_total: item.lineTotal
+        unit: item.unit, qty: item.qty, price: item.price,
+        line_total: item.lineTotal
       });
     }
 
-    // Update lot qty_remaining (FIFO) in Sheets
+    // FIFO: update qty_remaining on Stock_Lots in Sheets
     var goodsIn = JSON.parse(localStorage.getItem('hs_goodsin')||'[]');
     for (var j = 0; j < (sale.items||[]).length; j++) {
-      var si   = sale.items[j];
-      var lots = goodsIn.filter(function(r) { return r.sku === si.sku && (r.qtyRemaining||0) >= 0; })
-                        .sort(function(a,b) { return a.date < b.date ? -1 : 1; });
+      var si  = sale.items[j];
+      var skuLots = goodsIn
+        .filter(function(r) { return r.sku === si.sku && (parseFloat(r.qtyRemaining)||0) > 0; })
+        .sort(function(a,b) { return a.date < b.date ? -1 : 1; }); // oldest first
+
       var remaining = si.qty;
-      for (var k = 0; k < lots.length && remaining > 0; k++) {
-        var deduct = Math.min(remaining, lots[k].qtyRemaining||0);
+      for (var k = 0; k < skuLots.length && remaining > 0; k++) {
+        var deduct = Math.min(remaining, parseFloat(skuLots[k].qtyRemaining)||0);
         remaining -= deduct;
-        lots[k].qtyRemaining = (lots[k].qtyRemaining||0) - deduct;
-        // Update in Sheets
-        var found = GS.findRow('Stock_Lots', 'lot_id', lots[k].lotId);
-        if (found) {
-          await GS.updateField('Stock_Lots', 'lot_id', lots[k].lotId, 'qty_remaining', lots[k].qtyRemaining);
-        }
+        skuLots[k].qtyRemaining = (parseFloat(skuLots[k].qtyRemaining)||0) - deduct;
+        // Update the lot row in Sheets
+        await GS.updateField('Stock_Lots', 'lot_id', skuLots[k].lotId, 'qty_remaining', skuLots[k].qtyRemaining);
       }
     }
+    // Save updated goodsIn back to localStorage
     localStorage.setItem('hs_goodsin', JSON.stringify(goodsIn));
-    updateSyncTill('connected');
 
+    updateSyncTill('connected');
   } catch(e) {
     console.warn('pushLastSaleToSheets error:', e);
     updateSyncTill('offline');
   }
 }
 
+// ══════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════
 function init() {
+  // Restore user session if page was refreshed
+  try {
+    var savedUser = sessionStorage.getItem('hs_current_user');
+    if (savedUser) currentUser = JSON.parse(savedUser);
+  } catch(e) {}
+
   const d = new Date();
   document.getElementById('topbarDate').textContent =
     d.toLocaleDateString('en-GB', { weekday:'short', day:'numeric', month:'short', year:'numeric' })
@@ -2498,626 +2498,11 @@ function init() {
       + ' · ' + now.toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit' });
   }, 60000);
 
-  // Init Google Sheets then show startup
+  // Init Google Sheets then show startup screen
   initGSTill().then(function() { showStartup(); });
 }
 
 init();
-
-
-// ══════════════════════════════════════════
-// TRANSACTIONS PANEL
-// ══════════════════════════════════════════
-// currentTxnSale declared at top
-
-function openTxnPanel() {
-  sales = load(KEYS.sales);
-  renderTxnList();
-  document.getElementById('txnPanel').classList.add('open');
-}
-function closeTxnPanel() {
-  document.getElementById('txnPanel').classList.remove('open');
-}
-
-function txnBadge(sale) {
-  if (sale.refunded) return '<span class="txn-badge txn-badge-refunded">Refunded</span>';
-  const cls = { cash:'txn-badge-cash', card:'txn-badge-card', transfer:'txn-badge-transfer', credit:'txn-badge-credit' }[sale.payment] || 'txn-badge-cash';
-  const label = { cash:'Cash', card:'Card', transfer:'Transfer', credit:'Credit' }[sale.payment] || sale.payment;
-  return `<span class="txn-badge ${cls}">${label}</span>`;
-}
-
-function renderTxnList() {
-  const q = (document.getElementById('txnSearch').value || '').toLowerCase();
-  const filter = document.getElementById('txnFilter').value;
-  const todayStr = today();
-
-  let list = [...sales].reverse(); // newest first
-
-  if (filter === 'today') list = list.filter(s => s.date === todayStr);
-  else if (filter === 'active') list = list.filter(s => !s.refunded);
-  else if (filter === 'refunded') list = list.filter(s => s.refunded);
-
-  if (q) {
-    list = list.filter(s =>
-      s.id.toLowerCase().includes(q) ||
-      (s.items || []).some(i => i.name.toLowerCase().includes(q))
-    );
-  }
-
-  const el = document.getElementById('txnList');
-  if (!list.length) {
-    el.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text3);">No transactions found</div>';
-    return;
-  }
-
-  el.innerHTML = list.map(sale => {
-    const preview = (sale.items || []).map(i => `${i.qty}×${i.name}`).join(', ');
-    return `<div class="txn-item${sale.refunded ? ' refunded' : ''}" onclick="openTxnDetail('${sale.id}')">
-      <div class="txn-item-top">
-        <span class="txn-id">${sale.id}</span>
-        <span class="txn-total">${lkr(sale.total)}</span>
-      </div>
-      <div class="txn-item-mid">
-        <span class="txn-datetime">${sale.date} ${sale.time || ''}</span>
-        ${txnBadge(sale)}
-        ${sale.refunded ? '<span class="txn-badge txn-badge-refunded">Refunded</span>' : ''}
-      </div>
-      <div class="txn-items-preview">${preview}</div>
-    </div>`;
-  }).join('');
-}
-
-function openTxnDetail(saleId) {
-  sales = load(KEYS.sales);
-  const sale = sales.find(s => s.id === saleId);
-  if (!sale) return;
-  currentTxnSale = sale;
-
-  document.getElementById('txnDetailTitle').textContent = 'Bill — ' + sale.id;
-
-  // Build detail body
-  let body = `<div style="margin-bottom:14px;">`;
-
-  // Items table (editable if not refunded)
-  body += `<div style="font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:var(--text3);font-weight:600;margin-bottom:8px;">Items</div>`;
-  body += `<table style="width:100%;border-collapse:collapse;margin-bottom:14px;" id="editItemsTable">
-    <thead>
-      <tr style="border-bottom:1px solid var(--border);">
-        <th style="font-size:11px;color:var(--text3);padding:5px 8px;text-align:left;font-weight:500;">Product</th>
-        <th style="font-size:11px;color:var(--text3);padding:5px 8px;text-align:center;font-weight:500;">Qty</th>
-        <th style="font-size:11px;color:var(--text3);padding:5px 8px;text-align:right;font-weight:500;">Price</th>
-        <th style="font-size:11px;color:var(--text3);padding:5px 8px;text-align:right;font-weight:500;">Line total</th>
-      </tr>
-    </thead>
-    <tbody id="editItemsBody">`;
-
-  (sale.items || []).forEach((item, idx) => {
-    if (sale.refunded) {
-      body += `<tr style="border-bottom:1px solid var(--border);">
-        <td style="padding:7px 8px;font-size:13px;">${item.name}<div style="font-size:11px;color:var(--text3)">per ${item.unit}</div></td>
-        <td style="padding:7px 8px;text-align:center;font-family:'DM Mono',monospace;font-size:13px;">${item.qty}</td>
-        <td style="padding:7px 8px;text-align:right;font-family:'DM Mono',monospace;font-size:13px;">${lkr(item.price)}</td>
-        <td style="padding:7px 8px;text-align:right;font-family:'DM Mono',monospace;font-size:13px;font-weight:600;">${lkr(item.lineTotal)}</td>
-      </tr>`;
-    } else {
-      body += `<tr style="border-bottom:1px solid var(--border);" id="editRow${idx}">
-        <td style="padding:7px 8px;font-size:13px;">${item.name}<div style="font-size:11px;color:var(--text3)">per ${item.unit}</div></td>
-        <td style="padding:7px 8px;text-align:center;">
-          <input class="edit-qty-input" type="number" value="${item.qty}" min="0" step="any"
-            data-idx="${idx}" oninput="recalcEditTotals()">
-        </td>
-        <td style="padding:7px 8px;text-align:right;">
-          <input class="edit-price-input" type="number" value="${item.price.toFixed(2)}" min="0" step="any"
-            data-idx="${idx}" oninput="recalcEditTotals()">
-        </td>
-        <td style="padding:7px 8px;text-align:right;font-family:'DM Mono',monospace;font-size:13px;font-weight:600;" id="editLineTotal${idx}">${lkr(item.lineTotal)}</td>
-      </tr>`;
-    }
-  });
-
-  body += `</tbody></table>`;
-
-  // Totals summary
-  body += `<div style="background:var(--surface2);border-radius:8px;padding:12px 14px;">`;
-  body += `<div class="txn-detail-row"><span class="dl">Date / Time</span><span class="dv">${sale.date} ${sale.time||''}</span></div>`;
-  body += `<div class="txn-detail-row"><span class="dl">Payment</span><span class="dv">${sale.payment}</span></div>`;
-  if (sale.discount > 0)
-    body += `<div class="txn-detail-row"><span class="dl">Discount</span><span class="dv">− ${lkr(sale.discount)}</span></div>`;
-  if (sale.payment === 'cash') {
-    body += `<div class="txn-detail-row"><span class="dl">Cash received</span><span class="dv">${lkr(sale.cashReceived)}</span></div>`;
-    body += `<div class="txn-detail-row"><span class="dl">Change given</span><span class="dv">${lkr(sale.change||0)}</span></div>`;
-  }
-  body += `<div class="txn-detail-row grand-row" id="editGrandRow"><span class="dl">Total</span><span class="dv">${lkr(sale.total)}</span></div>`;
-  body += `</div>`;
-
-  if (sale.refunded) {
-    body += `<div style="margin-top:12px;padding:10px 12px;background:var(--danger-light);border-radius:8px;font-size:12.5px;color:var(--danger);">
-      <strong>Refunded</strong>${sale.refundReason ? ' — ' + sale.refundReason : ''}
-    </div>`;
-  }
-
-  body += `</div>`;
-  document.getElementById('txnDetailBody').innerHTML = body;
-
-  // Actions
-  const actions = document.getElementById('txnDetailActions');
-  if (sale.refunded) {
-    actions.innerHTML = `
-      <button class="txn-action-btn btn-reprint" onclick="reprintReceipt('${sale.id}')">🖨 Reprint</button>`;
-  } else {
-    actions.innerHTML = `
-      <button class="txn-action-btn btn-reprint" onclick="reprintReceipt('${sale.id}')">🖨 Reprint</button>
-      <button class="txn-action-btn btn-edit" onclick="saveBillEdit('${sale.id}')">✏ Save edits</button>
-      <button class="txn-action-btn btn-refund" onclick="openRefundModal('${sale.id}')">↩ Refund</button>`;
-  }
-
-  document.getElementById('txnDetailModal').classList.add('open');
-}
-
-function closeTxnDetail() {
-  document.getElementById('txnDetailModal').classList.remove('open');
-  currentTxnSale = null;
-}
-
-// ── EDIT: recalc totals live as qty/price change ──
-function recalcEditTotals() {
-  if (!currentTxnSale) return;
-  let newTotal = 0;
-  (currentTxnSale.items || []).forEach((item, idx) => {
-    const qtyEl = document.querySelector(`.edit-qty-input[data-idx="${idx}"]`);
-    const priceEl = document.querySelector(`.edit-price-input[data-idx="${idx}"]`);
-    if (!qtyEl || !priceEl) return;
-    const qty = parseFloat(qtyEl.value) || 0;
-    const price = parseFloat(priceEl.value) || 0;
-    const line = qty * price;
-    const ltEl = document.getElementById('editLineTotal' + idx);
-    if (ltEl) ltEl.textContent = lkr(line);
-    newTotal += line;
-  });
-  const disc = currentTxnSale.discount || 0;
-  const grand = Math.max(0, newTotal - disc);
-  const grandEl = document.getElementById('editGrandRow');
-  if (grandEl) grandEl.querySelector('.dv').textContent = lkr(grand);
-}
-
-// ── SAVE EDITS ──
-function saveBillEdit(saleId) {
-  const saleIdx = sales.findIndex(s => s.id === saleId);
-  if (saleIdx < 0) return;
-  const sale = sales[saleIdx];
-
-  // Read edited values
-  let newSubtotal = 0;
-  const updatedItems = sale.items.map((item, idx) => {
-    const qtyEl = document.querySelector(`.edit-qty-input[data-idx="${idx}"]`);
-    const priceEl = document.querySelector(`.edit-price-input[data-idx="${idx}"]`);
-    const qty = qtyEl ? (parseFloat(qtyEl.value) || 0) : item.qty;
-    const price = priceEl ? (parseFloat(priceEl.value) || 0) : item.price;
-    const lineTotal = qty * price;
-    newSubtotal += lineTotal;
-    return { ...item, qty, price, lineTotal };
-  });
-
-  const disc = sale.discount || 0;
-  const newTotal = Math.max(0, newSubtotal - disc);
-
-  // Adjust floor stock for qty differences
-  stock = load(KEYS.stock);
-  sale.items.forEach((oldItem, idx) => {
-    const newItem = updatedItems[idx];
-    const diff = newItem.qty - oldItem.qty; // positive = more sold, negative = less sold
-    const si = stock.findIndex(s => s.sku === oldItem.sku);
-    if (si >= 0) {
-      stock[si].floorQty = Math.max(0, (stock[si].floorQty || 0) - diff);
-    }
-  });
-  save(KEYS.stock, stock);
-
-  // Update sale record
-  sales[saleIdx] = { ...sale, items: updatedItems, subtotal: newSubtotal, total: newTotal, edited: true, editedAt: today() + ' ' + nowTime() };
-  save(KEYS.sales, sales);
-
-  closeTxnDetail();
-  renderTxnList();
-  toast('Bill ' + saleId + ' updated');
-}
-
-// ── REPRINT ──
-function reprintReceipt(saleId) {
-  const sale = sales.find(s => s.id === saleId);
-  if (!sale) return;
-  closeTxnDetail();
-  closeTxnPanel();
-  showReceipt(sale);
-}
-
-// ── REFUND ──
-// refundingSaleId declared at top
-function openRefundModal(saleId) {
-  refundingSaleId = saleId;
-  const sale = sales.find(s => s.id === saleId);
-  document.getElementById('refundInfo').innerHTML =
-    `<strong>${sale.id}</strong> — ${lkr(sale.total)}<br>
-    ${(sale.items||[]).map(i => i.qty + ' × ' + i.name).join(', ')}<br><br>
-    This will restore stock and mark the bill as refunded.`;
-  document.getElementById('refundReason').value = '';
-  document.getElementById('refundModal').classList.add('open');
-}
-function closeRefundModal() {
-  document.getElementById('refundModal').classList.remove('open');
-  refundingSaleId = null;
-}
-function confirmRefund() {
-  if (!refundingSaleId) return;
-  const reason = document.getElementById('refundReason').value.trim();
-  const saleIdx = sales.findIndex(s => s.id === refundingSaleId);
-  if (saleIdx < 0) return;
-  const sale = sales[saleIdx];
-
-  // Restore floor stock
-  stock = load(KEYS.stock);
-  (sale.items || []).forEach(item => {
-    const si = stock.findIndex(s => s.sku === item.sku);
-    if (si >= 0) stock[si].floorQty = (stock[si].floorQty || 0) + item.qty;
-  });
-  save(KEYS.stock, stock);
-
-  // Mark sale as refunded
-  sales[saleIdx] = { ...sale, refunded: true, refundReason: reason, refundedAt: today() + ' ' + nowTime() };
-  save(KEYS.sales, sales);
-
-  // Log movement
-  (sale.items || []).forEach(item => {
-    movements.push({
-      id: Date.now() + Math.random(),
-      date: today(), time: nowTime(),
-      type: 'refund',
-      sku: item.sku, productName: item.name,
-      qty: item.qty, from: 'sold', to: 'floor',
-      note: 'Refund of ' + sale.id + (reason ? ' — ' + reason : '')
-    });
-  });
-  save(KEYS.movements, movements);
-
-  closeRefundModal();
-  closeTxnDetail();
-  renderTxnList();
-  toast('Refund processed — ' + sale.id);
-}
-
-// Close txn panel on Escape
-document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') {
-    if (document.getElementById('unitModal').classList.contains('open')) { closeUnitModal(); return; }
-    if (document.getElementById('refundModal').classList.contains('open')) { closeRefundModal(); return; }
-    if (document.getElementById('txnDetailModal').classList.contains('open')) { closeTxnDetail(); return; }
-    if (document.getElementById('txnPanel').classList.contains('open')) { closeTxnPanel(); return; }
-  }
-});
-
-
-
-// ══════════════════════════════════════════
-// CASH NUMPAD
-// ══════════════════════════════════════════
-
-function openCashNumpad() {
-  cnpStr = document.getElementById('cashReceived').value || '';
-  document.getElementById('cnpDisplay').textContent = cnpStr || '0';
-  cnpUpdateChange();
-  document.getElementById('cashNumpadOverlay').classList.add('open');
-}
-function closeCashNumpad() {
-  document.getElementById('cashNumpadOverlay').classList.remove('open');
-}
-function cnpPress(val) {
-  if (val === 'del') {
-    cnpStr = cnpStr.slice(0, -1);
-  } else if (val === '.' && cnpStr.includes('.')) {
-    return; // only one decimal
-  } else if (val === '.' && cnpStr === '') {
-    cnpStr = '0.';
-  } else {
-    if (cnpStr === '0' && val !== '.') cnpStr = val;
-    else cnpStr += val;
-  }
-  document.getElementById('cnpDisplay').textContent = cnpStr || '0';
-  cnpUpdateChange();
-}
-function cnpUpdateChange() {
-  const grand = calcGrand();
-  const cash = parseFloat(cnpStr) || 0;
-  const change = cash - grand;
-  const el = document.getElementById('cnpChange');
-  if (cnpStr === '') { el.textContent = '—'; el.style.color = 'var(--gold)'; return; }
-  if (change >= 0) {
-    el.textContent = lkr(change);
-    el.style.color = 'var(--gold)';
-  } else {
-    el.textContent = '− ' + lkr(Math.abs(change)) + ' short';
-    el.style.color = 'var(--danger)';
-  }
-}
-function cnpConfirm() {
-  const val = parseFloat(cnpStr) || 0;
-  document.getElementById('cashReceived').value = val > 0 ? val : '';
-  noteCounts = {};
-  renderCashNotes();
-  calcChange();
-  closeCashNumpad();
-}
-
-// Also open numpad when cash note tiles area is tapped if nothing typed yet
-function openCashNumpadIfEmpty() {
-  if (!document.getElementById('cashReceived').value) openCashNumpad();
-}
-
-// ══════════════════════════════════════════
-// ADMIN / DAY END
-// ══════════════════════════════════════════
-
-function openAdminPanel() {
-  sales = load(KEYS.sales);
-  document.getElementById('adminDateLabel').textContent = today();
-  calcAdminStats();
-  recalcCashBalance();
-  renderSavedReports();
-  document.getElementById('dayEndReport').classList.remove('show');
-  document.getElementById('adminPanel').classList.add('open');
-}
-function closeAdminPanel() {
-  document.getElementById('adminPanel').classList.remove('open');
-}
-
-function getTodaySales() {
-  const todayStr = today();
-  return sales.filter(s => s.date === todayStr && !s.refunded);
-}
-function getTodayRefunds() {
-  const todayStr = today();
-  return sales.filter(s => s.date === todayStr && s.refunded);
-}
-
-function calcAdminStats() {
-  const todaySales   = getTodaySales();
-  const todayRefunds = getTodayRefunds();
-
-  const totalSales   = todaySales.reduce((s, x) => s + x.total, 0);
-  const custCount    = todaySales.length;
-  const avgBill      = custCount > 0 ? totalSales / custCount : 0;
-
-  const cashTxns     = todaySales.filter(s => s.payment === 'cash');
-  const cardTxns     = todaySales.filter(s => s.payment === 'card' || s.payment === 'transfer');
-  const creditTxns   = todaySales.filter(s => s.payment === 'credit');
-
-  const cashSales    = cashTxns.reduce((s, x) => s + x.total, 0);
-  const cardSales    = cardTxns.reduce((s, x) => s + x.total, 0);
-  const creditSales  = creditTxns.reduce((s, x) => s + x.total, 0);
-  const refundAmt    = todayRefunds.reduce((s, x) => s + x.total, 0);
-  const discounts    = todaySales.reduce((s, x) => s + (x.discount || 0), 0);
-  const itemsSold    = todaySales.reduce((s, x) => s + (x.items||[]).reduce((a, i) => a + i.qty, 0), 0);
-
-  // Tile 1: total + customers
-  document.getElementById('adTotalSales').textContent = lkr(totalSales);
-  document.getElementById('adBillCount').textContent  = custCount;
-  document.getElementById('adAvgBill').textContent    = 'avg ' + lkr(avgBill);
-  // Tile 2: cash
-  document.getElementById('adCashSales').textContent  = lkr(cashSales);
-  document.getElementById('adCashCount').textContent  = cashTxns.length;
-  // Tile 3: card
-  document.getElementById('adCardSales').textContent  = lkr(cardSales);
-  document.getElementById('adCardCount').textContent  = cardTxns.length;
-  // Tile 4: credit
-  document.getElementById('adCreditSales').textContent = lkr(creditSales);
-  document.getElementById('adCreditCount').textContent = creditTxns.length;
-  // Tile 5: refunds
-  document.getElementById('adRefunds').textContent     = lkr(refundAmt);
-  document.getElementById('adRefundCount').textContent = todayRefunds.length;
-  // Tile 6: discounts count+amount + items
-  const discountCount = todaySales.filter(s => (s.discount||0) > 0).length;
-  document.getElementById('adDiscountCount').textContent = discountCount;
-  document.getElementById('adDiscounts').textContent     = lkr(discounts);
-  document.getElementById('adItemsSold').textContent     = Number(itemsSold).toLocaleString('en-LK', {maximumFractionDigits:2});
-
-  // Expected cash = opening float + cash sales - change given
-  const changeGiven = cashTxns.reduce((s, x) => s + (x.change||0), 0);
-  const openFloat   = parseFloat(document.getElementById('adOpeningFloat').value) || 0;
-  const expected    = openFloat + cashSales - changeGiven;
-  document.getElementById('adExpectedCash').value = expected.toFixed(2);
-
-  // Top products
-  const productTotals = {};
-  todaySales.forEach(s => (s.items||[]).forEach(i => {
-    if (!productTotals[i.name]) productTotals[i.name] = { qty:0, rev:0, unit: i.unit };
-    productTotals[i.name].qty += i.qty;
-    productTotals[i.name].rev += i.lineTotal;
-  }));
-  const sorted = Object.entries(productTotals).sort((a,b) => b[1].rev - a[1].rev).slice(0, 8);
-  document.getElementById('adTopProducts').innerHTML = sorted.length
-    ? sorted.map(([name, d]) => `<tr style="border-bottom:1px solid var(--border);">
-        <td style="padding:9px 16px;font-size:13px;font-weight:500;">${name}</td>
-        <td style="padding:9px 16px;text-align:center;font-family:'DM Mono',monospace;font-size:13px;">${Number(d.qty).toLocaleString('en-LK',{maximumFractionDigits:2})} ${d.unit}</td>
-        <td style="padding:9px 16px;text-align:right;font-family:'DM Mono',monospace;font-size:13px;font-weight:600;color:var(--accent);">${lkr(d.rev)}</td>
-      </tr>`).join('')
-    : '<tr><td colspan="3" style="padding:20px;text-align:center;color:var(--text3);">No sales today</td></tr>';
-}
-
-function recalcCashBalance() {
-  calcAdminStats(); // refresh expected
-  const expected = parseFloat(document.getElementById('adExpectedCash').value) || 0;
-  const actual   = parseFloat(document.getElementById('adActualCash').value);
-  if (isNaN(actual)) {
-    document.getElementById('adVariance').textContent = '—';
-    document.getElementById('adVarianceStatus').textContent = 'Not counted yet';
-    document.getElementById('adVarianceStatus').style.color = 'var(--text3)';
-    return;
-  }
-  const variance = actual - expected;
-  const varEl = document.getElementById('adVariance');
-  const statEl = document.getElementById('adVarianceStatus');
-  varEl.textContent = (variance >= 0 ? '+' : '') + lkr(variance);
-  if (Math.abs(variance) < 1) {
-    varEl.style.color = 'var(--accent)';
-    statEl.textContent = '✓ Balanced';
-    statEl.style.color = 'var(--accent)';
-  } else if (variance > 0) {
-    varEl.style.color = 'var(--gold)';
-    statEl.textContent = 'Over by ' + lkr(variance);
-    statEl.style.color = 'var(--gold)';
-  } else {
-    varEl.style.color = 'var(--danger)';
-    statEl.textContent = 'Short by ' + lkr(Math.abs(variance));
-    statEl.style.color = 'var(--danger)';
-  }
-}
-
-function generateDayEnd() {
-  calcAdminStats();
-  const todaySales  = getTodaySales();
-  const todayRefunds = getTodayRefunds();
-  const shopName    = settings.shopName || 'Hardware Shop';
-  const dateStr     = today();
-  const timeStr     = nowTime();
-
-  const totalSales  = todaySales.reduce((s,x) => s+x.total, 0);
-  const cashSales   = todaySales.filter(s=>s.payment==='cash').reduce((s,x)=>s+x.total,0);
-  const cardSales   = todaySales.filter(s=>s.payment==='card'||s.payment==='transfer').reduce((s,x)=>s+x.total,0);
-  const creditSales = todaySales.filter(s=>s.payment==='credit').reduce((s,x)=>s+x.total,0);
-  const changeGiven = todaySales.filter(s=>s.payment==='cash').reduce((s,x)=>s+(x.change||0),0);
-  const discounts   = todaySales.reduce((s,x)=>s+(x.discount||0),0);
-  const refundAmt   = todayRefunds.reduce((s,x)=>s+x.total,0);
-  const openFloat   = parseFloat(document.getElementById('adOpeningFloat').value) || 0;
-  const expectedCash = openFloat + cashSales - changeGiven;
-  const actualCash  = parseFloat(document.getElementById('adActualCash').value) || 0;
-  const variance    = actualCash - expectedCash;
-  const notes       = document.getElementById('adDayNotes').value.trim();
-
-  const varClass = Math.abs(variance) < 1 ? 'over' : variance > 0 ? 'over' : 'under';
-  const varLabel = Math.abs(variance) < 1 ? 'Balanced ✓' : variance > 0 ? `Over + ${lkr(variance)}` : `Short ${lkr(Math.abs(variance))}`;
-
-  const report = {
-    id: 'DR-' + dateStr,
-    date: dateStr,
-    time: timeStr,
-    shopName,
-    totalSales, cashSales, cardSales, creditSales,
-    changeGiven, discounts, refundAmt,
-    billCount: todaySales.length,
-    custCount: todaySales.length,
-    cashCount: todaySales.filter(s=>s.payment==='cash').length,
-    cardCount: todaySales.filter(s=>s.payment==='card'||s.payment==='transfer').length,
-    creditCount: todaySales.filter(s=>s.payment==='credit').length,
-    refundCount: todayRefunds.length,
-    discountCount: todaySales.filter(s=>(s.discount||0)>0).length,
-    itemsSold: todaySales.reduce((s,x)=>s+(x.items||[]).reduce((a,i)=>a+i.qty,0),0),
-    openFloat, expectedCash, actualCash, variance, notes,
-    items: todaySales.reduce((a,s)=>(s.items||[]).reduce((b,i)=>{
-      const ex = b.find(x=>x.name===i.name);
-      if(ex){ex.qty+=i.qty;ex.rev+=i.lineTotal;}
-      else b.push({name:i.name,unit:i.unit,qty:i.qty,rev:i.lineTotal});
-      return b;
-    },a),[]).sort((a,b)=>b.rev-a.rev)
-  };
-
-  // Save report
-  let reports = load(KEYS_REPORTS);
-  const existIdx = reports.findIndex(r => r.id === report.id);
-  if (existIdx >= 0) reports[existIdx] = report;
-  else reports.push(report);
-  save(KEYS_REPORTS, reports);
-
-  // Render report
-  showDayEndReport(report);
-  renderSavedReports();
-  toast('Day-end report generated');
-}
-
-function showDayEndReport(report) {
-  const varClass = Math.abs(report.variance) < 1 ? 'over' : report.variance > 0 ? 'over' : 'under';
-  const varLabel = Math.abs(report.variance) < 1 ? 'Balanced ✓' : report.variance > 0 ? `Over + ${lkr(report.variance)}` : `Short ${lkr(Math.abs(report.variance))}`;
-
-  let html = `
-    <div class="der-title">${report.shopName}<br>Day End Report — ${report.date}</div>
-    <div class="der-row section-head"><span>SALES SUMMARY</span></div>
-    <div class="der-row"><span>Customers</span><span class="dv">${report.billCount}</span></div>
-    <div class="der-row"><span>Avg sale</span><span class="dv">${report.billCount > 0 ? lkr(report.totalSales / report.billCount) : lkr(0)}</span></div>
-    <div class="der-row total"><span>TOTAL SALES</span><span>${lkr(report.totalSales)}</span></div>
-    <div class="der-row section-head"><span>PAYMENT BREAKDOWN</span></div>
-    <div class="der-row"><span>Cash sales</span><span class="dv">${report.cashCount||0} / ${lkr(report.cashSales)}</span></div>
-    <div class="der-row"><span>Card / Transfer</span><span class="dv">${report.cardCount||0} / ${lkr(report.cardSales)}</span></div>
-    <div class="der-row"><span>Credit</span><span class="dv">${report.creditCount||0} / ${lkr(report.creditSales)}</span></div>
-    <div class="der-row"><span>Discounts given</span><span class="dv">${report.discountCount||0} / − ${lkr(report.discounts)}</span></div>
-    <div class="der-row"><span>Refunds</span><span class="dv">${report.refundCount||0} / − ${lkr(report.refundAmt)}</span></div>
-    <div class="der-row"><span>Items sold</span><span class="dv">${report.itemsSold ? Number(report.itemsSold).toLocaleString('en-LK',{maximumFractionDigits:2}) : '—'}</span></div>
-    <div class="der-row section-head"><span>CASH RECONCILIATION</span></div>
-    <div class="der-row"><span>Opening float</span><span class="dv">${lkr(report.openFloat)}</span></div>
-    <div class="der-row"><span>Cash sales</span><span class="dv">+ ${lkr(report.cashSales)}</span></div>
-    <div class="der-row"><span>Change given</span><span class="dv">− ${lkr(report.changeGiven)}</span></div>
-    <div class="der-row total"><span>Expected in till</span><span>${lkr(report.expectedCash)}</span></div>
-    <div class="der-row"><span>Actual cash counted</span><span class="dv">${lkr(report.actualCash)}</span></div>
-    <div class="der-row ${varClass} total"><span>Variance</span><span>${varLabel}</span></div>`;
-
-  if (report.items && report.items.length) {
-    html += `<div class="der-row section-head"><span>TOP ITEMS SOLD</span></div>`;
-    report.items.slice(0,8).forEach(i => {
-      html += `<div class="der-row"><span>${i.name}</span><span class="dv">${Number(i.qty).toLocaleString('en-LK',{maximumFractionDigits:2})} ${i.unit} — ${lkr(i.rev)}</span></div>`;
-    });
-  }
-
-  if (report.notes) {
-    html += `<div class="der-row section-head"><span>NOTES</span></div>
-    <div class="der-row"><span>${report.notes}</span></div>`;
-  }
-
-  html += `<div class="der-row section-head" style="margin-top:14px;"><span>Generated: ${report.date} ${report.time}</span></div>`;
-
-  const reportEl = document.getElementById('dayEndReport');
-  reportEl.innerHTML = html;
-  reportEl.classList.add('show');
-  reportEl.scrollIntoView({ behavior:'smooth', block:'nearest' });
-}
-
-function printDayEnd() {
-  const reportEl = document.getElementById('dayEndReport');
-  if (!reportEl.classList.contains('show')) {
-    toast('Generate the report first');
-    return;
-  }
-  const w = window.open('', '_blank', 'width=400,height=700');
-  w.document.write(`<html><head><title>Day End Report</title>
-    <style>body{font-family:monospace;font-size:13px;padding:20px;color:#111;}
-    .der-row{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #eee;}
-    .der-row.total{font-weight:700;font-size:14px;}
-    .der-row.section-head{color:#999;font-size:10px;text-transform:uppercase;letter-spacing:0.8px;margin-top:8px;}
-    .der-title{text-align:center;font-weight:700;font-size:15px;margin-bottom:14px;}
-    </style></head><body>${reportEl.innerHTML}</body></html>`);
-  w.document.close();
-  w.print();
-}
-
-function renderSavedReports() {
-  const reports = load(KEYS_REPORTS).reverse();
-  document.getElementById('adSavedCount').textContent = reports.length + ' saved';
-  const el = document.getElementById('savedReportsList');
-  if (!reports.length) {
-    el.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text3);font-size:13px;">No reports yet</div>';
-    return;
-  }
-  el.innerHTML = reports.map(r => `
-    <div class="saved-report-item" onclick="showDayEndReport(${JSON.stringify(r).replace(/</g,'&lt;')})">
-      <div>
-        <div style="font-size:13px;font-weight:600;">${r.date}</div>
-        <div style="font-size:11.5px;color:var(--text3);">${r.billCount} bills · ${lkr(r.totalSales)}</div>
-      </div>
-      <div style="text-align:right;">
-        <div style="font-family:'DM Mono',monospace;font-size:13px;font-weight:600;color:var(--accent);">${lkr(r.totalSales)}</div>
-        <div style="font-size:11px;color:${Math.abs(r.variance)<1?'var(--accent)':r.variance>0?'var(--gold)':'var(--danger)'}">
-          ${Math.abs(r.variance)<1?'Balanced':r.variance>0?'Over':'Short'}
-        </div>
-      </div>
-    </div>`).join('');
-}
-
 </script>
 </body>
 </html>
