@@ -1,1 +1,817 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hardware Shop POS</title>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
 
+:root {
+  --bg:          #f4f2ee;
+  --surface:     #ffffff;
+  --surface2:    #f9f8f5;
+  --border:      #e2dfd8;
+  --text:        #1a1916;
+  --text2:       #6b6860;
+  --text3:       #9e9b94;
+  --accent:      #2d6a4f;
+  --accent-l:    #e8f5ef;
+  --accent-dk:   #1b4332;
+  --warn:        #b45309;
+  --warn-l:      #fef3c7;
+  --danger:      #991b1b;
+  --danger-l:    #fee2e2;
+  --blue:        #1e3a8a;
+  --blue-l:      #eff6ff;
+  --gold:        #92400e;
+  --radius:      10px;
+  --shadow:      0 2px 8px rgba(0,0,0,0.07);
+  --shadow-md:   0 8px 24px rgba(0,0,0,0.10);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── SETUP SCREEN ── */
+#setupScreen {
+  position: fixed; inset: 0;
+  background: var(--text);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 200; padding: 24px;
+}
+.setup-card {
+  background: #242220; border: 1px solid #3a3733;
+  border-radius: 16px; padding: 36px;
+  width: 100%; max-width: 500px;
+  box-shadow: 0 24px 64px rgba(0,0,0,0.5);
+}
+.setup-logo {
+  width: 48px; height: 48px;
+  background: var(--accent); border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 20px;
+}
+.setup-title { font-size: 22px; font-weight: 700; color: #fff; margin-bottom: 6px; }
+.setup-sub   { font-size: 13px; color: rgba(255,255,255,0.45); margin-bottom: 28px; line-height: 1.6; }
+.setup-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: rgba(255,255,255,0.4); margin-bottom: 7px; }
+.setup-input {
+  width: 100%; padding: 11px 14px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 8px; color: #fff;
+  font-family: 'DM Mono', monospace; font-size: 13px;
+  margin-bottom: 18px; transition: border-color 0.15s;
+}
+.setup-input:focus { outline: none; border-color: var(--accent); }
+.setup-hint { font-size: 11.5px; color: rgba(255,255,255,0.3); margin-bottom: 22px; line-height: 1.7; }
+.setup-hint a { color: #52b788; }
+.setup-btn {
+  width: 100%; padding: 13px;
+  background: var(--accent); border: none; border-radius: 8px;
+  color: #fff; font-family: inherit; font-size: 15px; font-weight: 600;
+  cursor: pointer; transition: background 0.15s;
+}
+.setup-btn:hover { background: var(--accent-dk); }
+
+/* ── LOGIN SCREEN ── */
+#loginScreen {
+  position: fixed; inset: 0;
+  background: var(--text);
+  display: none; align-items: center; justify-content: center;
+  z-index: 100; padding: 24px;
+}
+#loginScreen.show { display: flex; }
+.login-card {
+  background: #242220; border: 1px solid #3a3733;
+  border-radius: 16px; padding: 40px;
+  width: 100%; max-width: 420px; text-align: center;
+  box-shadow: 0 24px 64px rgba(0,0,0,0.5);
+}
+.login-logo {
+  width: 56px; height: 56px;
+  background: var(--accent); border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 20px;
+}
+.login-shop   { font-size: 20px; font-weight: 700; color: #fff; margin-bottom: 4px; }
+.login-sub    { font-size: 13px; color: rgba(255,255,255,0.4); margin-bottom: 32px; }
+.login-status { font-size: 13px; color: rgba(255,255,255,0.4); margin-top: 16px; min-height: 20px; }
+
+/* ── MAIN HUB ── */
+#hubScreen { display: none; flex-direction: column; min-height: 100vh; }
+#hubScreen.show { display: flex; }
+
+.hub-topbar {
+  background: var(--surface); border-bottom: 1px solid var(--border);
+  padding: 0 32px; height: 58px;
+  display: flex; align-items: center; justify-content: space-between;
+  position: sticky; top: 0; z-index: 10;
+}
+.hub-brand { display: flex; align-items: center; gap: 12px; }
+.hub-brand-logo {
+  width: 32px; height: 32px; background: var(--accent);
+  border-radius: 8px; display: flex; align-items: center; justify-content: center;
+}
+.hub-shop-name { font-size: 15px; font-weight: 700; color: var(--text); }
+.hub-user {
+  display: flex; align-items: center; gap: 10px;
+  font-size: 13px; color: var(--text2);
+}
+.hub-avatar {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: var(--accent-l); color: var(--accent);
+  font-weight: 700; font-size: 13px;
+  display: flex; align-items: center; justify-content: center;
+}
+.hub-signout {
+  font-size: 12px; color: var(--text3);
+  background: none; border: 1px solid var(--border);
+  border-radius: 6px; padding: 4px 10px;
+  cursor: pointer; font-family: inherit;
+  transition: all 0.15s;
+}
+.hub-signout:hover { color: var(--danger); border-color: var(--danger); }
+
+.hub-body {
+  flex: 1; padding: 40px 32px;
+  display: flex; flex-direction: column; align-items: center;
+}
+
+/* Sync status bar */
+.sync-bar {
+  width: 100%; max-width: 760px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 10px 16px;
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 32px; font-size: 12.5px; color: var(--text2);
+}
+.sync-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--accent); flex-shrink: 0;
+}
+.sync-dot.warn    { background: var(--warn); }
+.sync-dot.offline { background: var(--text3); }
+.sync-dot.syncing { animation: pulse 1s infinite; background: var(--blue); }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+.hub-greeting { font-size: 26px; font-weight: 700; margin-bottom: 6px; text-align: center; }
+.hub-date     { font-size: 14px; color: var(--text3); margin-bottom: 36px; text-align: center; }
+
+/* App tiles */
+.app-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 18px; width: 100%; max-width: 760px;
+}
+.app-tile {
+  background: var(--surface); border: 1.5px solid var(--border);
+  border-radius: 16px; padding: 28px 24px;
+  cursor: pointer; transition: all 0.18s;
+  text-decoration: none; color: inherit;
+  display: flex; flex-direction: column; gap: 12px;
+  box-shadow: var(--shadow);
+  position: relative; overflow: hidden;
+}
+.app-tile:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: var(--shadow-md); }
+.app-tile:active { transform: translateY(0); }
+.app-tile.locked { cursor: default; }
+.app-tile.locked:hover { border-color: var(--warn); }
+.app-icon {
+  width: 48px; height: 48px; border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+}
+.app-icon.green  { background: var(--accent-l); color: var(--accent); }
+.app-icon.blue   { background: var(--blue-l);   color: var(--blue); }
+.app-icon.purple { background: #f5f3ff;          color: #6d28d9; }
+.app-icon.gold   { background: var(--warn-l);    color: var(--gold); }
+.app-name  { font-size: 16px; font-weight: 700; }
+.app-desc  { font-size: 12.5px; color: var(--text2); line-height: 1.5; }
+.app-badge {
+  position: absolute; top: 14px; right: 14px;
+  font-size: 10px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.5px; padding: 3px 8px;
+  border-radius: 20px;
+}
+.app-badge.admin { background: var(--warn-l); color: var(--gold); }
+.app-badge.online { background: var(--accent-l); color: var(--accent); }
+
+/* Admin key modal */
+.overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.45);
+  display: none; align-items: center; justify-content: center;
+  z-index: 300; padding: 20px;
+}
+.overlay.show { display: flex; }
+.key-card {
+  background: var(--surface); border-radius: 16px;
+  padding: 32px; width: 100%; max-width: 360px;
+  box-shadow: var(--shadow-md); text-align: center;
+}
+.key-title  { font-size: 17px; font-weight: 700; margin-bottom: 6px; }
+.key-sub    { font-size: 13px; color: var(--text2); margin-bottom: 22px; }
+.key-input {
+  width: 100%; padding: 14px; text-align: center;
+  font-family: 'DM Mono', monospace; font-size: 28px;
+  font-weight: 700; letter-spacing: 10px;
+  border: 2px solid var(--border); border-radius: var(--radius);
+  color: var(--text); background: var(--surface2);
+  margin-bottom: 8px; transition: border-color 0.15s;
+}
+.key-input:focus { outline: none; border-color: var(--accent); }
+.key-error  { font-size: 12px; color: var(--danger); min-height: 18px; margin-bottom: 14px; }
+.key-btn {
+  width: 100%; padding: 12px; border: none; border-radius: 8px;
+  background: var(--accent); color: #fff;
+  font-family: inherit; font-size: 14px; font-weight: 600;
+  cursor: pointer; margin-bottom: 8px; transition: background 0.15s;
+}
+.key-btn:hover { background: var(--accent-dk); }
+.key-cancel {
+  width: 100%; padding: 10px; border: 1px solid var(--border);
+  border-radius: 8px; background: none; color: var(--text2);
+  font-family: inherit; font-size: 13px; cursor: pointer;
+}
+
+/* Spinner */
+.spinner {
+  width: 20px; height: 20px;
+  border: 2px solid rgba(255,255,255,0.2);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  display: inline-block;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<!-- ══ SETUP SCREEN (first time — enter Client ID) ══ -->
+<div id="setupScreen">
+  <div class="setup-card">
+    <div class="setup-logo">
+      <svg width="26" height="26" fill="none" stroke="#fff" stroke-width="2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    </div>
+    <div class="setup-title">Hardware Shop POS</div>
+    <div class="setup-sub">Welcome! Enter your shop name to get started. Your data will be saved securely to Google Drive using your Google account.</div>
+
+    <div class="setup-label">Shop name</div>
+    <input type="text" class="setup-input" id="setupShopName" placeholder="e.g. Perera Hardware" value="">
+
+    <button class="setup-btn" onclick="saveSetup()">Get started →</button>
+  </div>
+</div>
+
+<!-- ══ LOGIN SCREEN ══ -->
+<div id="loginScreen">
+  <div class="login-card">
+    <div class="login-logo">
+      <svg width="28" height="28" fill="none" stroke="#fff" stroke-width="2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    </div>
+    <div class="login-shop" id="loginShopName">Hardware Shop</div>
+    <div class="login-sub">Point of Sale System</div>
+    <div id="googleSignInBtn"></div>
+    <div class="login-status" id="loginStatus"></div>
+  </div>
+</div>
+
+<!-- ══ MAIN HUB ══ -->
+<div id="hubScreen">
+  <div class="hub-topbar">
+    <div class="hub-brand">
+      <div class="hub-brand-logo">
+        <svg width="18" height="18" fill="none" stroke="#fff" stroke-width="2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      </div>
+      <div class="hub-shop-name" id="hubShopName">Hardware Shop</div>
+    </div>
+    <div class="hub-user">
+      <div class="hub-avatar" id="hubAvatar">?</div>
+      <span id="hubUserName"></span>
+      <button class="hub-signout" onclick="signOut()">Sign out</button>
+      <button class="hub-signout" onclick="showSetup()" style="margin-left:2px;" title="Settings">⚙</button>
+    </div>
+  </div>
+
+  <div class="hub-body">
+    <!-- Sync status -->
+    <div class="sync-bar" style="max-width:760px;">
+      <div class="sync-dot" id="syncDot"></div>
+      <span id="syncStatus">Connected to Google Sheets</span>
+      <span style="margin-left:auto;font-size:11.5px;color:var(--text3)" id="syncDetail"></span>
+    </div>
+
+    <div class="hub-greeting" id="hubGreeting">Good morning</div>
+    <div class="hub-date" id="hubDate"></div>
+
+    <!-- App tiles -->
+    <div class="app-grid">
+
+      <div class="app-tile" onclick="openApp('store-app.html')">
+        <div class="app-icon green">
+          <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 7H4a2 2 0 00-2 2v10a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2z"/><path d="M16 3H8l-2 4h12l-2-4z"/><path d="M12 12v4m-2-2h4"/></svg>
+        </div>
+        <div>
+          <div class="app-name">Store</div>
+          <div class="app-desc">Receive stock, manage inventory, track goods in and out</div>
+        </div>
+        <span class="app-badge online">Live</span>
+      </div>
+
+      <div class="app-tile" onclick="openApp('till-app.html')">
+        <div class="app-icon blue">
+          <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+        </div>
+        <div>
+          <div class="app-name">Till</div>
+          <div class="app-desc">Process sales, accept payments, print receipts</div>
+        </div>
+        <span class="app-badge online">Live</span>
+      </div>
+
+      <div class="app-tile" onclick="openApp('dashboard.html')">
+        <div class="app-icon purple">
+          <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        </div>
+        <div>
+          <div class="app-name">Dashboard</div>
+          <div class="app-desc">Sales reports, stock value, low stock alerts</div>
+        </div>
+        <span class="app-badge online">Live</span>
+      </div>
+
+      <div class="app-tile locked" onclick="openAdminWithKey()">
+        <div class="app-icon gold">
+          <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        </div>
+        <div>
+          <div class="app-name">Admin</div>
+          <div class="app-desc">Products, prices, users, suppliers, settings</div>
+        </div>
+        <span class="app-badge admin">🔑 Key required</span>
+      </div>
+
+    </div>
+
+    <div style="margin-top:28px;font-size:12px;color:var(--text3);text-align:center;" id="sheetLink"></div>
+  </div>
+</div>
+
+<!-- ══ ADMIN KEY MODAL ══ -->
+<div class="overlay" id="keyOverlay">
+  <div class="key-card">
+    <div class="key-title">Admin access</div>
+    <div class="key-sub">Enter the 6-digit admin key to continue</div>
+    <input type="password" class="key-input" id="keyInput" maxlength="6" placeholder="······" oninput="keyInputChanged()" onkeydown="if(event.key==='Enter')verifyKey()">
+    <div class="key-error" id="keyError"></div>
+    <button class="key-btn" onclick="verifyKey()">Unlock Admin</button>
+    <button class="key-cancel" onclick="closeKeyModal()">Cancel</button>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════
+// CONFIG & STATE
+// ══════════════════════════════════════════
+const CFG_KEY    = 'hs_config';       // { clientId, shopName, spreadsheetId, folderId, adminKey }
+const SESSION    = 'hs_session';      // { token, email, name, picture, expires }
+const SHEET_TABS = ['Products','Stock_Lots','Deliveries','Sales','Sale_Items','Stock_Movements','Users','Suppliers','Settings','Day_End_Reports'];
+
+var cfg     = loadCfg();
+var session = loadSession();
+var tokenClient = null;
+
+function loadCfg()     { try { return JSON.parse(localStorage.getItem(CFG_KEY)  || 'null') || {}; } catch(e) { return {}; } }
+function loadSession() { try { return JSON.parse(localStorage.getItem(SESSION)  || 'null') || null; } catch(e) { return null; } }
+function saveCfg()     { localStorage.setItem(CFG_KEY, JSON.stringify(cfg)); }
+function saveSession(s){ localStorage.setItem(SESSION, JSON.stringify(s)); }
+
+// ══════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════
+window.addEventListener('load', function() {
+  updateHubDate();
+  setInterval(updateHubDate, 60000);
+
+  // Check if first-time setup needed
+  // Use hardcoded App Client ID — users only need to enter shop name
+  if (!cfg.clientId || cfg.clientId === 'YOUR_CLIENT_ID_HERE.apps.googleusercontent.com') {
+    cfg.clientId = APP_CLIENT_ID;
+    if (cfg.shopName) saveCfg();
+  }
+  if (!cfg.shopName) {
+    document.getElementById('setupScreen').style.display = 'flex';
+    return;
+  }
+  document.getElementById('setupScreen').style.display = 'none';
+  document.getElementById('setupScreen').style.display = 'none';
+  document.getElementById('loginShopName').textContent = cfg.shopName || 'Hardware Shop';
+  document.getElementById('hubShopName').textContent   = cfg.shopName || 'Hardware Shop';
+
+  // Load Google Identity Services
+  loadGIS();
+});
+
+function loadGIS() {
+  // GIS script loads async — check if ready
+  if (typeof google === 'undefined' || !google.accounts) {
+    setTimeout(loadGIS, 300);
+    return;
+  }
+  initGIS();
+}
+
+function initGIS() {
+  tokenClient = google.accounts.oauth2.initTokenClient({
+    client_id: cfg.clientId,
+    scope: 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets',
+    callback: onTokenReceived,
+  });
+
+  // Check existing session
+  if (session && session.token && session.expires > Date.now()) {
+    showHub();
+    setSyncStatus('connected', 'All data syncing to Google Sheets');
+    return;
+  }
+
+  // Show login
+  google.accounts.id.initialize({
+    client_id:  cfg.clientId,
+    callback:   onGoogleSignIn,
+    auto_select: false,
+  });
+  google.accounts.id.renderButton(
+    document.getElementById('googleSignInBtn'),
+    { theme:'filled_black', size:'large', text:'signin_with', shape:'rectangular', width:280 }
+  );
+  document.getElementById('loginScreen').classList.add('show');
+}
+
+// ══════════════════════════════════════════
+// GOOGLE AUTH
+// ══════════════════════════════════════════
+function onGoogleSignIn(response) {
+  // Decode JWT
+  var parts   = response.credential.split('.');
+  var payload = JSON.parse(atob(parts[1]));
+  setLoginStatus('Getting permissions…');
+
+  // Request access token for Drive + Sheets
+  tokenClient.requestAccessToken({ prompt: '' });
+
+  // Store basic identity
+  session = {
+    email:   payload.email,
+    name:    payload.name,
+    picture: payload.picture,
+    token:   null,
+    expires: 0,
+  };
+}
+
+function onTokenReceived(tokenResponse) {
+  if (tokenResponse.error) {
+    setLoginStatus('Error: ' + tokenResponse.error);
+    return;
+  }
+  session.token   = tokenResponse.access_token;
+  session.expires = Date.now() + (tokenResponse.expires_in * 1000) - 60000;
+  saveSession(session);
+
+  setLoginStatus('Setting up your workspace…');
+
+  // First time or check spreadsheet exists
+  ensureSpreadsheet().then(function() {
+    document.getElementById('loginScreen').classList.remove('show');
+    showHub();
+    setSyncStatus('connected', 'Connected to Google Sheets');
+  }).catch(function(err) {
+    setLoginStatus('Setup error: ' + err.message);
+  });
+}
+
+function setLoginStatus(msg) {
+  document.getElementById('loginStatus').textContent = msg;
+}
+
+// ══════════════════════════════════════════
+// GOOGLE DRIVE / SHEETS SETUP
+// ══════════════════════════════════════════
+function gFetch(url, options) {
+  options = options || {};
+  options.headers = Object.assign({ 'Authorization': 'Bearer ' + session.token }, options.headers || {});
+  return fetch(url, options).then(function(r) { return r.json(); });
+}
+
+async function ensureSpreadsheet() {
+  // If we already have a spreadsheetId stored, verify it exists
+  if (cfg.spreadsheetId) {
+    try {
+      var check = await gFetch('https://sheets.googleapis.com/v4/spreadsheets/' + cfg.spreadsheetId + '?fields=spreadsheetId');
+      if (check.spreadsheetId) return; // exists, good
+    } catch(e) { /* will recreate */ }
+  }
+
+  setSyncStatus('syncing', 'Creating your Google Drive folder…');
+
+  // 1. Create folder
+  var folderName = (cfg.shopName || 'Hardware Shop') + ' POS';
+  var folder = await gFetch('https://www.googleapis.com/drive/v3/files', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name: folderName, mimeType: 'application/vnd.google-apps.folder' })
+  });
+  cfg.folderId = folder.id;
+
+  setSyncStatus('syncing', 'Creating Google Sheets…');
+
+  // 2. Create spreadsheet inside folder
+  var ss = await gFetch('https://sheets.googleapis.com/v4/spreadsheets', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      properties: { title: (cfg.shopName || 'Hardware Shop') + ' Data' },
+      sheets: SHEET_TABS.map(function(t) { return { properties: { title: t } }; })
+    })
+  });
+  cfg.spreadsheetId = ss.spreadsheetId;
+
+  // 3. Move spreadsheet to folder
+  await gFetch(
+    'https://www.googleapis.com/drive/v3/files/' + ss.spreadsheetId + '?addParents=' + cfg.folderId + '&removeParents=root',
+    { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: '{}' }
+  );
+
+  // 4. Write headers to each sheet
+  await writeSheetHeaders();
+
+  saveCfg();
+  setSyncStatus('syncing', 'Initialising Settings sheet…');
+  await writeSettings();
+  await writeSampleData();
+  setSyncStatus('connected', 'Workspace ready');
+}
+
+async function writeSheetHeaders() {
+  var headers = {
+    Products:         [['sku','product_name','category','unit','unit2','unit2_conv','unit3','unit3_conv','barcode','reorder_level','suggest_method','suggest_val','last_selling_price','last_effective_cost','notes']],
+    Stock_Lots:       [['lot_id','delivery_id','goods_in_date','sku','product_name','category','invoice_no','supplier','unit','qty_received','qty_remaining','purchase_cost','extra_share','eff_cost_unit','selling_price','selling_price2','selling_price3','remark','notes','extra_cost_total']],
+    Deliveries:       [['delivery_id','goods_in_date','invoice_no','supplier','extra_cost','notes','total_items','total_cost']],
+    Sales:            [['sale_id','date','time','cashier','subtotal','discount','total','payment','cash_received','change','refunded','refund_reason','refund_date']],
+    Sale_Items:       [['sale_id','sku','product_name','unit','qty','price','line_total']],
+    Stock_Movements:  [['id','date','time','type','sku','product_name','qty','unit','from_loc','to_loc','note']],
+    Users:            [['id','name','role','pin']],
+    Suppliers:        [['id','name','contact','phone','email','notes']],
+    Settings:         [['key','value']],
+    Day_End_Reports:  [['id','date','time','shop_name','bill_count','total_sales','cash_sales','card_sales','credit_sales','discounts','refund_amt','refund_count','open_float','change_given','expected_cash','actual_cash','variance','notes']]
+  };
+
+  var requests = Object.entries(headers).map(function(entry) {
+    return {
+      updateCells: {
+        range: { sheetId: getSheetId(entry[0]), startRowIndex: 0, endRowIndex: 1 },
+        rows: [{ values: entry[1][0].map(function(h) {
+          return { userEnteredValue: { stringValue: h }, userEnteredFormat: { textFormat: { bold: true }, backgroundColor: { red:0.18, green:0.42, blue:0.31 } } };
+        }) }],
+        fields: 'userEnteredValue,userEnteredFormat'
+      }
+    };
+  });
+
+  // Get sheet IDs first
+  var ssData = await gFetch('https://sheets.googleapis.com/v4/spreadsheets/' + cfg.spreadsheetId + '?fields=sheets.properties');
+  cfg.sheetIds = {};
+  (ssData.sheets || []).forEach(function(s) { cfg.sheetIds[s.properties.title] = s.properties.sheetId; });
+  saveCfg();
+
+  await gFetch('https://sheets.googleapis.com/v4/spreadsheets/' + cfg.spreadsheetId + ':batchUpdate', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ requests })
+  });
+}
+
+function getSheetId(tabName) {
+  return (cfg.sheetIds || {})[tabName] || 0;
+}
+
+async function writeSettings() {
+  var values = [
+    ['shop_name',    cfg.shopName || 'Hardware Shop'],
+    ['inflation',    '12'],
+    ['margin',       '25'],
+    ['reorder',      '10'],
+    ['floor_days',   '7'],
+    ['target_days',  '30'],
+    ['lead_time',    '7'],
+    ['admin_key',    ''],
+    ['currency',     'LKR'],
+    ['created',      new Date().toISOString()],
+  ];
+  await gFetch(
+    'https://sheets.googleapis.com/v4/spreadsheets/' + cfg.spreadsheetId + '/values/Settings!A2:B' + (values.length+1) + '?valueInputOption=RAW',
+    { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ values }) }
+  );
+}
+
+// ══════════════════════════════════════════
+// PASS CONTEXT TO APPS
+// ══════════════════════════════════════════
+function openApp(filename) {
+  if (!session || !session.token) { alert('Please sign in first'); return; }
+  // Store context so apps can read it
+  localStorage.setItem('hs_gcontext', JSON.stringify({
+    token:         session.token,
+    tokenExpires:  session.expires,
+    spreadsheetId: cfg.spreadsheetId,
+    shopName:      cfg.shopName,
+    userEmail:     session.email,
+    userName:      session.name,
+  }));
+  window.open(filename, '_blank');
+}
+
+function openAdminWithKey() {
+  document.getElementById('keyInput').value = '';
+  document.getElementById('keyError').textContent = '';
+  document.getElementById('keyOverlay').classList.add('show');
+  setTimeout(function() { document.getElementById('keyInput').focus(); }, 100);
+}
+
+function closeKeyModal() {
+  document.getElementById('keyOverlay').classList.remove('show');
+}
+
+function keyInputChanged() {
+  document.getElementById('keyError').textContent = '';
+}
+
+async function verifyKey() {
+  var entered = document.getElementById('keyInput').value.trim();
+  if (entered.length !== 6) {
+    document.getElementById('keyError').textContent = 'Enter a 6-digit key';
+    return;
+  }
+
+  // Read admin key from Settings sheet
+  var storedKey = cfg.adminKey || '';
+
+  // If no key set yet (first time), allow any 6 digits and set it
+  if (!storedKey) {
+    cfg.adminKey = entered;
+    saveCfg();
+    closeKeyModal();
+    openApp('admin-app.html');
+    return;
+  }
+
+  if (entered === storedKey) {
+    closeKeyModal();
+    openApp('admin-app.html');
+  } else {
+    document.getElementById('keyError').textContent = 'Incorrect key — try again';
+    document.getElementById('keyInput').value = '';
+    document.getElementById('keyInput').focus();
+  }
+}
+
+// ══════════════════════════════════════════
+// SAMPLE DATA (written once on first setup)
+// ══════════════════════════════════════════
+async function writeSampleData() {
+  // Sample products
+  var sampleProducts = [
+    ['SKU-CEM01','Cement','Building','bag','kg','50','','0','','10','days','30','','','50kg per bag'],
+    ['SKU-SAND01','River Sand','Building','kg','','0','','0','','50','days','14','','',''],
+    ['SKU-PIPE01','4 inch PVC Pipe','Plumbing','length','m','3','feet','9.84','','5','days','14','','','3m per length'],
+    ['SKU-NAIL01','3 inch Nail','Fasteners','kg','','0','','0','','5','days','7','','',''],
+    ['SKU-WIRE01','Binding Wire Roll','Building','roll','m','50','','0','','3','days','14','','','50m per roll'],
+  ];
+  var range = 'Products!A2:O' + (sampleProducts.length + 1);
+  await gFetch(
+    'https://sheets.googleapis.com/v4/spreadsheets/' + cfg.spreadsheetId
+    + '/values/' + encodeURIComponent(range) + '?valueInputOption=RAW',
+    { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ values: sampleProducts }) }
+  );
+
+  // Sample suppliers
+  var sampleSuppliers = [
+    ['sup_001','Lanka Cement Ltd','Mr. Perera','011-234-5678','info@lankacement.lk','Main cement supplier'],
+    ['sup_002','Colombo Hardware','Ms. Silva','077-123-4567','','General hardware'],
+  ];
+  var sRange = 'Suppliers!A2:F' + (sampleSuppliers.length + 1);
+  await gFetch(
+    'https://sheets.googleapis.com/v4/spreadsheets/' + cfg.spreadsheetId
+    + '/values/' + encodeURIComponent(sRange) + '?valueInputOption=RAW',
+    { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ values: sampleSuppliers }) }
+  );
+
+  // Sample user (cashier)
+  var sampleUsers = [
+    ['user_001','Cashier','Cashier',''],
+    ['user_002','Manager','Manager','1234'],
+  ];
+  await gFetch(
+    'https://sheets.googleapis.com/v4/spreadsheets/' + cfg.spreadsheetId
+    + '/values/Users!A2:D3?valueInputOption=RAW',
+    { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ values: sampleUsers }) }
+  );
+}
+
+// ══════════════════════════════════════════
+// HUB UI
+// ══════════════════════════════════════════
+function showHub() {
+  document.getElementById('hubScreen').classList.add('show');
+  document.getElementById('loginScreen').classList.remove('show');
+
+  var name = session.name || session.email || '';
+  document.getElementById('hubUserName').textContent = name;
+  document.getElementById('hubShopName').textContent  = cfg.shopName || 'Hardware Shop';
+
+  var initials = name.split(' ').map(function(w) { return w[0]; }).join('').toUpperCase().slice(0,2);
+  document.getElementById('hubAvatar').textContent = initials || '?';
+
+  if (cfg.spreadsheetId) {
+    document.getElementById('sheetLink').innerHTML =
+      '<a href="https://docs.google.com/spreadsheets/d/' + cfg.spreadsheetId + '/edit" target="_blank" style="color:var(--accent);text-decoration:none;">📊 Open Google Sheet ↗</a>'
+      + ' &nbsp;·&nbsp; <span>Folder: ' + (cfg.shopName||'Shop') + ' POS</span>';
+  }
+}
+
+function updateHubDate() {
+  var now  = new Date();
+  var h    = now.getHours();
+  var greet = h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
+  var el   = document.getElementById('hubGreeting');
+  var el2  = document.getElementById('hubDate');
+  if (el)  el.textContent  = greet;
+  if (el2) el2.textContent = now.toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+}
+
+function setSyncStatus(state, msg, detail) {
+  var dot = document.getElementById('syncDot');
+  var txt = document.getElementById('syncStatus');
+  var det = document.getElementById('syncDetail');
+  dot.className = 'sync-dot' + (state !== 'connected' ? ' ' + state : '');
+  if (txt) txt.textContent = msg || '';
+  if (det) det.textContent = detail || '';
+}
+
+function signOut() {
+  if (!confirm('Sign out?')) return;
+  session = null;
+  localStorage.removeItem(SESSION);
+  localStorage.removeItem('hs_gcontext');
+  google.accounts.id.disableAutoSelect();
+  document.getElementById('hubScreen').classList.remove('show');
+  document.getElementById('loginScreen').classList.add('show');
+  // Re-init login button
+  google.accounts.id.renderButton(
+    document.getElementById('googleSignInBtn'),
+    { theme:'filled_black', size:'large', text:'signin_with', shape:'rectangular', width:280 }
+  );
+}
+
+// ══════════════════════════════════════════
+// SETUP
+// ══════════════════════════════════════════
+// ── YOUR GOOGLE OAUTH CLIENT ID ──────────────────────────────────────
+// Register once at console.cloud.google.com → your project → OAuth 2.0
+// Enable Drive API + Sheets API, add your hosting URL as allowed origin
+// Then replace the string below with your actual Client ID
+var APP_CLIENT_ID = '71442167797-qgsvc6vr78im4uvh82kj00e2o8inrd11.apps.googleusercontent.com';
+// ─────────────────────────────────────────────────────────────────────
+
+function saveSetup() {
+  var name = document.getElementById('setupShopName').value.trim();
+  if (!name) { alert('Enter your shop name'); return; }
+  cfg.shopName = name;
+  cfg.clientId = APP_CLIENT_ID;
+  saveCfg();
+  document.getElementById('setupScreen').style.display = 'none';
+  document.getElementById('loginShopName').textContent = name;
+  loadGIS();
+}
+
+function showSetup() {
+  document.getElementById('setupShopName').value = cfg.shopName || '';
+  document.getElementById('setupScreen').style.display = 'flex';
+}
+
+// Escape key closes key modal
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') closeKeyModal();
+});
+</script>
+</body>
+</html>
