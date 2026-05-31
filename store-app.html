@@ -466,6 +466,11 @@ tbody tr:hover .gi-remove-btn { opacity: 1; }
     <div class="topbar-title" id="pageTitle">Goods in</div>
     <div class="topbar-actions">
       <span id="syncIndicator" style="font-size:11.5px;display:flex;align-items:center;gap:5px;"></span>
+      <button onclick="refreshAllData()" id="refreshBtn" title="Sync with Google Sheets"
+        style="display:flex;align-items:center;gap:5px;padding:5px 11px;border:1px solid var(--border);border-radius:6px;background:var(--surface2);font-family:inherit;font-size:12px;color:var(--text2);cursor:pointer;">
+        <svg id="refreshIcon" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+        Refresh
+      </button>
       <span style="font-size:12px;color:var(--text3)" id="topbarDate"></span>
     </div>
   </div>
@@ -1865,6 +1870,48 @@ function renderStockView() {
     : '<tr><td colspan="10" style="color:var(--text3);text-align:center;padding:24px;">No stock data</td></tr>';
 }
 
+function refreshAllData() {
+  if (typeof GS === 'undefined' || !GS.isOnline()) {
+    toast('Offline — using local data');
+    return;
+  }
+  var btn  = document.getElementById('refreshBtn');
+  var icon = document.getElementById('refreshIcon');
+  if (btn)  btn.disabled = true;
+  if (icon) icon.style.animation = 'spin 0.7s linear infinite';
+  updateSyncIndicator('syncing');
+  syncFromSheets().then(function() {
+    // Re-render current page
+    var active = document.querySelector('.page.active');
+    if (active) {
+      var id = active.id.replace('page-', '');
+      if (id === 'goods-in')         { renderGoodsInHistory(); populateSupplierList(); }
+      if (id === 'products')         renderProducts();
+      if (id === 'stock-view')       renderStockView();
+      if (id === 'next-order')       renderNextOrder();
+      if (id === 'waiting-delivery') renderWaitingDelivery();
+    }
+    if (btn)  btn.disabled = false;
+    if (icon) icon.style.animation = '';
+    updateSyncIndicator('connected');
+    toast('Synced with Google Sheets');
+  }).catch(function(e) {
+    console.warn('Refresh error:', e);
+    if (btn)  btn.disabled = false;
+    if (icon) icon.style.animation = '';
+    updateSyncIndicator('offline');
+    toast('Sync failed — check connection');
+  });
+}
+
+// CSS for spin animation (add to head if not present)
+if (!document.getElementById('spinStyle')) {
+  var style = document.createElement('style');
+  style.id = 'spinStyle';
+  style.textContent = '@keyframes spin { to { transform: rotate(360deg); } }';
+  document.head.appendChild(style);
+}
+
 function populateSupplierList() {
   var suppliers = JSON.parse(localStorage.getItem('hs_suppliers') || '[]');
   var dl = document.getElementById('supplierList');
@@ -2351,6 +2398,48 @@ function removeFromWaiting(sku) {
   renderWaitingDelivery();
   updateNavBadges();
   toast('Removed from waiting list');
+}
+
+function refreshAllData() {
+  if (typeof GS === 'undefined' || !GS.isOnline()) {
+    toast('Offline — using local data');
+    return;
+  }
+  var btn  = document.getElementById('refreshBtn');
+  var icon = document.getElementById('refreshIcon');
+  if (btn)  btn.disabled = true;
+  if (icon) icon.style.animation = 'spin 0.7s linear infinite';
+  updateSyncIndicator('syncing');
+  syncFromSheets().then(function() {
+    // Re-render current page
+    var active = document.querySelector('.page.active');
+    if (active) {
+      var id = active.id.replace('page-', '');
+      if (id === 'goods-in')         { renderGoodsInHistory(); populateSupplierList(); }
+      if (id === 'products')         renderProducts();
+      if (id === 'stock-view')       renderStockView();
+      if (id === 'next-order')       renderNextOrder();
+      if (id === 'waiting-delivery') renderWaitingDelivery();
+    }
+    if (btn)  btn.disabled = false;
+    if (icon) icon.style.animation = '';
+    updateSyncIndicator('connected');
+    toast('Synced with Google Sheets');
+  }).catch(function(e) {
+    console.warn('Refresh error:', e);
+    if (btn)  btn.disabled = false;
+    if (icon) icon.style.animation = '';
+    updateSyncIndicator('offline');
+    toast('Sync failed — check connection');
+  });
+}
+
+// CSS for spin animation (add to head if not present)
+if (!document.getElementById('spinStyle')) {
+  var style = document.createElement('style');
+  style.id = 'spinStyle';
+  style.textContent = '@keyframes spin { to { transform: rotate(360deg); } }';
+  document.head.appendChild(style);
 }
 
 function populateSupplierList() {
