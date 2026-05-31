@@ -122,6 +122,7 @@ tbody tr:hover { background: var(--surface2); }
 .badge-gray { background: #f0ede8; color: var(--text2); }
 .badge-blue { background: var(--accent2-light); color: var(--accent2); }
 
+@keyframes spin { to { transform: rotate(360deg); } }
 .mono { font-family: 'DM Mono', monospace; font-size: 13px; }
 
 /* ── KPI CARDS ── */
@@ -234,6 +235,16 @@ tbody tr:hover { background: var(--surface2); }
     <div class="topbar-title" id="pageTitle">Dashboard</div>
     <div class="topbar-right">
       <span id="syncIndicator" style="font-size:11.5px;display:flex;align-items:center;gap:5px;margin-right:8px;"></span>
+      <button onclick="refreshAdminData()" id="refreshBtn" title="Sync with Google Sheets"
+        style="display:flex;align-items:center;gap:5px;padding:5px 11px;border:1px solid var(--border);border-radius:6px;background:var(--surface2);font-family:inherit;font-size:12px;color:var(--text2);cursor:pointer;margin-right:4px;">
+        <svg id="refreshIcon" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="flex-shrink:0"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+        Refresh
+      </button>
+      <button id="openSheetBtn" onclick="openGoogleSheet()" title="Open Google Sheet"
+        style="display:none;align-items:center;gap:5px;padding:5px 11px;border:1px solid var(--border);border-radius:6px;background:var(--surface2);font-family:inherit;font-size:12px;color:var(--accent);cursor:pointer;font-weight:500;">
+        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        Open Sheet ↗
+      </button>
       <span id="topbarDate"></span>
     </div>
   </div>
@@ -948,14 +959,18 @@ function deleteUser(uid) {
   users = users.filter(function(u) { return u.id !== uid; });
   save(KEYS.users, users);
   renderUsers();
-  if (GS) {
-    GS.read('Users').then(function() {
-      var found = GS.findRow('Users', 'id', uid);
-      if (found) GS.deleteRow('Users', found.rowIndex)
-        .catch(function(e) { console.warn('deleteUser Sheets error:', e); });
-    });
+  if (GS && GS.isOnline()) {
+    GS.read('Users').then(function(rows) {
+      var rowIdx = -1;
+      for (var i = 0; i < rows.length; i++) {
+        if (rows[i].id === uid) { rowIdx = i + 1; break; }
+      }
+      if (rowIdx > 0) return GS.deleteRow('Users', rowIdx);
+    }).then(function() { toast('User deleted'); })
+      .catch(function(e) { console.warn('deleteUser Sheets error:', e); toast('User deleted locally'); });
+  } else {
+    toast('User deleted');
   }
-  toast('User deleted');
 }
 
 // ══════════════════════════════════════════
@@ -1113,14 +1128,30 @@ function deleteProduct(sku) {
   products = products.filter(function(p) { return p.sku !== sku; });
   save(KEYS.products, products);
   renderAdminProducts();
-  if (GS) {
-    GS.read('Products').then(function() {
-      var found = GS.findRow('Products', 'sku', sku);
-      if (found) GS.deleteRow('Products', found.rowIndex)
-        .catch(function(e) { console.warn('deleteProduct Sheets error:', e); });
+  if (GS && GS.isOnline()) {
+    updateSyncIndicator('syncing');
+    GS.read('Products').then(function(rows) {
+      // Find the row index from the freshly read data
+      var rowIdx = -1;
+      for (var i = 0; i < rows.length; i++) {
+        if (rows[i].sku === sku) { rowIdx = i + 1; break; }  // 1-based
+      }
+      if (rowIdx > 0) {
+        return GS.deleteRow('Products', rowIdx);
+      } else {
+        console.warn('deleteProduct: row not found in sheet for sku', sku);
+      }
+    }).then(function() {
+      updateSyncIndicator('connected');
+      toast('Product deleted from sheet');
+    }).catch(function(e) {
+      console.warn('deleteProduct Sheets error:', e);
+      updateSyncIndicator('offline');
+      toast('Product deleted locally — sheet sync failed');
     });
+  } else {
+    toast('Product deleted locally (offline)');
   }
-  toast('Product deleted');
 }
 
 function renderAdminProducts() {
@@ -1267,14 +1298,18 @@ function deleteSupplier(sid) {
   suppliers = suppliers.filter(function(s) { return s.id !== sid; });
   save(KEYS.suppliers, suppliers);
   renderSuppliers();
-  if (GS) {
-    GS.read('Suppliers').then(function() {
-      var found = GS.findRow('Suppliers', 'id', sid);
-      if (found) GS.deleteRow('Suppliers', found.rowIndex)
-        .catch(function(e) { console.warn('deleteSupplier Sheets error:', e); });
-    });
+  if (GS && GS.isOnline()) {
+    GS.read('Suppliers').then(function(rows) {
+      var rowIdx = -1;
+      for (var i = 0; i < rows.length; i++) {
+        if (rows[i].id === sid) { rowIdx = i + 1; break; }
+      }
+      if (rowIdx > 0) return GS.deleteRow('Suppliers', rowIdx);
+    }).then(function() { toast('Supplier deleted'); })
+      .catch(function(e) { console.warn('deleteSupplier Sheets error:', e); toast('Supplier deleted locally'); });
+  } else {
+    toast('Supplier deleted');
   }
-  toast('Supplier deleted');
 }
 
 // ══════════════════════════════════════════
@@ -1607,12 +1642,65 @@ function saveAdminKeyToSheets(key) {
   if (GS) GS.writeSetting('admin_key', key);
 }
 
+function refreshAdminData() {
+  if (typeof GS === 'undefined' || !GS.isOnline()) {
+    toast('Offline — using local data');
+    return;
+  }
+  var btn  = document.getElementById('refreshBtn');
+  var icon = document.getElementById('refreshIcon');
+  if (btn)  btn.disabled = true;
+  if (icon) icon.style.animation = 'spin 0.7s linear infinite';
+  updateSyncIndicator('syncing');
+
+  // Re-run full GS init to pull latest data
+  initGS().then(function() {
+    // Re-render current active page
+    var active = document.querySelector('.page.active');
+    if (active) {
+      var id = active.id.replace('page-', '');
+      if (id === 'dashboard')  renderDashboard();
+      if (id === 'users')      renderUsers();
+      if (id === 'products')   renderAdminProducts();
+      if (id === 'suppliers')  renderSuppliers();
+      if (id === 'settings')   loadSettings();
+      if (id === 'dayend')     renderReports();
+    }
+    if (btn)  btn.disabled = false;
+    if (icon) icon.style.animation = '';
+    toast('Synced with Google Sheets');
+  }).catch(function(e) {
+    console.warn('Refresh error:', e);
+    if (btn)  btn.disabled = false;
+    if (icon) icon.style.animation = '';
+    updateSyncIndicator('offline');
+    toast('Sync failed — check connection');
+  });
+}
+
+function openGoogleSheet() {
+  var ctx = JSON.parse(localStorage.getItem('hs_gcontext') || '{}');
+  if (ctx.spreadsheetId) {
+    window.open('https://docs.google.com/spreadsheets/d/' + ctx.spreadsheetId + '/edit', '_blank');
+  } else {
+    alert('No Google Sheet connected yet. Please log in from the Welcome Hub first.');
+  }
+}
+
 function init() {
   var d = new Date();
   var ds = d.toLocaleDateString('en-GB', { weekday:'short', day:'numeric', month:'short', year:'numeric' });
   document.getElementById('topbarDate').textContent  = ds;
   document.getElementById('sidebarDate').textContent = ds;
   document.getElementById('shopNameDisplay').textContent = settings.shopName || 'Hardware Shop';
+
+  // Show Open Sheet button if context available
+  var ctx = JSON.parse(localStorage.getItem('hs_gcontext') || '{}');
+  if (ctx.spreadsheetId) {
+    var btn = document.getElementById('openSheetBtn');
+    if (btn) btn.style.display = 'flex';
+  }
+
   renderDashboard();
   initGS();
 }
