@@ -725,6 +725,57 @@ async function writeSampleData() {
     + '/values/Users!A2:D3?valueInputOption=RAW',
     { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ values: sampleUsers }) }
   );
+
+  // Sample Stock_Lots — one delivery per product, realistic opening stock
+  // Columns: lot_id,delivery_id,goods_in_date,sku,product_name,category,
+  //          invoice_no,supplier,unit,qty_received,qty_remaining,
+  //          purchase_cost,extra_share,eff_cost_unit,
+  //          selling_price,selling_price2,selling_price3,
+  //          remark,notes,extra_cost_total
+  var today = new Date().toISOString().split('T')[0];
+  var sampleLots = [
+    ['LOT-001','DEL-001',today,'SKU-CEM01','Cement','Building','INV-0001','Lanka Cement Ltd','bag','50','50','1100.00','15.38','1115.38','1450.00','29.00','','Opening stock','',2000],
+    ['LOT-002','DEL-001',today,'SKU-SAND01','River Sand','Building','INV-0001','Lanka Cement Ltd','kg','500','500','42.00','1.54','43.54','65.00','','','Opening stock','',2000],
+    ['LOT-003','DEL-002',today,'SKU-PIPE01','4 inch PVC Pipe','Plumbing','INV-0002','Colombo Hardware','length','20','20','820.00','0','820.00','1200.00','400.00','','Opening stock','',0],
+    ['LOT-004','DEL-002',today,'SKU-NAIL01','3 inch Nail','Fasteners','INV-0002','Colombo Hardware','kg','25','25','280.00','0','280.00','420.00','','','Opening stock','',0],
+    ['LOT-005','DEL-002',today,'SKU-WIRE01','Binding Wire Roll','Building','INV-0002','Colombo Hardware','roll','10','10','1850.00','0','1850.00','2500.00','','','Opening stock','',0],
+  ];
+  var lotsRange = 'Stock_Lots!A2:T' + (sampleLots.length + 1);
+  await gFetch(
+    'https://sheets.googleapis.com/v4/spreadsheets/' + cfg.spreadsheetId
+    + '/values/' + encodeURIComponent(lotsRange) + '?valueInputOption=RAW',
+    { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ values: sampleLots }) }
+  );
+
+  // Sample Deliveries — two deliveries that match the lots above
+  var sampleDeliveries = [
+    ['DEL-001',today,'INV-0001','Lanka Cement Ltd','2000.00','Opening stock delivery','2','56770.00'],
+    ['DEL-002',today,'INV-0002','Colombo Hardware','0.00','Opening stock delivery','3','43500.00'],
+  ];
+  await gFetch(
+    'https://sheets.googleapis.com/v4/spreadsheets/' + cfg.spreadsheetId
+    + '/values/Deliveries!A2:H3?valueInputOption=RAW',
+    { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ values: sampleDeliveries }) }
+  );
+
+  // Sample Settings — fully populated
+  var sampleSettings = [
+    ['shop_name',   cfg.shopName || 'Hardware Shop'],
+    ['inflation',   '12'],
+    ['margin',      '25'],
+    ['reorder',     '10'],
+    ['floor_days',  '7'],
+    ['target_days', '30'],
+    ['lead_time',   '7'],
+    ['admin_key',   ''],
+    ['currency',    'LKR'],
+    ['created',     new Date().toISOString()],
+  ];
+  await gFetch(
+    'https://sheets.googleapis.com/v4/spreadsheets/' + cfg.spreadsheetId
+    + '/values/Settings!A2:B' + (sampleSettings.length + 1) + '?valueInputOption=RAW',
+    { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ values: sampleSettings }) }
+  );
 }
 
 // ══════════════════════════════════════════
