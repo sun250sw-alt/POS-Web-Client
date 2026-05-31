@@ -344,6 +344,8 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
   cursor: pointer;
 }
 
+@keyframes spin { to { transform: rotate(360deg); } }
+
 /* ── UNIT SELECTOR ── */
 .unit-select-btn {
   width: 100%;
@@ -1005,6 +1007,11 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
       </div>
       <div style="display:flex;align-items:center;gap:10px;margin-left:auto;">
         <span id="topbarUser" style="font-size:12px;font-weight:600;color:var(--accent);padding:4px 10px;background:var(--accent-light);border-radius:20px;"></span>
+        <button onclick="refreshTillData()" id="refreshBtn" title="Sync with Google Sheets"
+          style="display:flex;align-items:center;gap:5px;padding:5px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text2);font-family:inherit;font-size:11px;cursor:pointer;">
+          <svg id="refreshIcon" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+          Sync
+        </button>
         <button onclick="lockScreen()" style="display:flex;align-items:center;gap:5px;padding:5px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text3);font-family:inherit;font-size:11px;cursor:pointer;" title="Lock till">
           <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
           Lock
@@ -2408,6 +2415,7 @@ async function initGSTill() {
     }
 
     renderStartupBills();
+    renderStartupUsers();  // Re-render with users loaded from Sheets
     renderProducts();
     updateSyncTill('connected');
 
@@ -2475,6 +2483,31 @@ async function pushLastSaleToSheets() {
 // ══════════════════════════════════════════
 // INIT
 // ══════════════════════════════════════════
+function refreshTillData() {
+  if (typeof GS === 'undefined' || !GS.isOnline()) {
+    toast('Offline — using local data');
+    return;
+  }
+  var btn  = document.getElementById('refreshBtn');
+  var icon = document.getElementById('refreshIcon');
+  if (btn)  btn.disabled = true;
+  if (icon) icon.style.animation = 'spin 0.7s linear infinite';
+  updateSyncTill('syncing');
+
+  initGSTill().then(function() {
+    if (btn)  btn.disabled = false;
+    if (icon) icon.style.animation = '';
+    updateSyncTill('connected');
+    toast('Products and stock synced');
+  }).catch(function(e) {
+    console.warn('Till refresh error:', e);
+    if (btn)  btn.disabled = false;
+    if (icon) icon.style.animation = '';
+    updateSyncTill('offline');
+    toast('Sync failed — check connection');
+  });
+}
+
 function init() {
   // Restore user session if page was refreshed
   try {
