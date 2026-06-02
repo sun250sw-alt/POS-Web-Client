@@ -752,14 +752,15 @@ function renderDashboard() {
 
   // KPIs
   var periodLabel = currentPeriod === 'today' ? 'Today' : currentPeriod === '7' ? 'Last 7 days' : currentPeriod === '30' ? 'Last 30 days' : res.from + ' → ' + res.to;
-  document.getElementById('kpi-total').textContent        = lkr(totalSales);
-  document.getElementById('kpi-period-label').textContent = periodLabel;
-  document.getElementById('kpi-count').textContent        = custCount;
-  document.getElementById('kpi-avg').textContent          = 'avg ' + lkr(avgBill);
-  document.getElementById('kpi-cash').textContent         = lkr(cashSales);
-  document.getElementById('kpi-cash-count').textContent   = cashCount + ' transactions';
-  document.getElementById('kpi-refunds').textContent      = lkr(refundAmt);
-  document.getElementById('kpi-refund-count').textContent = refunded.length + ' transactions';
+  function setEl(id, val) { var e = document.getElementById(id); if (e) e.textContent = val; }
+  setEl('kpi-total',        lkr(totalSales));
+  setEl('kpi-period-label', periodLabel);
+  setEl('kpi-count',        custCount);
+  setEl('kpi-avg',          'avg ' + lkr(avgBill));
+  setEl('kpi-cash',         lkr(cashSales));
+  setEl('kpi-cash-count',   cashCount + ' transactions');
+  setEl('kpi-refunds',      lkr(refundAmt));
+  setEl('kpi-refund-count', refunded.length + ' transactions');
 
   // Payment breakdown tiles
   document.getElementById('payBreakdown').innerHTML = [
@@ -799,17 +800,19 @@ function renderDashboard() {
       + '<td class="mono" style="text-align:right;color:var(--accent);font-weight:600">' + lkr(r[1].rev) + '</td></tr>';
   }).join('') : '<tr><td colspan="4" style="text-align:center;color:var(--text3);padding:20px;">No sales in period</td></tr>';
 
-  // Low stock
+  // Low stock — use lot-derived qty for accuracy
   var lowItems = products.filter(function(p) {
-    var s = getStock(p.sku);
-    return ((s.storeQty||0)+(s.floorQty||0)) < (s.reorderLevel||settings.reorder);
+    var qty  = lotQtyMap[p.sku] !== undefined ? lotQtyMap[p.sku]
+             : ((getStock(p.sku).storeQty||0) + (getStock(p.sku).floorQty||0));
+    var need = p.reorderLevel || settings.reorder;
+    return qty < need;
   });
   document.getElementById('lowStockBadge').textContent = lowItems.length;
   var lowTbody = document.getElementById('lowStockTable');
   lowTbody.innerHTML = lowItems.length ? lowItems.map(function(p) {
-    var s = getStock(p.sku);
-    var have = (s.storeQty||0)+(s.floorQty||0);
-    var need = (s.reorderLevel||settings.reorder);
+    var have = lotQtyMap[p.sku] !== undefined ? lotQtyMap[p.sku]
+             : ((getStock(p.sku).storeQty||0) + (getStock(p.sku).floorQty||0));
+    var need = (p.reorderLevel||settings.reorder);
     return '<tr style="background:var(--warn-light)">'
       + '<td style="font-weight:500">' + p.name + '</td>'
       + '<td class="mono" style="text-align:right;color:var(--danger)">' + num(have,2) + ' ' + p.unit + '</td>'
@@ -843,43 +846,57 @@ function renderDashboard() {
 }
 
 function renderSalesChart(salesData, from, to) {
-  var ctx = document.getElementById('salesChart').getContext('2d');
-  if (salesChartInst) salesChartInst.destroy();
+  var canvasEl = document.getElementById('salesChart');
+  if (!canvasEl) return;
 
-  // Build date range labels
-  var labels = [], byDay = {};
-  var d = new Date(from); var end = new Date(to);
-  while (d <= end) {
-    var ds = d.toISOString().split('T')[0];
-    labels.push(ds.slice(5)); byDay[ds] = 0;
-    d.setDate(d.getDate()+1);
+  // Destroy previous chart instance safely
+  if (salesChartInst) { try { salesChartInst.destroy(); } catch(e){} salesChartInst = null; }
+
+  // Build date range — use string arithmetic to avoid timezone issues
+  var labels = [], dateKeys = [], byDay = {};
+  var cur = from;
+  while (cur <= to) {
+    labels.push(cur.slice(5));   // MM-DD display
+    dateKeys.push(cur);
+    byDay[cur] = 0;
+    // Increment date as string safely
+    var d = new Date(cur + 'T12:00:00'); // noon avoids DST shift
+    d.setDate(d.getDate() + 1);
+    cur = d.toISOString().split('T')[0];
+    if (dateKeys.length > 366) break; // safety
   }
-  salesData.forEach(function(s) { if (byDay[s.date] !== undefined) byDay[s.date] += s.total; });
-  var values = labels.map(function(l,i) {
-    var ds = Object.keys(byDay)[i]; return byDay[ds] || 0;
+
+  salesData.forEach(function(s) {
+    if (byDay[s.date] !== undefined) byDay[s.date] += (s.total || 0);
   });
 
-  salesChartInst = new Chart(ctx, {
+  // Map values using dateKeys (correct order, no Object.keys() ambiguity)
+  var values = dateKeys.map(function(dk) { return byDay[dk] || 0; });
+
+  salesChartInst = new Chart(canvasEl.getContext('2d'), {
     type: 'bar',
     data: {
-      labels,
-      datasets: [{ label:'Sales (LKR)', data: values, backgroundColor: '#2d6a4f', borderRadius:4, borderSkipped:false }]
+      labels: labels,
+      datasets: [{ label:'Sales (LKR)', data: values, backgroundColor: '#2d6a4f', borderRadius: 4, borderSkipped: false }]
     },
     options: {
       responsive: true, maintainAspectRatio: false,
       plugins: { legend: { display: false } },
       scales: {
         x: { grid: { display: false }, ticks: { font: { family: 'DM Sans', size: 11 }, color: '#9e9b94', maxTicksLimit: 14 } },
-        y: { grid: { color: '#f0ede8' }, ticks: { font: { family: 'DM Mono', size: 11 }, color: '#9e9b94', callback: function(v) { return 'LKR ' + (v/1000).toFixed(0) + 'K'; } } }
+        y: { grid: { color: '#f0ede8' }, beginAtZero: true,
+             ticks: { font: { family: 'DM Mono', size: 11 }, color: '#9e9b94',
+                      callback: function(v) { return v >= 1000 ? 'LKR ' + (v/1000).toFixed(0) + 'K' : 'LKR ' + v; } } }
       }
     }
   });
 }
 
 function renderPayChart(cash, card, credit) {
-  var ctx = document.getElementById('payChart').getContext('2d');
-  if (payChartInst) payChartInst.destroy();
-  payChartInst = new Chart(ctx, {
+  var canvasEl = document.getElementById('payChart');
+  if (!canvasEl) return;
+  if (payChartInst) { try { payChartInst.destroy(); } catch(e){} payChartInst = null; }
+  payChartInst = new Chart(canvasEl.getContext('2d'), {
     type: 'doughnut',
     data: {
       labels: ['Cash','Card/Transfer','Credit'],
@@ -1472,7 +1489,7 @@ async function initGS() {
     var prods = await GS.read('Products');
     if (prods.length) {
       products = prods.map(function(r) { return {
-        sku: r.sku, name: r.product_name, category: r.category,
+        sku: r.sku, name: (r.product_name || r.name || ''), category: (r.category || ''),
         unit: r.unit, unit2: r.unit2||'', unit2Conv: parseFloat(r.unit2_conv)||0,
         unit3: r.unit3||'', unit3Conv: parseFloat(r.unit3_conv)||0,
         barcode: r.barcode||'', reorderLevel: parseFloat(r.reorder_level)||0,
@@ -1487,7 +1504,7 @@ async function initGS() {
     // Load users
     var usersData = await GS.read('Users');
     if (usersData.length) {
-      users = usersData.map(function(r) { return { id:r.id, name:r.name, role:r.role, pin:r.pin||'' }; });
+      users = usersData.map(function(r) { return { id:(r.id||''), name:(r.name||''), role:(r.role||'Cashier'), pin:(r.pin||'')||'' }; });
       localStorage.setItem('hs_users', JSON.stringify(users));
     }
 
