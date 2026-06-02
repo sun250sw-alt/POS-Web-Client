@@ -2521,7 +2521,7 @@ async function syncFromSheets() {
     var prods = await GS.read('Products');
     if (prods.length) {
       var mapped = prods.map(function(r) { return {
-        sku: r.sku, name: r.product_name, category: r.category,
+        sku: r.sku, name: (r.product_name || r.name || ''), category: (r.category || ''),
         unit: r.unit, unit2: r.unit2, unit2Conv: parseFloat(r.unit2_conv)||0,
         unit3: r.unit3, unit3Conv: parseFloat(r.unit3_conv)||0,
         barcode: r.barcode,
@@ -2542,7 +2542,7 @@ async function syncFromSheets() {
       localStorage.setItem('hs_goodsin', JSON.stringify(lots.map(function(r) { return {
         lotId: r.lot_id, deliveryId: r.delivery_id, date: r.goods_in_date,
         supplier: r.supplier, invoice: r.invoice_no,
-        sku: r.sku, productName: r.product_name, unit: r.unit,
+        sku: r.sku, productName: (r.product_name || r.productName || ''), unit: r.unit,
         qty: parseFloat(r.qty_received)||0,
         qtyRemaining: parseFloat(r.qty_remaining)||0,
         purchaseCost: parseFloat(r.purchase_cost)||0,
