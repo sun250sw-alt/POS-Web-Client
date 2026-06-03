@@ -51,6 +51,16 @@ var GS = (function () {
     return _online && !!_ctx && !!_ctx.token && _ctx.tokenExpires > Date.now();
   }
 
+  // Check if we have a spreadsheet but token is expired
+  function isTokenExpired() {
+    return !!_ctx && !!_ctx.spreadsheetId && (!_ctx.token || _ctx.tokenExpires <= Date.now());
+  }
+
+  // Check if we have a valid spreadsheet connection at all
+  function hasSpreadsheet() {
+    return !!_ctx && !!_ctx.spreadsheetId;
+  }
+
   // ──────────────────────────────────────────────────────────
   // PUBLIC — READ
   // Always fetches live from Sheets, updates cache + headers
@@ -398,6 +408,8 @@ var GS = (function () {
   return {
     init:             init,
     isOnline:         isOnline,
+    isTokenExpired:   isTokenExpired,
+    hasSpreadsheet:   hasSpreadsheet,
     read:             read,
     append:           append,
     update:           update,
