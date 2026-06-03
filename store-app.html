@@ -462,6 +462,11 @@ tbody tr:hover .gi-remove-btn { opacity: 1; }
 
 <!-- ── MAIN ── -->
 <div class="main">
+  <!-- Token expiry warning -->
+  <div id="tokenBanner" style="display:none;background:#fef3c7;border-bottom:1px solid #fcd34d;padding:8px 20px;align-items:center;justify-content:space-between;font-size:12.5px;color:#92400e;">
+    <span>⚠ Google session expired — changes saving locally only.</span>
+    <button onclick="window.open('index.html','_blank')" style="background:#92400e;color:#fff;border:none;border-radius:5px;padding:4px 12px;font-family:inherit;font-size:12px;cursor:pointer;">Re-connect ↗</button>
+  </div>
   <div class="topbar">
     <div class="topbar-title" id="pageTitle">Goods in</div>
     <div class="topbar-actions">
@@ -2499,10 +2504,21 @@ function initGS() {
   GS.init().then(function(connected) {
     updateSyncIndicator(connected ? 'connected' : 'offline');
     if (connected) {
-      // Load fresh data from Sheets into localStorage cache
       syncFromSheets();
+    } else if (typeof GS !== 'undefined' && GS.isTokenExpired && GS.isTokenExpired()) {
+      var b = document.getElementById('tokenBanner');
+      if (b) b.style.display = 'flex';
+      updateSyncIndicator('offline');
     }
   });
+  // Re-check token every 5 minutes
+  setInterval(function() {
+    if (typeof GS !== 'undefined' && GS.isTokenExpired && GS.isTokenExpired()) {
+      var b = document.getElementById('tokenBanner');
+      if (b) b.style.display = 'flex';
+      updateSyncIndicator('offline');
+    }
+  }, 300000);
 }
 
 function updateSyncIndicator(state) {
