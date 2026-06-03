@@ -249,6 +249,12 @@ tbody tr:hover { background: var(--surface2); }
     </div>
   </div>
 
+  <!-- Token expiry warning banner -->
+  <div id="tokenBanner" style="display:none;background:#fef3c7;border-bottom:1px solid #fcd34d;padding:9px 28px;display:none;align-items:center;justify-content:space-between;font-size:13px;color:#92400e;">
+    <span>⚠ Your Google session has expired — changes are saving locally only.</span>
+    <button onclick="reAuthGoogle()" style="background:#92400e;color:#fff;border:none;border-radius:6px;padding:5px 14px;font-family:inherit;font-size:12px;font-weight:600;cursor:pointer;">Re-connect Google ↗</button>
+  </div>
+
   <div class="content">
 
     <!-- ══ DASHBOARD PAGE ══ -->
@@ -1383,7 +1389,11 @@ function saveSettings() {
       toast('Settings saved to Google Sheets');
     }).catch(function(e) {
       console.warn('settings sync error:', e);
+      if (GS && GS.isTokenExpired()) {
+      toast('Session expired — reconnect Google to sync'); checkTokenStatus();
+    } else {
       toast('Settings saved locally (will sync when online)');
+    }
     });
   } else {
     toast('Settings saved');
@@ -1695,6 +1705,28 @@ function refreshAdminData() {
   });
 }
 
+function reAuthGoogle() {
+  // Redirect to hub to re-login — hub will refresh the token and set hs_gcontext
+  var cfg = JSON.parse(localStorage.getItem('hs_config') || '{}');
+  if (cfg.clientId && cfg.clientId !== 'YOUR_CLIENT_ID_HERE.apps.googleusercontent.com') {
+    window.open('index.html', '_blank');
+  } else {
+    alert('Please open the Welcome Hub (index.html) to reconnect your Google account.');
+  }
+}
+
+function checkTokenStatus() {
+  if (!GS) return;
+  var banner = document.getElementById('tokenBanner');
+  if (!banner) return;
+  if (GS.isTokenExpired()) {
+    banner.style.display = 'flex';
+    updateSyncIndicator('offline');
+  } else if (GS.hasSpreadsheet()) {
+    banner.style.display = 'none';
+  }
+}
+
 function openGoogleSheet() {
   var ctx = JSON.parse(localStorage.getItem('hs_gcontext') || '{}');
   if (ctx.spreadsheetId) {
@@ -1719,7 +1751,9 @@ function init() {
   }
 
   renderDashboard();
-  initGS();
+  initGS().then(function() { checkTokenStatus(); });
+  // Re-check token every 5 minutes
+  setInterval(checkTokenStatus, 300000);
 }
 
 init();
