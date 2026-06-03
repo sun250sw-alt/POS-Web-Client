@@ -2485,7 +2485,12 @@ async function pushLastSaleToSheets() {
 // INIT
 // ══════════════════════════════════════════
 function refreshTillData() {
-  if (typeof GS === 'undefined' || !GS.isOnline()) {
+  if (typeof GS === 'undefined') { toast('Offline — using local data'); return; }
+  if (GS.isTokenExpired && GS.isTokenExpired()) {
+    toast('Session expired — open Welcome Hub to reconnect');
+    return;
+  }
+  if (!GS.isOnline()) {
     toast('Offline — using local data');
     return;
   }
