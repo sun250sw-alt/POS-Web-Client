@@ -476,6 +476,11 @@ tbody tr:hover .gi-remove-btn { opacity: 1; }
         <svg id="refreshIcon" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
         Refresh
       </button>
+      <button onclick="clearStoreCacheAndReload()" title="Clear local cache and reload from Sheets"
+        style="display:flex;align-items:center;gap:5px;padding:5px 11px;border:1px solid var(--border);border-radius:6px;background:var(--surface2);font-family:inherit;font-size:12px;color:var(--warn);cursor:pointer;">
+        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+        Clear cache
+      </button>
       <span style="font-size:12px;color:var(--text3)" id="topbarDate"></span>
     </div>
   </div>
@@ -1875,11 +1880,31 @@ function renderStockView() {
     : '<tr><td colspan="10" style="color:var(--text3);text-align:center;padding:24px;">No stock data</td></tr>';
 }
 
+function clearStoreCacheAndReload() {
+  if (!confirm('Clear local cache and reload all data from Google Sheets?')) return;
+  if (GS) GS.clearCache();
+  Object.keys(localStorage).forEach(function(k) {
+    if (k.startsWith('hs_') && k !== 'hs_config' && k !== 'hs_session' && k !== 'hs_sync_queue') {
+      localStorage.removeItem(k);
+    }
+  });
+  products = []; stock = []; goodsIn = []; movements = [];
+  settings = { shopName:'Hardware Shop', inflation:12, margin:25, reorder:10, floorDays:7, targetDays:30, leadTime:7 };
+  toast('Cache cleared — reloading…');
+  refreshAllData();
+}
+
 function refreshAllData() {
-  if (typeof GS === 'undefined' || !GS.isOnline()) {
-    toast('Offline — using local data');
+  if (typeof GS === 'undefined') { toast('Google Sheets not available'); return; }
+  if (GS.isTokenExpired && GS.isTokenExpired()) {
+    toast('Session expired — open Welcome Hub to reconnect');
+    var b = document.getElementById('tokenBanner');
+    if (b) b.style.display = 'flex';
     return;
   }
+  if (!GS.isOnline()) { toast('No internet connection'); return; }
+  // Clear cache to ensure fresh data from Sheets
+  GS.clearCache();
   var btn  = document.getElementById('refreshBtn');
   var icon = document.getElementById('refreshIcon');
   if (btn)  btn.disabled = true;
@@ -2405,11 +2430,31 @@ function removeFromWaiting(sku) {
   toast('Removed from waiting list');
 }
 
+function clearStoreCacheAndReload() {
+  if (!confirm('Clear local cache and reload all data from Google Sheets?')) return;
+  if (GS) GS.clearCache();
+  Object.keys(localStorage).forEach(function(k) {
+    if (k.startsWith('hs_') && k !== 'hs_config' && k !== 'hs_session' && k !== 'hs_sync_queue') {
+      localStorage.removeItem(k);
+    }
+  });
+  products = []; stock = []; goodsIn = []; movements = [];
+  settings = { shopName:'Hardware Shop', inflation:12, margin:25, reorder:10, floorDays:7, targetDays:30, leadTime:7 };
+  toast('Cache cleared — reloading…');
+  refreshAllData();
+}
+
 function refreshAllData() {
-  if (typeof GS === 'undefined' || !GS.isOnline()) {
-    toast('Offline — using local data');
+  if (typeof GS === 'undefined') { toast('Google Sheets not available'); return; }
+  if (GS.isTokenExpired && GS.isTokenExpired()) {
+    toast('Session expired — open Welcome Hub to reconnect');
+    var b = document.getElementById('tokenBanner');
+    if (b) b.style.display = 'flex';
     return;
   }
+  if (!GS.isOnline()) { toast('No internet connection'); return; }
+  // Clear cache to ensure fresh data from Sheets
+  GS.clearCache();
   var btn  = document.getElementById('refreshBtn');
   var icon = document.getElementById('refreshIcon');
   if (btn)  btn.disabled = true;
