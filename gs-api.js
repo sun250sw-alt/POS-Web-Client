@@ -36,19 +36,43 @@ var GS = (function () {
       return Promise.resolve(false);
     }
 
+    // Load offline queue
     try { _queue = JSON.parse(localStorage.getItem(QUEUE_KEY) || '[]'); } catch (e) { _queue = []; }
+
+    // Load cache but mark it as potentially stale
     try { _cache = JSON.parse(localStorage.getItem(CACHE_KEY) || '{}'); } catch (e) { _cache = {}; }
 
     window.addEventListener('online',  function () { _online = true;  flushQueue(); });
     window.addEventListener('offline', function () { _online = false; });
     _online = navigator.onLine;
 
-    // Load sheet IDs (needed for deleteRow)
+    // Check if token is still valid
+    var tokenOk = !!_ctx.token && _ctx.tokenExpires > Date.now();
+    if (!tokenOk) {
+      console.warn('GS: token expired — need re-auth');
+      return Promise.resolve(false);
+    }
+
     return _loadSheetIds().then(function () { return true; }).catch(function () { return false; });
   }
 
+  // Clear all local cache — forces fresh reads from Sheets
+  function clearCache() {
+    _cache = {};
+    _heads = {};
+    try { localStorage.removeItem(CACHE_KEY); } catch(e) {}
+    console.log('GS cache cleared');
+  }
+
   function isOnline() {
-    return _online && !!_ctx && !!_ctx.token && _ctx.tokenExpires > Date.now();
+    // Checks: network is up AND we have a spreadsheet AND token is valid
+    return _online && !!_ctx && !!_ctx.spreadsheetId &&
+           !!_ctx.token && _ctx.tokenExpires > Date.now();
+  }
+
+  function isNetworkUp() {
+    // Just network — ignore token state
+    return _online && !!_ctx && !!_ctx.spreadsheetId;
   }
 
   // Check if we have a spreadsheet but token is expired
@@ -408,8 +432,10 @@ var GS = (function () {
   return {
     init:             init,
     isOnline:         isOnline,
+    isNetworkUp:      isNetworkUp,
     isTokenExpired:   isTokenExpired,
     hasSpreadsheet:   hasSpreadsheet,
+    clearCache:       clearCache,
     read:             read,
     append:           append,
     update:           update,
