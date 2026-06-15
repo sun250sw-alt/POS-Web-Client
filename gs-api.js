@@ -1,14 +1,6 @@
 /**
- * gs-api.js  —  Google Sheets API layer for Hardware Shop POS
+ * gs-api.js  —  Optimized Google Sheets API layer for Hardware Shop POS
  * All apps include this via <script src="gs-api.js">
- *
- * Key design decisions:
- *  - read()   always fetches live from Sheets, caches result locally
- *  - append() writes to Sheets first, updates cache on success
- *  - update() writes to Sheets first, updates cache on success
- *  - deleteRow() uses batchUpdate deleteDimension — actually removes the row
- *  - All writes queue when offline and flush on reconnect
- *  - _heads[tab] always populated from the last read() — ensures correct column order
  */
 
 var GS = (function () {
@@ -24,29 +16,32 @@ var GS = (function () {
   var QUEUE_KEY = 'hs_sync_queue';
   var CACHE_KEY = 'hs_gs_cache';
 
+  // Automatically refresh credential context from shared storage
+  function _reloadContext() {
+    try {
+      var fresh = JSON.parse(localStorage.getItem('hs_gcontext') || 'null');
+      if (fresh) { _ctx = fresh; }
+    } catch (e) {}
+  }
+
   // ──────────────────────────────────────────────────────────
   // PUBLIC — INIT
   // ──────────────────────────────────────────────────────────
   function init() {
-    try { _ctx = JSON.parse(localStorage.getItem('hs_gcontext') || 'null'); }
-    catch (e) { _ctx = null; }
+    _reloadContext();
 
     if (!_ctx || !_ctx.spreadsheetId) {
       console.warn('GS: no context — localStorage-only mode');
       return Promise.resolve(false);
     }
 
-    // Load offline queue
     try { _queue = JSON.parse(localStorage.getItem(QUEUE_KEY) || '[]'); } catch (e) { _queue = []; }
-
-    // Load cache but mark it as potentially stale
     try { _cache = JSON.parse(localStorage.getItem(CACHE_KEY) || '{}'); } catch (e) { _cache = {}; }
 
     window.addEventListener('online',  function () { _online = true;  flushQueue(); });
     window.addEventListener('offline', function () { _online = false; });
     _online = navigator.onLine;
 
-    // Check if token is still valid
     var tokenOk = !!_ctx.token && _ctx.tokenExpires > Date.now();
     if (!tokenOk) {
       console.warn('GS: token expired — need re-auth');
@@ -56,7 +51,6 @@ var GS = (function () {
     return _loadSheetIds().then(function () { return true; }).catch(function () { return false; });
   }
 
-  // Clear all local cache — forces fresh reads from Sheets
   function clearCache() {
     _cache = {};
     _heads = {};
@@ -65,29 +59,27 @@ var GS = (function () {
   }
 
   function isOnline() {
-    // Checks: network is up AND we have a spreadsheet AND token is valid
+    _reloadContext();
     return _online && !!_ctx && !!_ctx.spreadsheetId &&
            !!_ctx.token && _ctx.tokenExpires > Date.now();
   }
 
   function isNetworkUp() {
-    // Just network — ignore token state
     return _online && !!_ctx && !!_ctx.spreadsheetId;
   }
 
-  // Check if we have a spreadsheet but token is expired
   function isTokenExpired() {
+    _reloadContext();
     return !!_ctx && !!_ctx.spreadsheetId && (!_ctx.token || _ctx.tokenExpires <= Date.now());
   }
 
-  // Check if we have a valid spreadsheet connection at all
   function hasSpreadsheet() {
+    _reloadContext();
     return !!_ctx && !!_ctx.spreadsheetId;
   }
 
   // ──────────────────────────────────────────────────────────
   // PUBLIC — READ
-  // Always fetches live from Sheets, updates cache + headers
   // ──────────────────────────────────────────────────────────
   function read(tab) {
     if (!isOnline()) return Promise.resolve(_cache[tab] || []);
@@ -119,7 +111,6 @@ var GS = (function () {
 
   // ──────────────────────────────────────────────────────────
   // PUBLIC — APPEND
-  // Writes to Sheets, then updates local cache
   // ──────────────────────────────────────────────────────────
   function append(tab, rowObj) {
     var op = { type: 'append', tab: tab, rowObj: rowObj, ts: Date.now() };
@@ -151,12 +142,11 @@ var GS = (function () {
   }
 
   // ──────────────────────────────────────────────────────────
-  // PUBLIC — UPDATE  (rowIndex is 1-based, after header)
+  // PUBLIC — UPDATE
   // ──────────────────────────────────────────────────────────
   function update(tab, rowIndex, rowObj) {
     var op = { type: 'update', tab: tab, rowIndex: rowIndex, rowObj: rowObj, ts: Date.now() };
 
-    // Update cache immediately
     if (_cache[tab]) _cache[tab][rowIndex - 1] = rowObj;
     _saveCache();
 
@@ -172,11 +162,55 @@ var GS = (function () {
   }
 
   // ──────────────────────────────────────────────────────────
-  // PUBLIC — DELETE ROW  (rowIndex 1-based after header)
-  // Uses batchUpdate deleteDimension — actually removes the row
+  // PUBLIC — BATCH UPDATE (Saves multiple rows in a single HTTP request)
+  // ──────────────────────────────────────────────────────────
+  function batchUpdateRows(tab, updates) {
+    // updates: Array of { rowIndex: Number (1-based), rowObj: Object }
+    if (_cache[tab]) {
+      updates.forEach(function (u) {
+        _cache[tab][u.rowIndex - 1] = u.rowObj;
+      });
+      _saveCache();
+    }
+
+    if (!isOnline()) {
+      updates.forEach(function (u) {
+        _queue.push({ type: 'update', tab: tab, rowIndex: u.rowIndex, rowObj: u.rowObj, ts: Date.now() });
+      });
+      _saveQueue();
+      return Promise.resolve({ queued: true });
+    }
+
+    return _ensureHeaders(tab).then(function () {
+      var data = updates.map(function (u) {
+        var sheetRow = u.rowIndex + 1;
+        var colCount = (_heads[tab] || Object.keys(u.rowObj)).length;
+        var endCol   = _colLetter(colCount);
+        var range    = encodeURIComponent(tab) + '!A' + sheetRow + ':' + endCol + sheetRow;
+        return {
+          range: range,
+          values: [_rowToArray(tab, u.rowObj)]
+        };
+      });
+
+      return _gFetch(
+        'https://sheets.googleapis.com/v4/spreadsheets/' + _ctx.spreadsheetId + '/values:batchUpdate',
+        {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify({
+            valueInputOption: 'RAW',
+            data: data
+          })
+        }
+      );
+    });
+  }
+
+  // ──────────────────────────────────────────────────────────
+  // PUBLIC — DELETE ROW
   // ──────────────────────────────────────────────────────────
   function deleteRow(tab, rowIndex) {
-    // Remove from cache
     if (_cache[tab]) { _cache[tab].splice(rowIndex - 1, 1); _saveCache(); }
 
     if (!isOnline()) {
@@ -192,9 +226,6 @@ var GS = (function () {
     return _doDeleteRow(tab, rowIndex);
   }
 
-  // ──────────────────────────────────────────────────────────
-  // PUBLIC — FIND ROW  (searches cache, re-reads if not found)
-  // ──────────────────────────────────────────────────────────
   function findRow(tab, field, value) {
     var rows = _cache[tab] || [];
     for (var i = 0; i < rows.length; i++) {
@@ -203,16 +234,10 @@ var GS = (function () {
     return null;
   }
 
-  // ──────────────────────────────────────────────────────────
-  // PUBLIC — UPSERT  (find + update or append)
-  // Reads live from sheet first to ensure cache is current
-  // ──────────────────────────────────────────────────────────
   function upsert(tab, keyField, rowObj) {
     if (!isOnline()) {
-      // Offline: just append (dedup on next sync)
       return append(tab, rowObj);
     }
-    // Re-read to get fresh data + headers before upsert
     return read(tab).then(function () {
       var found = findRow(tab, keyField, rowObj[keyField]);
       if (found) return update(tab, found.rowIndex, rowObj);
@@ -220,9 +245,6 @@ var GS = (function () {
     });
   }
 
-  // ──────────────────────────────────────────────────────────
-  // PUBLIC — UPDATE FIELD  (single cell by key lookup)
-  // ──────────────────────────────────────────────────────────
   function updateField(tab, keyField, keyValue, field, value) {
     return read(tab).then(function () {
       var found = findRow(tab, keyField, keyValue);
@@ -233,9 +255,6 @@ var GS = (function () {
     });
   }
 
-  // ──────────────────────────────────────────────────────────
-  // PUBLIC — SETTINGS HELPERS
-  // ──────────────────────────────────────────────────────────
   function readSettings() {
     return read('Settings').then(function (rows) {
       var out = {};
@@ -252,43 +271,44 @@ var GS = (function () {
     });
   }
 
-  // ──────────────────────────────────────────────────────────
-  // PUBLIC — FLUSH OFFLINE QUEUE
-  // ──────────────────────────────────────────────────────────
+  // Preserves strict write-order sequentially, stopping on first error
   function flushQueue() {
     if (!isOnline() || _queue.length === 0) return Promise.resolve();
-    var ops = _queue.slice();
-    _queue = [];
-    _saveQueue();
 
-    var chain = Promise.resolve();
-    ops.forEach(function (op) {
-      chain = chain.then(function () {
+    var index = 0;
+    function processNext() {
+      if (index >= _queue.length) {
+        _queue = [];
+        _saveQueue();
+        return Promise.resolve();
+      }
+
+      var op = _queue[index];
+      return Promise.resolve().then(function () {
         if (op.type === 'append') return _ensureHeaders(op.tab).then(function () { return _doAppend(op.tab, op.rowObj); });
         if (op.type === 'update') return _ensureHeaders(op.tab).then(function () { return _doUpdate(op.tab, op.rowIndex, op.rowObj); });
         if (op.type === 'delete') return _doDeleteRow(op.tab, op.rowIndex);
         return Promise.resolve();
+      }).then(function () {
+        index++;
+        return processNext();
       }).catch(function (err) {
-        _queue.push(op);
+        console.warn('Queue flush suspended at operation ' + index + ' due to error:', err);
+        _queue = _queue.slice(index);
         _saveQueue();
-        console.warn('GS.flushQueue op failed, re-queued:', err);
+        throw err;
       });
-    });
-    return chain;
+    }
+
+    return processNext();
   }
 
-  // ──────────────────────────────────────────────────────────
-  // PUBLIC — CONTEXT ACCESSORS
-  // ──────────────────────────────────────────────────────────
   function getSpreadsheetId() { return _ctx ? _ctx.spreadsheetId : null; }
   function getShopName()      { return _ctx ? _ctx.shopName : 'Hardware Shop'; }
   function getUserName()      { return _ctx ? _ctx.userName : ''; }
   function getUserEmail()     { return _ctx ? _ctx.userEmail : ''; }
   function getToken()         { return _ctx ? _ctx.token : null; }
 
-  // ──────────────────────────────────────────────────────────
-  // PRIVATE — LOAD SHEET IDs (needed for deleteRow)
-  // ──────────────────────────────────────────────────────────
   function _loadSheetIds() {
     if (!isOnline()) return Promise.resolve();
     return _gFetch(
@@ -301,12 +321,8 @@ var GS = (function () {
     });
   }
 
-  // ──────────────────────────────────────────────────────────
-  // PRIVATE — ENSURE HEADERS LOADED FOR TAB
-  // ──────────────────────────────────────────────────────────
   function _ensureHeaders(tab) {
     if (_heads[tab] && _heads[tab].length) return Promise.resolve();
-    // Read the header row only
     return _gFetch(
       'https://sheets.googleapis.com/v4/spreadsheets/' + _ctx.spreadsheetId
       + '/values/' + encodeURIComponent(tab) + '!1:1'
@@ -316,9 +332,6 @@ var GS = (function () {
     }).catch(function () {});
   }
 
-  // ──────────────────────────────────────────────────────────
-  // PRIVATE — DO APPEND
-  // ──────────────────────────────────────────────────────────
   function _doAppend(tab, rowObj) {
     var values = [_rowToArray(tab, rowObj)];
     return _gFetch(
@@ -332,11 +345,8 @@ var GS = (function () {
     );
   }
 
-  // ──────────────────────────────────────────────────────────
-  // PRIVATE — DO UPDATE  (rowIndex 1-based after header → sheet row = rowIndex+1)
-  // ──────────────────────────────────────────────────────────
   function _doUpdate(tab, rowIndex, rowObj) {
-    var sheetRow = rowIndex + 1; // header is row 1, data starts row 2
+    var sheetRow = rowIndex + 1;
     var colCount = (_heads[tab] || Object.keys(rowObj)).length;
     var endCol   = _colLetter(colCount);
     var range    = encodeURIComponent(tab) + '!A' + sheetRow + ':' + endCol + sheetRow;
@@ -352,13 +362,10 @@ var GS = (function () {
     );
   }
 
-  // ──────────────────────────────────────────────────────────
-  // PRIVATE — DO DELETE ROW via batchUpdate
-  // ──────────────────────────────────────────────────────────
   function _doDeleteRow(tab, rowIndex) {
     var sheetId = _sheetIds[tab];
     if (sheetId === undefined) return Promise.resolve();
-    var startIndex = rowIndex; // 0-based: header=0, first data row=1
+    var startIndex = rowIndex;
     return _gFetch(
       'https://sheets.googleapis.com/v4/spreadsheets/' + _ctx.spreadsheetId + ':batchUpdate',
       {
@@ -370,7 +377,7 @@ var GS = (function () {
               range: {
                 sheetId:    sheetId,
                 dimension:  'ROWS',
-                startIndex: startIndex,     // row to delete (0-based)
+                startIndex: startIndex,
                 endIndex:   startIndex + 1
               }
             }
@@ -380,13 +387,9 @@ var GS = (function () {
     );
   }
 
-  // ──────────────────────────────────────────────────────────
-  // PRIVATE — ROW OBJECT → ARRAY  (ordered by sheet headers)
-  // ──────────────────────────────────────────────────────────
   function _rowToArray(tab, rowObj) {
     var headers = _heads[tab];
     if (!headers || !headers.length) {
-      // No headers loaded — use object key order (fallback only)
       return Object.keys(rowObj).map(function (k) { return rowObj[k] !== undefined ? String(rowObj[k]) : ''; });
     }
     return headers.map(function (h) {
@@ -395,9 +398,6 @@ var GS = (function () {
     });
   }
 
-  // ──────────────────────────────────────────────────────────
-  // PRIVATE — COLUMN LETTER  (1→A, 26→Z, 27→AA …)
-  // ──────────────────────────────────────────────────────────
   function _colLetter(n) {
     var s = '';
     while (n > 0) {
@@ -408,10 +408,8 @@ var GS = (function () {
     return s || 'A';
   }
 
-  // ──────────────────────────────────────────────────────────
-  // PRIVATE — AUTHENTICATED FETCH
-  // ──────────────────────────────────────────────────────────
   function _gFetch(url, options) {
+    _reloadContext();
     options = options || {};
     options.headers = Object.assign(
       { 'Authorization': 'Bearer ' + (_ctx ? _ctx.token : '') },
@@ -426,9 +424,6 @@ var GS = (function () {
   function _saveCache() { try { localStorage.setItem(CACHE_KEY, JSON.stringify(_cache)); } catch (e) {} }
   function _saveQueue() { try { localStorage.setItem(QUEUE_KEY, JSON.stringify(_queue)); } catch (e) {} }
 
-  // ──────────────────────────────────────────────────────────
-  // EXPOSE PUBLIC API
-  // ──────────────────────────────────────────────────────────
   return {
     init:             init,
     isOnline:         isOnline,
@@ -439,6 +434,7 @@ var GS = (function () {
     read:             read,
     append:           append,
     update:           update,
+    batchUpdateRows:  batchUpdateRows,
     deleteRow:        deleteRow,
     findRow:          findRow,
     upsert:           upsert,
