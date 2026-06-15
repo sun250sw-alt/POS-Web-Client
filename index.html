@@ -40,94 +40,6 @@ body {
   flex-direction: column;
 }
 
-/* ── DIAGNOSTIC SCREEN ── */
-#diagScreen {
-  position: fixed; inset: 0;
-  background: #0f0e0c;
-  display: none; flex-direction: column;
-  align-items: center; justify-content: flex-start;
-  z-index: 250; padding: 32px 20px;
-  overflow-y: auto;
-}
-#diagScreen.show { display: flex; }
-.diag-card {
-  background: #1a1917; border: 1px solid #2e2c29;
-  border-radius: 14px; padding: 28px 32px;
-  width: 100%; max-width: 640px;
-}
-.diag-title {
-  font-size: 18px; font-weight: 700; color: #fff;
-  margin-bottom: 4px; display: flex; align-items: center; gap: 10px;
-}
-.diag-sub { font-size: 13px; color: rgba(255,255,255,0.4); margin-bottom: 24px; }
-.diag-step {
-  display: flex; align-items: flex-start; gap: 12px;
-  padding: 11px 0; border-bottom: 1px solid #2e2c29;
-}
-.diag-step:last-child { border-bottom: none; }
-.diag-icon {
-  width: 22px; height: 22px; border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 12px; flex-shrink: 0; margin-top: 1px;
-  font-weight: 700;
-}
-.diag-icon.pending { background: #2e2c29; color: #6b6860; }
-.diag-icon.running { background: #1e3a8a; color: #93c5fd; animation: pulse 1s infinite; }
-.diag-icon.pass    { background: #1b4332; color: #52b788; }
-.diag-icon.fail    { background: #7f1d1d; color: #fca5a5; }
-.diag-icon.warn    { background: #78350f; color: #fcd34d; }
-.diag-step-info { flex: 1; }
-.diag-step-label { font-size: 13.5px; font-weight: 500; color: rgba(255,255,255,0.85); }
-.diag-step-detail { font-size: 12px; color: rgba(255,255,255,0.35); margin-top: 3px; }
-.diag-step-detail.error { color: #fca5a5; }
-.diag-step-detail.warn  { color: #fcd34d; }
-.diag-progress {
-  height: 3px; background: #2e2c29; border-radius: 2px;
-  margin: 18px 0;
-}
-.diag-progress-bar {
-  height: 100%; background: var(--accent); border-radius: 2px;
-  transition: width 0.4s ease; width: 0%;
-}
-.diag-actions { display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap; }
-.diag-btn {
-  padding: 10px 20px; border-radius: 8px; font-family: inherit;
-  font-size: 13.5px; font-weight: 600; cursor: pointer; border: none;
-  transition: all 0.15s;
-}
-.diag-btn-primary { background: var(--accent); color: #fff; }
-.diag-btn-primary:hover { background: var(--accent-dk); }
-.diag-btn-secondary { background: #2e2c29; color: rgba(255,255,255,0.7); }
-.diag-btn-secondary:hover { background: #3a3733; }
-
-.log-panel {
-  margin-top: 16px; background: #0a0908;
-  border: 1px solid #2e2c29; border-radius: 8px;
-  padding: 14px; display: none;
-}
-.log-panel.show { display: block; }
-.log-header {
-  font-size: 11px; font-weight: 600; text-transform: uppercase;
-  letter-spacing: 0.5px; color: rgba(255,255,255,0.3);
-  margin-bottom: 10px; display: flex; justify-content: space-between;
-  align-items: center;
-}
-.log-copy-btn {
-  background: #2e2c29; border: none; border-radius: 5px;
-  color: rgba(255,255,255,0.5); font-family: inherit; font-size: 11px;
-  padding: 3px 10px; cursor: pointer;
-}
-.log-copy-btn:hover { background: #3a3733; color: #fff; }
-.log-entries {
-  font-family: 'DM Mono', monospace; font-size: 11.5px;
-  color: rgba(255,255,255,0.6); line-height: 1.7;
-  max-height: 220px; overflow-y: auto;
-}
-.log-entry.err  { color: #fca5a5; }
-.log-entry.warn { color: #fcd34d; }
-.log-entry.ok   { color: #52b788; }
-.log-entry.info { color: rgba(255,255,255,0.5); }
-
 /* ── SETUP SCREEN ── */
 #setupScreen {
   position: fixed; inset: 0;
@@ -187,7 +99,7 @@ body {
   display: flex; align-items: center; justify-content: center;
   margin: 0 auto 20px;
 }
-.login-shop   { font-size: 20px; font-weight: 700; color: #fff; margin-bottom: 4px; }
+.login-shop" { font-size: 20px; font-weight: 700; color: #fff; margin-bottom: 4px; }
 .login-sub    { font-size: 13px; color: rgba(255,255,255,0.4); margin-bottom: 32px; }
 .login-status { font-size: 13px; color: rgba(255,255,255,0.4); margin-top: 16px; min-height: 20px; }
 
@@ -327,33 +239,8 @@ body {
 </head>
 <body>
 
-<!-- ══ DIAGNOSTIC SCREEN ══ -->
-<div id="diagScreen">
-  <div class="diag-card">
-    <div class="diag-title">
-      <svg width="22" height="22" fill="none" stroke="var(--accent)" stroke-width="2" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-      System check
-    </div>
-    <div class="diag-sub">Checking all connections before launching…</div>
-    <div class="diag-progress"><div class="diag-progress-bar" id="diagProgress"></div></div>
-    <div id="diagSteps"></div>
-    <div class="diag-actions" id="diagActions" style="display:none;">
-      <button class="diag-btn diag-btn-primary" id="diagContinueBtn" onclick="diagContinue()" style="display:none;">Continue →</button>
-      <button class="diag-btn diag-btn-secondary" onclick="toggleDiagLog()">View log</button>
-      <button class="diag-btn diag-btn-secondary" onclick="runDiagnostics()">Re-run checks</button>
-    </div>
-    <div class="log-panel" id="diagLogPanel">
-      <div class="log-header">
-        Diagnostic log
-        <button class="log-copy-btn" onclick="copyDiagLog()">Copy to clipboard</button>
-      </div>
-      <div class="log-entries" id="diagLogEntries"></div>
-    </div>
-  </div>
-</div>
-
 <!-- ══ SETUP SCREEN ══ -->
-<div id="setupScreen">
+<div id="setupScreen" style="display:none;">
   <div class="setup-card">
     <div class="setup-logo">
       <svg width="26" height="26" fill="none" stroke="#fff" stroke-width="2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
@@ -439,7 +326,7 @@ body {
         <span class="app-badge online">Live</span>
       </div>
 
-      <div class="app-tile locked" onclick="openApp('admin-app.html')">
+      <div class="app-tile locked" onclick="openAdminWithKey()">
         <div class="app-icon gold">
           <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
         </div>
@@ -467,224 +354,6 @@ body {
 </div>
 
 <script>
-var diagLog = [];
-var diagResults = {};
-
-var DIAG_STEPS = [
-  { id: 'config',    label: 'App configuration',          detail: 'Checking Client ID and shop name' },
-  { id: 'network',   label: 'Internet connection',         detail: 'Verifying network is reachable' },
-  { id: 'google',    label: 'Google Identity Services',    detail: 'Checking Google login library loaded' },
-  { id: 'session',   label: 'Google session / token',      detail: 'Checking saved login token' },
-  { id: 'drive',     label: 'Google Drive access',         detail: 'Testing Drive API connection' },
-  { id: 'sheet',     label: 'Google Sheets access',        detail: 'Verifying spreadsheet exists and readable' },
-  { id: 'tabs',      label: 'Sheet tabs present',          detail: 'Checking all required tabs exist' },
-  { id: 'headers',   label: 'Sheet headers correct',       detail: 'Validating column headers match expected' },
-];
-
-function diagAddLog(level, msg) {
-  var ts = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-  diagLog.push({ level: level, msg: msg, ts: ts });
-  var el = document.getElementById('diagLogEntries');
-  if (el) {
-    var div = document.createElement('div');
-    div.className = 'log-entry ' + (level === 'error' ? 'err' : level === 'warn' ? 'warn' : level === 'ok' ? 'ok' : 'info');
-    div.textContent = '[' + ts + '] ' + (level === 'error' ? '✗' : level === 'ok' ? '✓' : level === 'warn' ? '⚠' : 'i') + ' ' + msg;
-    el.appendChild(div);
-    el.scrollTop = el.scrollHeight;
-  }
-}
-
-function setDiagStep(id, status, detail) {
-  diagResults[id] = status;
-  var iconEl   = document.getElementById('diag-icon-' + id);
-  var detailEl = document.getElementById('diag-detail-' + id);
-  if (iconEl) {
-    iconEl.className = 'diag-icon ' + status;
-    iconEl.textContent = status === 'pass' ? '✓' : status === 'fail' ? '✗' : status === 'warn' ? '!' : status === 'running' ? '…' : '·';
-  }
-  if (detailEl && detail) {
-    detailEl.textContent = detail;
-    detailEl.className = 'diag-step-detail' + (status === 'fail' ? ' error' : status === 'warn' ? ' warn' : '');
-  }
-  var done   = Object.values(diagResults).filter(function(v) { return v !== 'pending' && v !== 'running'; }).length;
-  var pct    = Math.round((done / DIAG_STEPS.length) * 100);
-  var bar    = document.getElementById('diagProgress');
-  if (bar) bar.style.width = pct + '%';
-}
-
-function renderDiagSteps() {
-  var container = document.getElementById('diagSteps');
-  container.innerHTML = DIAG_STEPS.map(function(step) {
-    return '<div class="diag-step" id="diag-step-' + step.id + '">'
-      + '<div class="diag-icon pending" id="diag-icon-' + step.id + '">·</div>'
-      + '<div class="diag-step-info">'
-      +   '<div class="diag-step-label">' + step.label + '</div>'
-      +   '<div class="diag-step-detail" id="diag-detail-' + step.id + '">' + step.detail + '</div>'
-      + '</div></div>';
-  }).join('');
-}
-
-async function runDiagnostics() {
-  diagLog = [];
-  diagResults = {};
-  document.getElementById('diagActions').style.display = 'none';
-  document.getElementById('diagContinueBtn').style.display = 'none';
-  document.getElementById('diagLogEntries').innerHTML = '';
-  document.getElementById('diagProgress').style.width = '0%';
-  renderDiagSteps();
-  diagAddLog('info', 'Starting diagnostic checks…');
-  diagAddLog('info', 'User agent: ' + navigator.userAgent.slice(0, 80));
-
-  var allPass = true;
-  var warnings = 0;
-
-  // step 1
-  setDiagStep('config', 'running', 'Checking…');
-  await sleep(200);
-  var cfg = loadCfg();
-  if (!cfg.clientId || cfg.clientId === 'YOUR_CLIENT_ID_HERE.apps.googleusercontent.com') {
-    setDiagStep('config', 'fail', 'Client ID not set — complete setup first');
-    diagAddLog('error', 'Client ID placeholder found. Enter Client ID.');
-    allPass = false;
-  } else {
-    setDiagStep('config', 'pass', 'Shop: ' + (cfg.shopName || 'Not Set'));
-    diagAddLog('ok', 'Config OK');
-  }
-
-  // step 2
-  setDiagStep('network', 'running', 'Pinging Google…');
-  try {
-    var netTest = await fetch('https://www.googleapis.com/discovery/v1/apis?fields=kind', { signal: AbortSignal.timeout(5000) });
-    if (netTest.ok) {
-      setDiagStep('network', 'pass', 'Google APIs accessible');
-      diagAddLog('ok', 'Network OK');
-    } else {
-      setDiagStep('network', 'warn', 'Google APIs returned status ' + netTest.status);
-      warnings++;
-    }
-  } catch(e) {
-    setDiagStep('network', 'fail', 'Connection failed: ' + e.message);
-    allPass = false;
-  }
-
-  // step 3
-  setDiagStep('google', 'running', 'Checking library…');
-  await sleep(100);
-  if (typeof google !== 'undefined' && google.accounts) {
-    setDiagStep('google', 'pass', 'Google Identity Services loaded');
-  } else {
-    setDiagStep('google', 'fail', 'GIS library not loaded. Check connection/ad-blockers.');
-    allPass = false;
-  }
-
-  // step 4
-  setDiagStep('session', 'running', 'Checking saved session…');
-  var session = loadSession();
-  if (!session || !session.token) {
-    setDiagStep('session', 'warn', 'Not signed in');
-    warnings++;
-  } else if (session.expires <= Date.now()) {
-    setDiagStep('session', 'warn', 'Session expired');
-    warnings++;
-  } else {
-    setDiagStep('session', 'pass', 'Logged in as ' + session.email);
-  }
-
-  var hasToken = session && session.token && session.expires > Date.now();
-
-  // step 5
-  setDiagStep('drive', 'running', 'Testing Drive API…');
-  if (!hasToken) {
-    setDiagStep('drive', 'warn', 'Skipped — no valid token');
-    warnings++;
-  } else {
-    try {
-      var driveTest = await fetch('https://www.googleapis.com/drive/v3/about?fields=user', {
-        headers: { 'Authorization': 'Bearer ' + session.token },
-        signal: AbortSignal.timeout(5000)
-      });
-      var driveData = await driveTest.json();
-      if (driveData.user) {
-        setDiagStep('drive', 'pass', 'Drive accessible');
-      } else {
-        setDiagStep('drive', 'fail', 'Drive API error: ' + (driveData.error ? driveData.error.message : 'Unknown'));
-        allPass = false;
-      }
-    } catch(e) {
-      setDiagStep('drive', 'fail', e.message);
-      allPass = false;
-    }
-  }
-
-  // step 6
-  setDiagStep('sheet', 'running', 'Checking spreadsheet…');
-  if (!hasToken || !cfg.spreadsheetId) {
-    setDiagStep('sheet', 'warn', 'No sheet metadata — login will create one');
-    setDiagStep('tabs', 'warn', 'Skipped');
-    setDiagStep('headers', 'warn', 'Skipped');
-    warnings += 3;
-  } else {
-    try {
-      var sheetTest = await fetch(
-        'https://sheets.googleapis.com/v4/spreadsheets/' + cfg.spreadsheetId + '?fields=spreadsheetId,properties.title,sheets.properties.title',
-        { headers: { 'Authorization': 'Bearer ' + session.token }, signal: AbortSignal.timeout(5000) }
-      );
-      var sheetData = await sheetTest.json();
-      if (sheetData.spreadsheetId) {
-        setDiagStep('sheet', 'pass', 'Spreadsheet OK — "' + sheetData.properties.title + '"');
-
-        // step 7
-        setDiagStep('tabs', 'running', 'Checking tabs…');
-        var REQUIRED_TABS = ['Products','Stock_Lots','Deliveries','Sales','Sale_Items','Stock_Movements','Users','Suppliers','Settings','Day_End_Reports'];
-        var existingTabs  = (sheetData.sheets || []).map(function(s) { return s.properties.title; });
-        var missingTabs   = REQUIRED_TABS.filter(function(t) { return !existingTabs.includes(t); });
-        if (missingTabs.length > 0) {
-          setDiagStep('tabs', 'fail', 'Missing tabs: ' + missingTabs.join(', '));
-          allPass = false;
-        } else {
-          setDiagStep('tabs', 'pass', 'All required tabs present');
-        }
-
-        // step 8
-        setDiagStep('headers', 'running', 'Checking headers…');
-        setDiagStep('headers', 'pass', 'Headers checked & validated');
-
-      } else {
-        setDiagStep('sheet', 'fail', 'Spreadsheet not found');
-        allPass = false;
-      }
-    } catch(e) {
-      setDiagStep('sheet', 'fail', e.message);
-      allPass = false;
-    }
-  }
-
-  document.getElementById('diagActions').style.display = 'flex';
-  var continueBtn = document.getElementById('diagContinueBtn');
-  if (allPass || warnings > 0) {
-    continueBtn.style.display = 'block';
-    continueBtn.textContent = allPass ? 'All good — continue →' : 'Continue with warnings →';
-  } else {
-    continueBtn.style.display = 'none';
-  }
-}
-
-function diagContinue() {
-  document.getElementById('diagScreen').classList.remove('show');
-  launchApp();
-}
-
-function toggleDiagLog() {
-  document.getElementById('diagLogPanel').classList.toggle('show');
-}
-
-function copyDiagLog() {
-  var text = diagLog.map(function(e) { return '[' + e.ts + '] [' + e.level.toUpperCase() + '] ' + e.msg; }).join('\n');
-  navigator.clipboard.writeText(text).then(function() { alert('Copied!'); });
-}
-
-function sleep(ms) { return new Promise(function(r) { setTimeout(r, ms); }); }
-
 var CFG_KEY = 'hs_config';
 var SESSION = 'hs_session';
 var SHEET_TABS = ['Products','Stock_Lots','Deliveries','Sales','Sale_Items','Stock_Movements','Users','Suppliers','Settings','Day_End_Reports'];
@@ -701,9 +370,7 @@ function saveSession(s){ localStorage.setItem(SESSION, JSON.stringify(s)); }
 window.addEventListener('load', function() {
   updateHubDate();
   setInterval(updateHubDate, 60000);
-  document.getElementById('diagScreen').classList.add('show');
-  renderDiagSteps();
-  setTimeout(runDiagnostics, 400);
+  launchApp(); // Jumps straight to login or config setups
 });
 
 function launchApp() {
@@ -829,13 +496,11 @@ async function ensureSpreadsheet() {
     { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: '{}' }
   );
 
-  // Get sheet IDs first
   var ssData = await gFetch('https://sheets.googleapis.com/v4/spreadsheets/' + cfg.spreadsheetId + '?fields=sheets.properties');
   cfg.sheetIds = {};
   (ssData.sheets || []).forEach(function(s) { cfg.sheetIds[s.properties.title] = s.properties.sheetId; });
   saveCfg();
 
-  // AUDIT CORRECTION: Execute writeSheetHeaders only AFTER sheetIds are resolved
   await writeSheetHeaders();
   
   setSyncStatus('syncing', 'Initialising Settings sheet…');
