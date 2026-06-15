@@ -117,7 +117,6 @@ body {
 
 .content { padding: 24px 28px; flex: 1; }
 
-/* ── TABS (within pages) ── */
 .page { display: none; }
 .page.active { display: block; }
 
@@ -267,15 +266,6 @@ tbody tr:hover { background: var(--surface2); }
 }
 .search-bar input:focus { outline: none; border-color: var(--accent); }
 
-/* ── SECTION DIVIDER ── */
-.section-gap { margin-bottom: 20px; }
-.section-label {
-  font-size: 11px; font-weight: 600; text-transform: uppercase;
-  letter-spacing: 0.5px; color: var(--text3); margin-bottom: 10px;
-}
-
-/* ── PRICE CALC BOX ── */
-/* ── GOODS-IN LINE ITEMS ── */
 .gi-line-select {
   padding: 5px 7px;
   border: 1px solid var(--border);
@@ -292,10 +282,6 @@ tbody tr:hover { background: var(--surface2); }
   background: var(--surface); width: 100%; text-align: right;
 }
 .gi-line-input:focus { outline: none; border-color: var(--accent); }
-.gi-line-unit {
-  font-size: 11px; font-weight: 600; color: var(--text3);
-  text-align: center; padding: 2px 0;
-}
 .gi-line-total {
   font-family: 'DM Mono', monospace; font-size: 13px;
   font-weight: 600; color: var(--accent);
@@ -314,24 +300,6 @@ tbody tr:hover .gi-remove-btn { opacity: 1; }
   color: var(--text3); font-size: 13px;
 }
 
-.price-calc {
-  background: var(--accent-light);
-  border: 1px solid #b7e4c7;
-  border-radius: var(--radius);
-  padding: 12px 14px;
-}
-.price-calc-row {
-  display: flex; justify-content: space-between;
-  font-size: 12.5px; padding: 2px 0;
-}
-.price-calc-row.total {
-  border-top: 1px solid #b7e4c7;
-  margin-top: 6px; padding-top: 6px;
-  font-weight: 600; font-size: 14px;
-}
-
-/* ── MONO ── */
-/* ── NEXT ORDER / WAITING DELIVERY ── */
 .no-qty-input, .no-cost-input {
   padding: 4px 7px;
   border: 1px solid var(--border);
@@ -396,7 +364,6 @@ tbody tr:hover .gi-remove-btn { opacity: 1; }
 .fill-warn { background: #f59e0b; }
 .fill-danger { background: #ef4444; }
 
-/* ── RESPONSIVE ── */
 @media (max-width: 900px) {
   .form-grid-4 { grid-template-columns: 1fr 1fr; }
   .stat-grid { grid-template-columns: 1fr 1fr; }
@@ -499,7 +466,7 @@ tbody tr:hover .gi-remove-btn { opacity: 1; }
           </div>
           <div class="card-body">
 
-            <!-- Delivery header — date / supplier / invoice (shared for all items) -->
+            <!-- Delivery header -->
             <div class="form-grid form-grid-3" style="margin-bottom:10px;">
               <div class="form-group">
                 <label class="form-label">Date received</label>
@@ -559,8 +526,6 @@ tbody tr:hover .gi-remove-btn { opacity: 1; }
               Items in this delivery: <strong id="gi-line-count" style="color:var(--text)">0</strong>
             </div>
 
-
-
             <button class="btn btn-primary" onclick="saveGoodsIn()" style="width:100%;">
               <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
               Save delivery &amp; update all stock
@@ -596,10 +561,10 @@ tbody tr:hover .gi-remove-btn { opacity: 1; }
           <input type="text" placeholder="Search products…" id="productSearch" oninput="renderProducts()">
         </div>
         <div style="display:flex;align-items:center;gap:8px;">
-          <span style="font-size:12px;color:var(--text3);">View only — manage products in Admin app</span>
-          <button class="btn btn-ghost btn-sm" onclick="window.open('admin-app.html','_blank')">
-            <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-            Open Admin ↗
+          <span style="font-size:12px;color:var(--text3);">View and edit catalog. Direct sync to Google Sheets.</span>
+          <button class="btn btn-primary btn-sm" onclick="openProductModal()">
+            <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Add product
           </button>
         </div>
       </div>
@@ -609,12 +574,11 @@ tbody tr:hover .gi-remove-btn { opacity: 1; }
             <thead>
               <tr>
                 <th>SKU</th><th>Product</th><th>Category</th>
-                <th>Primary unit</th><th>Unit 2</th><th>1→2</th>
-                <th>Unit 3</th><th>1→3</th><th>Reorder</th><th>Status</th>
+                <th>Primary unit</th><th>Unit 2</th><th>Reorder</th><th>Status</th><th>Actions</th>
               </tr>
             </thead>
             <tbody id="productsTable">
-              <tr><td colspan="10" style="color:var(--text3);text-align:center;padding:24px;">No products yet — manage in Admin app</td></tr>
+              <tr><td colspan="8" style="color:var(--text3);text-align:center;padding:24px;">No products yet — manage above or in Admin</td></tr>
             </tbody>
           </table>
         </div>
@@ -692,7 +656,6 @@ tbody tr:hover .gi-remove-btn { opacity: 1; }
       </div>
 
       <div class="card">
-        <!-- Read-only notice -->
         <div style="background:var(--info-light);border:1px solid #bfdbfe;border-radius:var(--radius);padding:9px 14px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;">
           <span style="font-size:12.5px;color:var(--info);">
             <strong>Prices are view-only here.</strong> To edit cost or selling prices, open the Admin app.
@@ -734,7 +697,6 @@ tbody tr:hover .gi-remove-btn { opacity: 1; }
 
     <!-- ══════════════ NEXT ORDER PAGE ══════════════ -->
     <div class="page" id="page-next-order">
-      <!-- Toolbar -->
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
         <div style="font-size:13px;color:var(--text2);">Auto-generated from low stock · Override any value · Mark ordered when placed</div>
         <div style="display:flex;gap:8px;">
@@ -971,17 +933,11 @@ tbody tr:hover .gi-remove-btn { opacity: 1; }
             <option value="m">m (length / metres)</option>
             <option value="L">L (volume / litres)</option>
           </select>
-          <span class="form-hint">e.g. bag + kg, pipe length + m</span>
         </div>
 
         <div class="form-group">
           <label class="form-label">Reorder level</label>
           <input type="number" class="form-control" id="pm-reorder" min="0" step="any" placeholder="Uses default">
-        </div>
-        <div class="form-group" style="display:none">
-          <input type="hidden" id="pm-cost" value="0">
-          <input type="hidden" id="pm-costdate" value="">
-          <input type="hidden" id="pm-market" value="0">
         </div>
       </div>
       <div class="form-grid form-grid-2" style="gap:12px;margin-bottom:14px;">
@@ -1006,7 +962,6 @@ tbody tr:hover .gi-remove-btn { opacity: 1; }
         </div>
       </div>
 
-      <!-- Pricing note -->
       <div style="font-size:12px;color:var(--text3);background:var(--surface2);border-radius:var(--radius);padding:10px 12px;margin-top:4px;">
         Set cost price and selling price later in <strong>Stock view</strong> after saving the product.
       </div>
@@ -1052,17 +1007,16 @@ tbody tr:hover .gi-remove-btn { opacity: 1; }
   </div>
 </div>
 
-<!-- ══ TOAST ══ -->
-<div id="toast" style="position:fixed;bottom:24px;right:24px;background:var(--text);color:#fff;padding:10px 18px;border-radius:8px;font-size:13px;font-weight:500;opacity:0;transition:opacity 0.25s;pointer-events:none;z-index:999;"></div>
+<div id="toast"></div>
 
 <script>
 // ══════════════════════════════════════════════
-// DATA STORE (localStorage)
+// DATA STORE
 // ══════════════════════════════════════════════
 const KEYS = { products:'hs_products', stock:'hs_stock', goodsIn:'hs_goodsin', movements:'hs_movements', settings:'hs_settings' };
 
-function load(key) { try { return JSON.parse(localStorage.getItem(key)) || []; } catch { return []; } }
-function loadObj(key, def) { try { return JSON.parse(localStorage.getItem(key)) || def; } catch { return def; } }
+function load(key) { try { return JSON.parse(localStorage.getItem(key)) || []; } catch(e) { return []; } }
+function loadObj(key, def) { try { return JSON.parse(localStorage.getItem(key)) || def; } catch(e) { return def; } }
 function save(key, val) { localStorage.setItem(key, JSON.stringify(val)); }
 
 let products = load(KEYS.products);
@@ -1078,7 +1032,8 @@ function lkr(n) {
   if (isNaN(n) || n === null) return '—';
   return 'LKR ' + Number(n).toLocaleString('en-LK', {minimumFractionDigits:2, maximumFractionDigits:2});
 }
-function num(n, dp=2) {
+function num(n, dp) {
+  dp = dp !== undefined ? dp : 2;
   if (isNaN(n) || n === null) return '—';
   return Number(n).toLocaleString('en-LK', {minimumFractionDigits:dp, maximumFractionDigits:dp});
 }
@@ -1090,8 +1045,7 @@ function daysBetween(dateStr) {
   return Math.max(0, Math.floor((t - d) / 86400000));
 }
 function inflFactor(days) {
-  const r = settings.inflation / 100;
-  return Math.pow(1 + r, days / 365);
+  return Math.pow(1 + settings.inflation / 100, days / 365);
 }
 function currentValue(costPrice, costDate) {
   const days = daysBetween(costDate);
@@ -1112,45 +1066,31 @@ function toast(msg) {
   setTimeout(() => el.style.opacity = '0', 2200);
 }
 function getStock(sku) {
-  return stock.find(s => s.sku === sku) || { sku, storeQty:0, floorQty:0, reorderLevel: settings.reorder, suggestMethod:'days', suggestVal: settings.floorDays, managerOverride: null };
+  return stock.find(s => s.sku === sku) || { sku: sku, storeQty:0, floorQty:0, reorderLevel: settings.reorder, suggestMethod:'days', suggestVal: settings.floorDays, managerOverride: null };
 }
 function setStock(sku, updates) {
   const idx = stock.findIndex(s => s.sku === sku);
   if (idx >= 0) stock[idx] = { ...stock[idx], ...updates };
-  else stock.push({ sku, storeQty:0, floorQty:0, reorderLevel: settings.reorder, suggestMethod:'days', suggestVal: settings.floorDays, managerOverride: null, ...updates });
+  else stock.push({ sku: sku, storeQty:0, floorQty:0, reorderLevel: settings.reorder, suggestMethod:'days', suggestVal: settings.floorDays, managerOverride: null, ...updates });
   save(KEYS.stock, stock);
 }
 function getSuggestedFloor(sku) {
   const s = getStock(sku);
   if (s.managerOverride !== null && s.managerOverride !== undefined) return s.managerOverride;
   if (s.suggestMethod === 'fixed') return parseFloat(s.suggestVal) || settings.floorDays;
-  // days-based: average daily sales × floor days (use 5 as default if no sales data yet)
-  const avgDaily = avgDailySales(sku);
-  return avgDaily * (parseFloat(s.suggestVal) || settings.floorDays);
+  return avgDailySales(sku) * (parseFloat(s.suggestVal) || settings.floorDays);
 }
-function avgDailySales(sku) {
-  // From goodsIn movements of type 'floor' we infer sales by depletion later — for now use 1 unit/day as baseline
-  // When till integration is added this will read from sales sheet
-  return 1;
-}
-function getCategories() {
-  return [...new Set(products.map(p => p.category).filter(Boolean))].sort();
-}
-function updateCategoryList() {
-  const dl = document.getElementById('categoryList');
-  if (!dl) return;
-  dl.innerHTML = getCategories().map(c => `<option value="${c}">`).join('');
-}
+
 function logMovement(type, sku, productName, qty, from, to, note) {
   var unit = (products.find(function(p){return p.sku===sku;})||{}).unit||'';
-  var m = { id: Date.now(), date: today(), time: new Date().toTimeString().slice(0,5), type, sku, productName, qty, unit, from, to, note: note||'' };
+  var m = { id: Date.now(), date: today(), time: new Date().toTimeString().slice(0,5), type: type, sku: sku, productName: productName, qty: qty, unit: unit, from_loc: from, to_loc: to, note: note||'' };
   movements.push(m);
   save(KEYS.movements, movements);
   if (typeof GS !== 'undefined' && GS.isOnline()) {
     GS.append('Stock_Movements', {
       id: m.id, date: m.date, time: m.time, type: m.type,
       sku: m.sku, product_name: m.productName, qty: m.qty, unit: m.unit,
-      from_loc: m.from, to_loc: m.to, note: m.note
+      from_loc: m.from_loc, to_loc: m.to_loc, note: m.note
     }).catch(function(e) { console.warn('movement sync:', e); });
   }
 }
@@ -1163,7 +1103,7 @@ function showPage(id) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.getElementById('page-'+id).classList.add('active');
-  event.currentTarget.classList.add('active');
+  if (event) event.currentTarget.classList.add('active');
   document.getElementById('pageTitle').textContent = pageTitles[id] || id;
   if (id === 'goods-in') { if (!giLines.length) addGoodsInLine(); renderGiLines(); populateSupplierList(); }
   if (id === 'products') renderProducts();
@@ -1175,26 +1115,9 @@ function showPage(id) {
 }
 
 // ══════════════════════════════════════════════
-// DATE DISPLAY
+// GOODS IN (fifo / purchase lots)
 // ══════════════════════════════════════════════
-function initDates() {
-  const d = new Date();
-  const s = d.toLocaleDateString('en-GB', { weekday:'short', day:'numeric', month:'short', year:'numeric' });
-  document.getElementById('topbarDate').textContent = s;
-  document.getElementById('sidebarDate').textContent = s;
-  const giDate = document.getElementById('gi-date');
-  if (giDate) giDate.value = today();
-  // Init goods-in with one blank line ready
-  addGoodsInLine();
-  document.getElementById('shopNameDisplay').textContent = settings.shopName || 'Hardware Shop';
-}
-
-// ══════════════════════════════════════════════
-// GOODS IN
-// ══════════════════════════════════════════════
-// GOODS IN — MULTI-ITEM DELIVERY
-// ══════════════════════════════════════════════
-let giLines = []; // array of { id, sku, qty, cost, market }
+let giLines = [];
 
 function productOptionsHtml() {
   return '<option value="">— select product —</option>' +
@@ -1203,24 +1126,17 @@ function productOptionsHtml() {
 
 function addGoodsInLine() {
   const id = Date.now() + Math.random();
-  giLines.push({ id, sku: '', qty: '', cost: '', market: '' });
+  giLines.push({ id: id, sku: '', qty: '', cost: '', market: '' });
   renderGiLines();
-  // Focus the new product select
-  const rows = document.querySelectorAll('#gi-lines-body tr');
-  if (rows.length) {
-    const lastSelect = rows[rows.length - 1].querySelector('.gi-line-select');
-    if (lastSelect) lastSelect.focus();
-  }
 }
 
 function removeGiLine(id) {
   giLines = giLines.filter(l => l.id !== id);
   renderGiLines();
-  calcGiGrandTotal();
 }
 
 function onGiLineProductChange(id, sku) {
-  const line = giLines.find(function(l) { return l.id === id; });
+  const line = giLines.find(l => l.id === id);
   if (line) line.sku = sku;
   document.getElementById('gi-line-count').textContent = giLines.length;
 }
@@ -1232,14 +1148,11 @@ function onGiLineInput(id, field, value) {
 }
 
 function calcGiLineTotal(id) {
-  // No price calculation in goods-in — qty only
   document.getElementById('gi-line-count').textContent = giLines.length;
 }
 
 function calcGiGrandTotal() {
   document.getElementById('gi-line-count').textContent = giLines.length;
-  // Update effective costs display by re-rendering
-  // (done via renderGiLines which is called after each input)
 }
 
 function renderGiLines() {
@@ -1250,12 +1163,11 @@ function renderGiLines() {
     return;
   }
 
-  // Calculate effective costs using weighted qty split
   const extraCost   = parseFloat(document.getElementById('gi-extra-cost').value) || 0;
-  const totalQtyAll = giLines.reduce(function(s, l) { return s + (parseFloat(l.qty) || 0); }, 0);
+  const totalQtyAll = giLines.reduce((s, l) => s + (parseFloat(l.qty) || 0), 0);
 
-  tbody.innerHTML = giLines.map(function(line) {
-    const p         = products.find(function(x) { return x.sku === line.sku; });
+  tbody.innerHTML = giLines.map(line => {
+    const p         = products.find(x => x.sku === line.sku);
     const rowBg     = line.fromOrder ? 'background:rgba(239,68,68,0.04);' : '';
     const suggest   = line.fromOrder ? '<div style="margin-bottom:4px;"><span class="gi-suggest-arrow">&#8601; from order</span></div>' : '';
     const unitTxt   = p ? p.unit : '&mdash;';
@@ -1263,12 +1175,9 @@ function renderGiLines() {
     const costVal   = line.cost   || '';
     const remVal    = line.remark || '';
 
-    // Effective cost = purchase cost + weighted extra delivery cost share
     const qty       = parseFloat(line.qty)  || 0;
     const cost      = parseFloat(line.cost) || 0;
-    const extraShare = (totalQtyAll > 0 && qty > 0)
-      ? (qty / totalQtyAll) * extraCost
-      : 0;
+    const extraShare = (totalQtyAll > 0 && qty > 0) ? (qty / totalQtyAll) * extraCost : 0;
     const effCost   = cost + (qty > 0 ? extraShare / qty : 0);
     const effDisplay = (cost > 0)
       ? '<span class="mono" style="font-size:12px;color:var(--accent-dark);font-weight:600">' + lkr(effCost) + '</span>'
@@ -1290,20 +1199,14 @@ function renderGiLines() {
       +   '<div style="font-size:12px;font-weight:600;color:var(--text2)">' + unitTxt + '</div>'
       + '</td>'
       + '<td style="padding:5px 7px;">'
-      +   '<input class="gi-line-input" type="number" id="gi-qty-' + line.id + '"'
-      +   ' placeholder="0" min="0" step="any" value="' + qtyVal + '"'
-      +   ' data-id="' + line.id + '" data-field="qty" oninput="onGiLineInputEvt(this)">'
+      +   '<input class="gi-line-input" type="number" id="gi-qty-' + line.id + '" placeholder="0" min="0" step="any" value="' + qtyVal + '" data-id="' + line.id + '" data-field="qty" oninput="onGiLineInputEvt(this)">'
       + '</td>'
       + '<td style="padding:5px 7px;">'
-      +   '<input class="gi-line-input" type="number" id="gi-cost-' + line.id + '"'
-      +   ' placeholder="0.00" min="0" step="any" value="' + costVal + '"'
-      +   ' data-id="' + line.id + '" data-field="cost" oninput="onGiLineInputEvt(this)">'
+      +   '<input class="gi-line-input" type="number" id="gi-cost-' + line.id + '" placeholder="0.00" min="0" step="any" value="' + costVal + '" data-id="' + line.id + '" data-field="cost" oninput="onGiLineInputEvt(this)">'
       + '</td>'
       + '<td style="padding:5px 7px;">' + effDisplay + '</td>'
       + '<td style="padding:5px 7px;">'
-      +   '<input class="gi-line-input" type="text" id="gi-remark-' + line.id + '"'
-      +   ' placeholder="optional note…" style="text-align:left;width:100%;" value="' + remVal + '"'
-      +   ' data-id="' + line.id + '" data-field="remark" oninput="onGiLineInputEvt(this)">'
+      +   '<input class="gi-line-input" type="text" id="gi-remark-' + line.id + '" placeholder="optional note…" style="text-align:left;width:100%;" value="' + remVal + '" data-id="' + line.id + '" data-field="remark" oninput="onGiLineInputEvt(this)">'
       + '</td>'
       + '<td style="padding:5px 4px;">'
       +   '<button class="gi-remove-btn" onclick="removeGiLine(' + line.id + ')" title="Remove">&times;</button>'
@@ -1314,8 +1217,6 @@ function renderGiLines() {
   calcGiGrandTotal();
 }
 
-
-// Event handler using data attributes to avoid quote issues in HTML attributes
 function onGiLineInputEvt(el) {
   const id    = parseFloat(el.dataset.id);
   const field = el.dataset.field;
@@ -1325,7 +1226,7 @@ function onGiLineInputEvt(el) {
 function clearGoodsInForm() {
   giLines = [];
   renderGiLines();
-  ['gi-supplier','gi-invoice','gi-notes','gi-extra-cost'].forEach(function(id) {
+  ['gi-supplier','gi-invoice','gi-notes','gi-extra-cost'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = '';
   });
@@ -1342,54 +1243,53 @@ function saveGoodsIn() {
   if (!date)     { toast('Select a date'); return; }
   if (!supplier) { toast('Enter supplier name'); return; }
 
-  // Validate lines
   const validLines = [];
-  for (var i = 0; i < giLines.length; i++) {
+  for (let i = 0; i < giLines.length; i++) {
     const line = giLines[i];
     if (!line.sku) { toast('Row ' + (i+1) + ': select a product'); return; }
     const qty  = parseFloat(line.qty);
     const cost = parseFloat(line.cost) || 0;
     if (!qty || qty <= 0) { toast('Row ' + (i+1) + ': enter a valid quantity'); return; }
-    if (validLines.find(function(l) { return l.sku === line.sku; })) {
+    if (validLines.find(l => l.sku === line.sku)) {
       toast('Row ' + (i+1) + ': duplicate product — combine into one row'); return;
     }
-    validLines.push({ sku: line.sku, qty, cost, remark: line.remark || '', fromOrder: line.fromOrder || false });
+    validLines.push({ sku: line.sku, qty: qty, cost: cost, remark: line.remark || '', fromOrder: line.fromOrder || false });
   }
   if (!validLines.length) { toast('Add at least one item'); return; }
 
-  // Calculate weighted extra cost share per item
-  const totalQtyAll = validLines.reduce(function(s, l) { return s + l.qty; }, 0);
-  validLines.forEach(function(line) {
+  const totalQtyAll = validLines.reduce((s, l) => s + l.qty, 0);
+  validLines.forEach(line => {
     const share       = totalQtyAll > 0 ? (line.qty / totalQtyAll) * extraCost : 0;
     line.extraShare   = share;
     line.effCostUnit  = line.cost + (line.qty > 0 ? share / line.qty : 0);
   });
 
   const deliveryId  = 'DEL-' + Date.now().toString(36).toUpperCase();
-  const totalCost   = validLines.reduce(function(s, l) { return s + l.qty * l.effCostUnit; }, 0);
 
-  validLines.forEach(function(line) {
-    const p           = products.find(function(x) { return x.sku === line.sku; });
+  validLines.forEach(line => {
+    const p           = products.find(x => x.sku === line.sku);
     const productName = p ? p.name : line.sku;
 
-    // Save goods-in record with FIFO lot data
     goodsIn.push({
-      id:           Date.now() + Math.random(),
-      lotId:        'LOT-' + Date.now().toString(36).toUpperCase() + Math.random().toString(36).slice(2,4).toUpperCase(),
-      deliveryId,   date, supplier, invoice,
-      sku:          line.sku, productName,
-      qty:          line.qty,
-      qtyRemaining: line.qty,
-      unit:         p ? p.unit : '',
-      purchaseCost: line.cost,
-      extraShare:   line.extraShare,
-      effCostUnit:  line.effCostUnit,
-      remark:       line.remark,
-      notes,
+      id:             Date.now() + Math.random(),
+      lotId:          'LOT-' + Date.now().toString(36).toUpperCase() + Math.random().toString(36).slice(2,4).toUpperCase(),
+      deliveryId:     deliveryId,
+      date:           date,
+      supplier:       supplier,
+      invoice:        invoice,
+      sku:            line.sku,
+      productName:    productName,
+      qty:            line.qty,
+      qtyRemaining:   line.qty,
+      unit:           p ? p.unit : '',
+      purchaseCost:   line.cost,
+      extraShare:     line.extraShare,
+      effCostUnit:    line.effCostUnit,
+      remark:         line.remark,
+      notes:          notes,
       extraCostTotal: extraCost
     });
 
-    // Update stock qty
     const s = getStock(line.sku);
     setStock(line.sku, {
       storeQty:          (s.storeQty || 0) + line.qty,
@@ -1399,12 +1299,11 @@ function saveGoodsIn() {
       lastEffectiveCost: line.effCostUnit
     });
 
-    // Update product cache
-    const pi = products.findIndex(function(x) { return x.sku === line.sku; });
+    const pi = products.findIndex(x => x.sku === line.sku);
     if (pi >= 0) {
       products[pi].lastEffectiveCost = line.effCostUnit;
-      save(KEYS.products, products);
     }
+    save(KEYS.products, products);
 
     logMovement('goods-in', line.sku, productName, line.qty, 'supplier', 'store',
       supplier + (invoice ? ' · ' + invoice : '') + (line.remark ? ' | ' + line.remark : '') + ' [' + deliveryId + ']');
@@ -1412,14 +1311,13 @@ function saveGoodsIn() {
 
   save(KEYS.goodsIn, goodsIn);
 
-  const receivedSkus = new Set(validLines.map(function(l) { return l.sku; }));
-  saveOrders(loadOrders().filter(function(o) { return !receivedSkus.has(o.sku); }));
+  const receivedSkus = new Set(validLines.map(l => l.sku));
+  saveOrders(loadOrders().filter(o => !receivedSkus.has(o.sku)));
   updateNavBadges();
 
   renderGoodsInHistory();
-  toast('Delivery saved — ' + validLines.length + ' item' + (validLines.length > 1 ? 's' : '') + (extraCost > 0 ? ', delivery cost split' : ''));
+  toast('Delivery saved — ' + validLines.length + ' item(s)');
 
-  // Push to Google Sheets
   if (typeof GS !== 'undefined' && GS.isOnline()) {
     updateSyncIndicator('syncing');
     pushDeliveryToSheets().then(function() {
@@ -1435,9 +1333,8 @@ function saveGoodsIn() {
 
 function renderGoodsInHistory() {
   const tbody = document.getElementById('gi-history');
-  // Group by deliveryId
   const grouped = {};
-  [...goodsIn].reverse().forEach(function(r) {
+  [...goodsIn].reverse().forEach(r => {
     const key = r.deliveryId || (r.date + '|' + (r.supplier||''));
     if (!grouped[key]) grouped[key] = {
       deliveryId: r.deliveryId || key,
@@ -1445,7 +1342,6 @@ function renderGoodsInHistory() {
       items: [], totalCost: 0, extraCost: r.extraCostTotal || 0
     };
     grouped[key].items.push(r);
-    // Total effective cost = qty × effCostUnit
     grouped[key].totalCost += (r.qty||0) * (r.effCostUnit || r.purchaseCost || 0);
   });
 
@@ -1455,7 +1351,7 @@ function renderGoodsInHistory() {
     return;
   }
 
-  tbody.innerHTML = entries.map(function(g) {
+  tbody.innerHTML = entries.map(g => {
     const hasTotal = g.totalCost > 0;
     return '<tr style="cursor:pointer;" data-did="' + g.deliveryId + '" onclick="showDeliveryReceipt(this.dataset.did)" title="Click to view full receipt">'
       + '<td style="white-space:nowrap">'
@@ -1463,25 +1359,20 @@ function renderGoodsInHistory() {
       +   '<div style="font-size:11px;color:var(--text3)">' + (g.invoice||'no invoice') + '</div>'
       + '</td>'
       + '<td><div style="font-weight:500">' + (g.supplier||'—') + '</div></td>'
-      + '<td style="text-align:center"><span class="badge badge-gray">' + g.items.length + ' item' + (g.items.length!==1?'s':'') + '</span></td>'
+      + '<td style="text-align:center"><span class="badge badge-gray">' + g.items.length + ' item(s)</span></td>'
       + '<td class="mono" style="font-weight:600;color:' + (hasTotal?'var(--accent)':'var(--text3)') + '">'
       +   (hasTotal ? lkr(g.totalCost) : 'N/A') + '</td>'
       + '</tr>';
   }).join('');
 }
 
-let allDeliveries = {}; // populated by renderGoodsInHistory
-
 function showDeliveryReceipt(deliveryId) {
-  // Rebuild grouped from goodsIn
-  const items = goodsIn.filter(function(r) {
-    return (r.deliveryId || (r.date+'|'+(r.supplier||''))) === deliveryId;
-  });
+  const items = goodsIn.filter(r => (r.deliveryId || (r.date+'|'+(r.supplier||''))) === deliveryId);
   if (!items.length) return;
 
   const first = items[0];
   const extraCost = first.extraCostTotal || 0;
-  const totalCost = items.reduce(function(s,r) { return s + (r.qty||0)*(r.effCostUnit||r.purchaseCost||0); }, 0);
+  const totalCost = items.reduce((s, r) => s + (r.qty||0)*(r.effCostUnit||r.purchaseCost||0), 0);
 
   let receiptHtml = '<div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-top:14px;font-size:13px;" id="gi-receipt-box">'
     + '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px;">'
@@ -1498,7 +1389,7 @@ function showDeliveryReceipt(deliveryId) {
     +   '<th style="text-align:left;padding:5px 8px;font-size:11px;color:var(--text3)">Remark</th>'
     + '</tr></thead><tbody>';
 
-  items.forEach(function(r) {
+  items.forEach(r => {
     receiptHtml += '<tr style="border-bottom:1px solid var(--border);">'
       + '<td style="padding:6px 8px;font-weight:500">' + r.productName + '</td>'
       + '<td style="padding:6px 8px;text-align:center;font-family:monospace">' + num(r.qty,2) + ' ' + r.unit + '</td>'
@@ -1517,11 +1408,9 @@ function showDeliveryReceipt(deliveryId) {
     + '<button class="btn btn-ghost btn-sm" style="margin-top:10px;" onclick="this.parentElement.remove()">Close</button>'
     + '</div>';
 
-  // Remove existing receipt if any
   const existing = document.getElementById('gi-receipt-box');
   if (existing) existing.remove();
 
-  // Append after the history card
   const histCard = document.getElementById('gi-history').closest('.card');
   histCard.insertAdjacentHTML('afterend', receiptHtml);
 }
@@ -1535,21 +1424,20 @@ function openProductModal(sku) {
   const title = sku ? 'Edit product' : 'Add product';
   document.getElementById('productModalTitle').textContent = title;
   if (!sku) {
-    ['pm-name','pm-category','pm-sku','pm-reorder','pm-barcode','pm-notes','pm-suggest-val'].forEach(function(id) {
+    ['pm-name','pm-category','pm-sku','pm-reorder','pm-barcode','pm-notes','pm-suggest-val'].forEach(id => {
       var el = document.getElementById(id); if (el) el.value = '';
     });
     document.getElementById('pm-unit').value  = '';
     document.getElementById('pm-unit2').value = '';
     document.getElementById('pm-suggest-method').value = 'days';
   } else {
-    const p = products.find(function(x) { return x.sku === sku; });
+    const p = products.find(x => x.sku === sku);
     if (!p) return;
     document.getElementById('pm-name').value       = p.name          || '';
     document.getElementById('pm-category').value   = p.category      || '';
     document.getElementById('pm-sku').value        = p.sku           || '';
     document.getElementById('pm-unit').value       = p.unit          || '';
     document.getElementById('pm-unit2').value      = p.unit2         || '';
-
     document.getElementById('pm-reorder').value    = p.reorderLevel  || '';
     document.getElementById('pm-barcode').value    = p.barcode       || '';
     document.getElementById('pm-notes').value      = p.notes         || '';
@@ -1559,27 +1447,18 @@ function openProductModal(sku) {
   }
   updateCategoryList();
   updateSuggestLabel();
-  onUnit2Change();
   document.getElementById('productModal').classList.add('open');
 }
 function closeProductModal() { document.getElementById('productModal').classList.remove('open'); }
-function updateModalCalc() {
-  updateSuggestLabel();
-}
-function onPrimaryUnitChange() {
-  onUnit2Change(); // re-evaluate conversion label
-}
 
-function onUnit2Change() {
-  // Just update the suggest label — no conversion field needed
-  updateSuggestLabel();
-}
-
+function onPrimaryUnitChange() { onUnit2Change(); }
+function onUnit2Change() { updateSuggestLabel(); }
 function updateSuggestLabel() {
   const method = document.getElementById('pm-suggest-method').value;
   const lbl = document.getElementById('pm-suggest-label');
   if (lbl) lbl.textContent = method === 'days' ? 'Days to keep on floor' : 'Fixed qty on floor';
 }
+
 function saveProduct() {
   const name = document.getElementById('pm-name').value.trim();
   const category = document.getElementById('pm-category').value.trim();
@@ -1592,13 +1471,11 @@ function saveProduct() {
   const suggestVal   = parseFloat(document.getElementById('pm-suggest-val').value) || null;
   const reorderLevel = parseFloat(document.getElementById('pm-reorder').value)     || null;
 
-  // Get existing price data if editing (preserve prices set in stock view)
-  const existingProduct = products.find(function(x) { return x.sku === sku; }) || {};
-
+  const existingProduct = products.find(x => x.sku === sku) || {};
   const unit2 = document.getElementById('pm-unit2').value || '';
 
   const product = {
-    sku, name, category, unit,
+    sku: sku, name: name, category: category, unit: unit,
     unit2:         unit2,
     sellingPrice:  existingProduct.sellingPrice  || 0,
     sellingPrice2: existingProduct.sellingPrice2 || 0,
@@ -1607,45 +1484,78 @@ function saveProduct() {
     marketPrice:    existingProduct.marketPrice   || 0,
     barcode: document.getElementById('pm-barcode').value.trim(),
     notes:   document.getElementById('pm-notes').value.trim(),
+    reorderLevel: reorderLevel || existingProduct.reorderLevel || 0
   };
-  if (reorderLevel !== null) product.reorderLevel = reorderLevel;
 
   if (editingProductSku) {
     const idx = products.findIndex(p => p.sku === editingProductSku);
     if (idx >= 0) products[idx] = { ...products[idx], ...product };
   } else {
     products.push(product);
-    // Init stock entry
     setStock(sku, { storeQty:0, floorQty:0, suggestMethod: method, suggestVal: suggestVal || settings.floorDays, reorderLevel: reorderLevel || settings.reorder });
   }
-  // Update stock suggest config
+
   const s = getStock(sku);
   setStock(sku, { ...s, suggestMethod: method, suggestVal: suggestVal || s.suggestVal || settings.floorDays, reorderLevel: reorderLevel || s.reorderLevel || settings.reorder });
-
   save(KEYS.products, products);
+
+  // Sync saved product to Sheets immediately
+  if (typeof GS !== 'undefined' && GS.isOnline()) {
+    updateSyncIndicator('syncing');
+    GS.upsert('Products', 'sku', {
+      sku: product.sku, product_name: product.name, category: product.category,
+      unit: product.unit, unit2: product.unit2||'', unit2_conv: product.unit2Conv||0,
+      barcode: product.barcode||'', reorder_level: product.reorderLevel||0,
+      suggest_method: method, suggest_val: suggestVal||0,
+      notes: product.notes||''
+    }).then(function() {
+      updateSyncIndicator('connected');
+    }).catch(function(err) {
+      console.warn('Live product Sheets sync fail:', err);
+      updateSyncIndicator('offline');
+    });
+  }
+
   closeProductModal();
   renderProducts();
   populateGoodsInProductDropdown();
   toast((editingProductSku ? 'Updated' : 'Added') + ': ' + name);
 }
+
 function deleteProduct(sku) {
   if (!confirm('Delete this product? This cannot be undone.')) return;
   products = products.filter(p => p.sku !== sku);
   save(KEYS.products, products);
   renderProducts();
-  toast('Product deleted');
+  if (typeof GS !== 'undefined' && GS.isOnline()) {
+    updateSyncIndicator('syncing');
+    GS.read('Products').then(rows => {
+      let rowIdx = -1;
+      for (let i=0; i<rows.length; i++) {
+        if (rows[i].sku === sku) { rowIdx = i + 1; break; }
+      }
+      if (rowIdx > 0) return GS.deleteRow('Products', rowIdx);
+    }).then(() => {
+      updateSyncIndicator('connected');
+      toast('Product deleted from Sheets');
+    }).catch(e => {
+      console.warn('Sheets delete fail:', e);
+      updateSyncIndicator('offline');
+    });
+  } else {
+    toast('Product deleted locally');
+  }
 }
+
 function renderProducts() {
   const q = (document.getElementById('productSearch').value || '').toLowerCase();
-  const filtered = products.filter(function(p) {
-    return !q || p.name.toLowerCase().includes(q) || (p.category||'').toLowerCase().includes(q) || p.sku.toLowerCase().includes(q);
-  });
+  const filtered = products.filter(p => !q || p.name.toLowerCase().includes(q) || (p.category||'').toLowerCase().includes(q) || p.sku.toLowerCase().includes(q));
   const tbody = document.getElementById('productsTable');
   if (!filtered.length) {
-    tbody.innerHTML = '<tr><td colspan="10" style="color:var(--text3);text-align:center;padding:24px;">' + (q ? 'No results' : 'No products — manage in Admin app') + '</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="8" style="color:var(--text3);text-align:center;padding:24px;">No products match query</td></tr>';
     return;
   }
-  tbody.innerHTML = filtered.map(function(p) {
+  tbody.innerHTML = filtered.map(p => {
     const s    = getStock(p.sku);
     const qty  = (s.storeQty||0) + (s.floorQty||0);
     const need = p.reorderLevel || settings.reorder;
@@ -1654,13 +1564,6 @@ function renderProducts() {
       : isLow ? '<span class="badge badge-warn">Low</span>'
       : '<span class="badge badge-green">OK</span>';
 
-    const conv2 = p.unit2 && p.unit2Conv
-      ? '<span class="mono" style="font-size:12px">×' + p.unit2Conv + '</span>'
-      : (p.unit2 ? '<span style="color:var(--text3)">—</span>' : '');
-    const conv3 = p.unit3 && p.unit3Conv
-      ? '<span class="mono" style="font-size:12px">×' + p.unit3Conv + '</span>'
-      : (p.unit3 ? '<span style="color:var(--text3)">—</span>' : '');
-
     return '<tr>'
       + '<td class="mono" style="font-size:12px;color:var(--text3)">' + p.sku + '</td>'
       + '<td><div style="font-weight:500">' + p.name + '</div>'
@@ -1668,15 +1571,15 @@ function renderProducts() {
       + '<td><span class="badge badge-gray">' + (p.category||'—') + '</span></td>'
       + '<td><span class="badge badge-info">' + p.unit + '</span></td>'
       + '<td>' + (p.unit2 ? '<span class="badge badge-gray">' + p.unit2 + '</span>' : '<span style="color:var(--text3)">—</span>') + '</td>'
-      + '<td>' + conv2 + '</td>'
-      + '<td>' + (p.unit3 ? '<span class="badge badge-gray">' + p.unit3 + '</span>' : '<span style="color:var(--text3)">—</span>') + '</td>'
-      + '<td>' + conv3 + '</td>'
       + '<td class="mono" style="color:var(--text2)">' + num(need,0) + '</td>'
       + '<td>' + statusBadge + '</td>'
+      + '<td>'
+      +   '<button class="btn btn-ghost btn-sm" onclick="openProductModal(\'' + p.sku + '\')">Edit</button> '
+      +   '<button class="btn btn-danger btn-sm" onclick="deleteProduct(\'' + p.sku + '\')">Del</button>'
+      + '</td>'
       + '</tr>';
   }).join('');
 }
-
 
 // ══════════════════════════════════════════════
 // SHOP FLOOR
@@ -1705,8 +1608,7 @@ function confirmTransfer() {
   logMovement('floor-transfer', transferSku, p?.name||transferSku, qty, 'store', 'floor', note);
   closeTransferModal();
   renderShopFloor();
-  renderStockViewStats();
-  toast('Transferred ' + num(qty,2) + ' ' + (p?.unit||'') + ' to shop floor');
+  toast('Transferred ' + num(qty,2) + ' to floor');
 }
 function saveFloorOverride(sku) {
   const val = parseFloat(document.getElementById('override-'+sku).value);
@@ -1773,27 +1675,6 @@ function renderShopFloor() {
 // ══════════════════════════════════════════════
 // STOCK VIEW
 // ══════════════════════════════════════════════
-function renderStockViewStats() {
-  var costTotal = 0, inflTotal = 0, salesTotal = 0, lowItems = 0;
-  products.forEach(function(p) {
-    const s        = getStock(p.sku);
-    const totalQty = (s.storeQty||0) + (s.floorQty||0);
-    const days     = daysBetween(p.costDate);
-    const factor   = inflFactor(days);
-    const cv       = (p.costPrice||0) * factor;
-    // Selling: use manager-set price, else suggested (inflation-adjusted cost + margin)
-    const suggested = cv * (1 + settings.margin / 100);
-    const selling   = (p.sellingPrice && p.sellingPrice > 0) ? p.sellingPrice : suggested;
-    costTotal  += totalQty * (p.costPrice||0);
-    inflTotal  += totalQty * cv;
-    salesTotal += totalQty * selling;
-    if (totalQty < (s.reorderLevel || settings.reorder)) lowItems++;
-  });
-  document.getElementById('sv-cost-total').textContent  = lkr(costTotal);
-  document.getElementById('sv-infl-total').textContent  = lkr(inflTotal);
-  document.getElementById('sv-sales-total').textContent = lkr(salesTotal);
-  document.getElementById('sv-low-items').textContent   = lowItems;
-}
 function renderStockView() {
   renderStockViewStats();
   const q = (document.getElementById('svSearch').value || '').toLowerCase();
@@ -1801,13 +1682,10 @@ function renderStockView() {
   const tbody = document.getElementById('svTable');
 
   const rows = products
-    .filter(function(p) { return !q || p.name.toLowerCase().includes(q) || (p.category||'').toLowerCase().includes(q) || p.sku.toLowerCase().includes(q); })
-    .map(function(p) {
+    .filter(p => !q || p.name.toLowerCase().includes(q) || (p.category||'').toLowerCase().includes(q) || p.sku.toLowerCase().includes(q))
+    .map(p => {
       const s        = getStock(p.sku);
       const totalQty = (s.storeQty||0) + (s.floorQty||0);
-      const days     = daysBetween(p.costDate);
-      const factor   = inflFactor(days);
-      const cv       = (p.costPrice||0) * factor;
       const reorder  = s.reorderLevel || settings.reorder;
       const isLow    = totalQty < reorder;
       if (filter === 'low' && !isLow) return null;
@@ -1820,213 +1698,81 @@ function renderStockView() {
         : isLow ? '<span class="badge badge-warn">Low</span>'
         : '<span class="badge badge-green">OK</span>';
 
-      // Optimum override input
       const overrideVal = (s.optimOverride !== null && s.optimOverride !== undefined) ? s.optimOverride : '';
-      const optimInput = '<input type="number" class="no-qty-input" style="width:80px;font-size:12px;"'
-        + ' placeholder="' + num(optim,1).replace(/,/g,'') + '"'
-        + ' value="' + overrideVal + '"'
-        + ' data-sku="' + p.sku + '"'
-        + ' title="Override optimum qty (blank = auto)"'
-        + ' onchange="saveOptimOverride(this.dataset.sku, this.value)">'
+      const optimInput = '<input type="number" class="no-qty-input" style="width:80px;font-size:12px;" placeholder="' + num(optim,1).replace(/,/g,'') + '" value="' + overrideVal + '" data-sku="' + p.sku + '" onchange="saveOptimOverride(this.dataset.sku, this.value)">'
         + '<div style="font-size:10px;color:var(--text3);margin-top:2px;white-space:nowrap">' + optimLabel + '</div>';
 
-      // Selling price — read-only display (edit via Admin app)
-      var sellDisplay = '';
+      let sellDisplay = '';
       if (p.sellingPrice > 0) {
         sellDisplay = '<span class="mono" style="font-size:13px;font-weight:600;color:var(--accent-dark)">' + lkr(p.sellingPrice) + '</span>'
           + '<div style="font-size:10px;color:var(--text3);margin-top:1px">per ' + p.unit + '</div>';
       } else {
-        sellDisplay = '<span style="font-size:11px;color:var(--text3)">not set</span>'
-          + '<div style="font-size:10px;color:var(--text3);margin-top:1px">per ' + p.unit + '</div>';
-      }
-      if (p.unit2) {
-        var sp2 = p.sellingPrice2 > 0
-          ? '<span class="mono" style="font-size:12px;font-weight:600;color:var(--accent)">' + lkr(p.sellingPrice2) + '</span>'
-          : '<span style="font-size:11px;color:var(--text3)">not set</span>';
-        sellDisplay += '<div style="margin-top:5px;padding-top:5px;border-top:1px solid var(--border);">'
-          + sp2 + '<div style="font-size:10px;color:var(--text3);margin-top:1px">per ' + p.unit2 + '</div></div>';
+        sellDisplay = '<span style="font-size:11px;color:var(--text3)">not set</span>';
       }
 
-      // Last delivery info from stock record
-      const lastDel = s.lastDelivery || '—';
-      const lastInv = s.lastInvoice  || '—';
-      const lastSup = s.lastSupplier ? '<div style="font-size:10px;color:var(--text3)">' + s.lastSupplier + '</div>' : '';
-
-      return '<tr style="' + (isLow ? 'background:var(--warn-light)' : '') + '">'
-        + '<td class="mono" style="font-size:12px;color:var(--text3)">' + p.sku + '</td>'
-        + '<td style="font-weight:500">' + p.name + '<div style="font-size:11px;color:var(--text3)">' + (p.category||'') + '</div></td>'
-        + '<td>'
-        +   '<span class="badge badge-info">' + p.unit + '</span>'
-        +   (p.unit2 ? ' <span class="badge badge-gray" style="margin-left:2px">' + p.unit2 + '</span>' : '')
-        +   (p.unit3 ? ' <span class="badge badge-gray" style="margin-left:2px">' + p.unit3 + '</span>' : '')
-        + '</td>'
-        + '<td class="mono" style="font-weight:600">'
-        +   num(totalQty,2)
-        +   (p.unit2 && p.unit2Conv > 0 ? '<div style="font-size:10px;color:var(--text3)">' + num(totalQty * p.unit2Conv, 2) + ' ' + p.unit2 + '</div>' : '')
-        +   (p.unit3 && p.unit3Conv > 0 ? '<div style="font-size:10px;color:var(--text3)">' + num(totalQty * p.unit3Conv, 2) + ' ' + p.unit3 + '</div>' : '')
-        + '</td>'
-        + '<td>' + optimInput + '</td>'
-        + '<td class="mono" style="color:var(--text3);font-size:12px">' + (avgDay > 0 ? num(avgDay,2) + '/d' : '<span style="font-size:11px">no data</span>') + '</td>'
-
-        + '<td>' + sellDisplay + '</td>'
-        + '<td style="font-size:12px;white-space:nowrap">' + lastDel + lastSup + '</td>'
-        + '<td style="font-size:12px;color:var(--text2);white-space:nowrap">' + lastInv + '</td>'
-        + '<td>' + statusBadge + '</td>'
-        + '</tr>';
+      return `<tr style="${isLow ? 'background:var(--warn-light)' : ''}">
+        <td class="mono" style="font-size:12px;color:var(--text3)">${p.sku}</td>
+        <td style="font-weight:500">${p.name}<div style="font-size:11px;color:var(--text3)">${p.category||''}</div></td>
+        <td><span class="badge badge-info">${p.unit}</span></td>
+        <td class="mono" style="font-weight:600">${num(totalQty,2)}</td>
+        <td>${optimInput}</td>
+        <td class="mono" style="color:var(--text3);font-size:12px">${avgDay > 0 ? num(avgDay,2)+'/d' : 'no sales'}</td>
+        <td>${sellDisplay}</td>
+        <td style="font-size:12px;">${s.lastDelivery||'—'}</td>
+        <td style="font-size:12px;">${s.lastInvoice||'—'}</td>
+        <td>${statusBadge}</td>
+      </tr>`;
     }).filter(Boolean);
 
-  tbody.innerHTML = rows.length
-    ? rows.join('')
-    : '<tr><td colspan="10" style="color:var(--text3);text-align:center;padding:24px;">No stock data</td></tr>';
+  tbody.innerHTML = rows.length ? rows.join('') : '<tr><td colspan="10" style="color:var(--text3);text-align:center;padding:24px;">No stock records</td></tr>';
 }
 
-function clearStoreCacheAndReload() {
-  if (!confirm('Clear local cache and reload all data from Google Sheets?')) return;
-  if (GS) GS.clearCache();
-  Object.keys(localStorage).forEach(function(k) {
-    if (k.startsWith('hs_') && k !== 'hs_config' && k !== 'hs_session' && k !== 'hs_sync_queue') {
-      localStorage.removeItem(k);
-    }
+function renderStockViewStats() {
+  let costTotal = 0, inflTotal = 0, salesTotal = 0, lowItems = 0;
+  products.forEach(p => {
+    const s = getStock(p.sku);
+    const totalQty = (s.storeQty||0) + (s.floorQty||0);
+    const days     = daysBetween(p.costDate);
+    const factor   = inflFactor(days);
+    const cv       = (p.costPrice||0) * factor;
+    const suggested = cv * (1 + settings.margin / 100);
+    const selling   = (p.sellingPrice && p.sellingPrice > 0) ? p.sellingPrice : suggested;
+    costTotal  += totalQty * (p.costPrice||0);
+    inflTotal  += totalQty * cv;
+    salesTotal += totalQty * selling;
+    if (totalQty < (s.reorderLevel || settings.reorder)) lowItems++;
   });
-  products = []; stock = []; goodsIn = []; movements = [];
-  settings = { shopName:'Hardware Shop', inflation:12, margin:25, reorder:10, floorDays:7, targetDays:30, leadTime:7 };
-  toast('Cache cleared — reloading…');
-  refreshAllData();
-}
-
-function refreshAllData() {
-  if (typeof GS === 'undefined') { toast('Google Sheets not available'); return; }
-  if (GS.isTokenExpired && GS.isTokenExpired()) {
-    toast('Session expired — open Welcome Hub to reconnect');
-    var b = document.getElementById('tokenBanner');
-    if (b) b.style.display = 'flex';
-    return;
-  }
-  if (!GS.isOnline()) { toast('No internet connection'); return; }
-  // Clear cache to ensure fresh data from Sheets
-  GS.clearCache();
-  var btn  = document.getElementById('refreshBtn');
-  var icon = document.getElementById('refreshIcon');
-  if (btn)  btn.disabled = true;
-  if (icon) icon.style.animation = 'spin 0.7s linear infinite';
-  updateSyncIndicator('syncing');
-  syncFromSheets().then(function() {
-    // Re-render current page
-    var active = document.querySelector('.page.active');
-    if (active) {
-      var id = active.id.replace('page-', '');
-      if (id === 'goods-in')         { renderGoodsInHistory(); populateSupplierList(); }
-      if (id === 'products')         renderProducts();
-      if (id === 'stock-view')       renderStockView();
-      if (id === 'next-order')       renderNextOrder();
-      if (id === 'waiting-delivery') renderWaitingDelivery();
-    }
-    if (btn)  btn.disabled = false;
-    if (icon) icon.style.animation = '';
-    updateSyncIndicator('connected');
-    toast('Synced with Google Sheets');
-  }).catch(function(e) {
-    console.warn('Refresh error:', e);
-    if (btn)  btn.disabled = false;
-    if (icon) icon.style.animation = '';
-    updateSyncIndicator('offline');
-    toast('Sync failed — check connection');
-  });
-}
-
-// CSS for spin animation (add to head if not present)
-if (!document.getElementById('spinStyle')) {
-  var style = document.createElement('style');
-  style.id = 'spinStyle';
-  style.textContent = '@keyframes spin { to { transform: rotate(360deg); } }';
-  document.head.appendChild(style);
-}
-
-function populateSupplierList() {
-  var suppliers = JSON.parse(localStorage.getItem('hs_suppliers') || '[]');
-  var dl = document.getElementById('supplierList');
-  if (dl) dl.innerHTML = suppliers.map(function(s) { return '<option value="' + s.name + '">'; }).join('');
+  document.getElementById('sv-cost-total').textContent  = lkr(costTotal);
+  document.getElementById('sv-infl-total').textContent  = lkr(inflTotal);
+  document.getElementById('sv-sales-total').textContent = lkr(salesTotal);
+  document.getElementById('sv-low-items').textContent   = lowItems;
 }
 
 // ══════════════════════════════════════════════
-// SETTINGS
+// NEXT ORDER & REORDERS
 // ══════════════════════════════════════════════
-function loadSettings() {
-  document.getElementById('s-shopname').value   = settings.shopName  || '';
-  document.getElementById('s-inflation').value  = settings.inflation || 12;
-  document.getElementById('s-margin').value     = settings.margin    || 25;
-  document.getElementById('s-reorder').value    = settings.reorder   || 10;
-  document.getElementById('s-floordays').value  = settings.floorDays || 7;
-  document.getElementById('s-targetdays').value = settings.targetDays || 30;
-  document.getElementById('s-leadtime').value   = settings.leadTime   || 7;
-}
-function saveSettings() {
-  settings.shopName   = document.getElementById('s-shopname').value.trim()   || 'Hardware Shop';
-  settings.inflation  = parseFloat(document.getElementById('s-inflation').value)  || 12;
-  settings.margin     = parseFloat(document.getElementById('s-margin').value)     || 25;
-  settings.reorder    = parseFloat(document.getElementById('s-reorder').value)    || 10;
-  settings.floorDays  = parseFloat(document.getElementById('s-floordays').value)  || 7;
-  settings.targetDays = parseFloat(document.getElementById('s-targetdays').value) || 30;
-  settings.leadTime   = parseFloat(document.getElementById('s-leadtime').value)   || 7;
-  save(KEYS.settings, settings);
-  document.getElementById('shopNameDisplay').textContent = settings.shopName;
-  if (typeof GS !== 'undefined' && GS.isOnline()) {
-    var s = settings;
-    Promise.all([
-      GS.writeSetting('shop_name',   s.shopName),
-      GS.writeSetting('inflation',   String(s.inflation)),
-      GS.writeSetting('margin',      String(s.margin)),
-      GS.writeSetting('reorder',     String(s.reorder)),
-      GS.writeSetting('floor_days',  String(s.floorDays)),
-      GS.writeSetting('target_days', String(s.targetDays)),
-      GS.writeSetting('lead_time',   String(s.leadTime)),
-    ]).then(function() { toast('Settings saved to Google Sheets'); })
-      .catch(function(e) { console.warn('settings sync error:', e); toast('Settings saved locally'); });
-  } else {
-    toast('Settings saved');
-  }
-}
-function clearAllData() {
-  if (!confirm('This will delete ALL products, stock, and records. Are you sure?')) return;
-  Object.values(KEYS).forEach(k => localStorage.removeItem(k));
-  products = []; stock = []; goodsIn = []; movements = [];
-  settings = { shopName:'Hardware Shop', inflation:12, margin:25, reorder:10, floorDays:7, targetDays:30, leadTime:7 };
-  save(KEYS.settings, settings);
-  loadSettings();
-  toast('All data cleared');
-}
-
-
-// ══════════════════════════════════════════════
-// NEXT ORDER & WAITING FOR DELIVERY
-// ══════════════════════════════════════════════
-const KEYS_ORDERS = 'hs_orders'; // { sku, qtyOrdered, costPerUnit, orderedOn, status:'ordered' }
-
+const KEYS_ORDERS = 'hs_orders';
 function loadOrders() { return JSON.parse(localStorage.getItem(KEYS_ORDERS) || '[]'); }
 function saveOrders(o) { localStorage.setItem(KEYS_ORDERS, JSON.stringify(o)); }
 
-// ── avgDailySales: reads from hs_sales, last 60 days ──
 function avgDailySales(sku) {
-  var allSales = JSON.parse(localStorage.getItem(KEYS.stock && 'hs_sales') || '[]');
-  // Read from the correct key
-  var salesRaw = localStorage.getItem('hs_sales');
+  const salesRaw = localStorage.getItem('hs_sales');
   if (!salesRaw) return 0;
-  var salesData;
+  let salesData;
   try { salesData = JSON.parse(salesRaw); } catch(e) { return 0; }
   if (!Array.isArray(salesData) || !salesData.length) return 0;
 
-  // Look back 60 days (or however many days of data exist)
-  var now    = new Date(); now.setHours(0,0,0,0);
-  var cutoff = new Date(now); cutoff.setDate(cutoff.getDate() - 60);
+  const now = new Date(); now.setHours(0,0,0,0);
+  const cutoff = new Date(now); cutoff.setDate(cutoff.getDate() - 60);
 
-  var totalQty = 0;
-  var datesWithSales = new Set();
+  let totalQty = 0;
+  let datesWithSales = new Set();
 
-  salesData.forEach(function(sale) {
+  salesData.forEach(sale => {
     if (sale.refunded) return;
-    var saleDate = new Date(sale.date);
+    const saleDate = new Date(sale.date);
     if (saleDate < cutoff) return;
-    (sale.items || []).forEach(function(item) {
+    (sale.items || []).forEach(item => {
       if (item.sku === sku) {
         totalQty += (item.qty || 0);
         datesWithSales.add(sale.date);
@@ -2035,52 +1781,30 @@ function avgDailySales(sku) {
   });
 
   if (!datesWithSales.size) return 0;
-
-  // Average over the actual number of days in data range (min 1)
-  var oldestDate = salesData.reduce(function(oldest, s) {
-    return (!oldest || s.date < oldest) ? s.date : oldest;
-  }, null);
-  var daysOfData = oldestDate
-    ? Math.max(1, Math.round((now - new Date(oldestDate)) / 86400000))
-    : 1;
-  var lookback = Math.min(daysOfData, 60);
+  const oldestDate = salesData.reduce((oldest, s) => (!oldest || s.date < oldest) ? s.date : oldest, null);
+  const daysOfData = oldestDate ? Math.max(1, Math.round((now - new Date(oldestDate)) / 86400000)) : 1;
+  const lookback = Math.min(daysOfData, 60);
 
   return totalQty / lookback;
 }
 
-// ── optimumQty: avg daily sales × (target days + lead time) ──
-// Falls back to reorderLevel×2 if no sales data exists yet
 function optimumQty(sku) {
-  var s = getStock(sku);
-
-  // Manager override takes priority
+  const s = getStock(sku);
   if (s.optimOverride !== null && s.optimOverride !== undefined) {
     return parseFloat(s.optimOverride);
   }
+  const avgDaily   = avgDailySales(sku);
+  const targetDays = settings.targetDays || 30;
+  const leadTime   = settings.leadTime   || 7;
 
-  var avgDaily   = avgDailySales(sku);
-  var targetDays = settings.targetDays || 30;
-  var leadTime   = settings.leadTime   || 7;
-
-  if (avgDaily > 0) {
-    // working stock + safety buffer for lead time
-    return avgDaily * (targetDays + leadTime);
-  }
-
-  // No sales history: fall back to reorderLevel × 3
+  if (avgDaily > 0) return avgDaily * (targetDays + leadTime);
   return (s.reorderLevel || settings.reorder) * 3;
 }
 
-// ── optimumQtyLabel: human-readable explanation ──
 function optimumQtyLabel(sku) {
-  var s = getStock(sku);
-  if (s.optimOverride !== null && s.optimOverride !== undefined) {
-    return 'override';
-  }
-  var avgDaily = avgDailySales(sku);
-  if (avgDaily > 0) {
-    return (settings.targetDays||30) + 'd + ' + (settings.leadTime||7) + 'd lead';
-  }
+  const s = getStock(sku);
+  if (s.optimOverride !== null && s.optimOverride !== undefined) return 'override';
+  if (avgDailySales(sku) > 0) return (settings.targetDays||30) + 'd + ' + (settings.leadTime||7) + 'd lead';
   return 'no sales data';
 }
 
@@ -2088,13 +1812,11 @@ function saveOptimOverride(sku, val) {
   const s = getStock(sku);
   const override = val === '' ? null : (parseFloat(val) || null);
   setStock(sku, { optimOverride: override });
-  // Sync optimum override to Products sheet via lastEffectiveCost field isn't ideal
-  // Store it in stock record — synced when stock is rebuilt from lots
-  toast(override !== null ? 'Optimum override saved' : 'Override cleared — back to auto');
+  toast(override !== null ? 'Optimum override saved' : 'Override cleared');
+  renderStockView();
 }
 
 function updateNavBadges() {
-  // Next order badge — low stock items not yet ordered
   const orders = loadOrders();
   const orderedSkus = new Set(orders.map(o => o.sku));
   const lowNotOrdered = products.filter(p => {
@@ -2107,7 +1829,6 @@ function updateNavBadges() {
     badge1.style.display = lowNotOrdered > 0 ? 'inline' : 'none';
     badge1.textContent = lowNotOrdered;
   }
-  // Waiting delivery badge — ordered items count
   const badge2 = document.getElementById('nav-delivery-badge');
   if (badge2) {
     badge2.style.display = orders.length > 0 ? 'inline' : 'none';
@@ -2118,11 +1839,11 @@ function updateNavBadges() {
 // ═══════════════════════════════
 // NEXT ORDER TAB
 // ═══════════════════════════════
-let extraOrderLines = []; // manually added extra items
+let extraOrderLines = [];
 
 function refreshNextOrder() {
-  stock = JSON.parse(localStorage.getItem(KEYS.stock) || '[]');
-  products = JSON.parse(localStorage.getItem(KEYS.products) || '[]');
+  stock = load(KEYS.stock);
+  products = load(KEYS.products);
   renderNextOrder();
 }
 
@@ -2130,7 +1851,6 @@ function renderNextOrder() {
   const orders = loadOrders();
   const orderedSkus = new Set(orders.map(o => o.sku));
 
-  // Auto list: all products below reorder level
   const lowItems = products.filter(p => {
     const s = getStock(p.sku);
     const total = (s.storeQty||0) + (s.floorQty||0);
@@ -2200,7 +1920,6 @@ function calcNoLineTotal(sku) {
 
 function calcNoGrandTotal() {
   let grand = 0;
-  // Auto lines
   products.forEach(p => {
     const s = getStock(p.sku);
     const total = (s.storeQty||0) + (s.floorQty||0);
@@ -2213,7 +1932,6 @@ function calcNoGrandTotal() {
     const cost  = parseFloat(costEl.value)  || 0;
     grand += need * cost;
   });
-  // Extra lines
   extraOrderLines.forEach(l => {
     grand += (parseFloat(l.qty)||0) * (parseFloat(l.cost)||0);
   });
@@ -2233,7 +1951,7 @@ function markOrdered(sku) {
   const orders = loadOrders();
   if (!orders.find(o => o.sku === sku)) {
     const p = products.find(x => x.sku === sku);
-    orders.push({ sku, productName: p?p.name:sku, unit: p?p.unit:'', qtyOrdered: need, costPerUnit: cost, orderedOn: today() });
+    orders.push({ sku: sku, productName: p?p.name:sku, unit: p?p.unit:'', qtyOrdered: need, costPerUnit: cost, orderedOn: today() });
     saveOrders(orders);
   }
   renderNextOrder();
@@ -2246,7 +1964,6 @@ function unmarkOrdered(sku) {
   renderNextOrder();
 }
 
-// ── Extra (manual) order lines ──
 function addExtraOrderLine() {
   extraOrderLines.push({ id: Date.now(), sku:'', qty:'', cost:'' });
   renderExtraOrderLines();
@@ -2303,93 +2020,14 @@ function renderExtraOrderLines() {
       <td style="padding:6px 10px"><input class="no-cost-input" type="number" value="${l.cost}" placeholder="0.00" min="0" step="any" oninput="onExtraLineChange(${l.id},'cost',this.value)"></td>
       <td class="mono" style="padding:6px 10px;text-align:right;font-weight:600" id="no-extra-total-${l.id}">${(parseFloat(l.qty)&&parseFloat(l.cost))?lkr(parseFloat(l.qty)*parseFloat(l.cost)):'—'}</td>
       <td style="padding:6px 10px;text-align:center;white-space:nowrap">
-        <button class="btn-order btn-sm" onclick="markExtraOrdered(${l.id})">
-          <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
-          Add to order
-        </button>
+        <button class="btn-order btn-sm" onclick="markExtraOrdered(${l.id})">Add to order</button>
         <button class="wd-remove-btn" onclick="removeExtraLine(${l.id})" style="margin-left:4px">✕</button>
       </td>
     </tr>`;
   }).join('');
 }
 
-function printNextOrder() {
-  window.print();
-}
-
-// ═══════════════════════════════
-// WAITING FOR DELIVERY TAB
-// ═══════════════════════════════
-function renderWaitingDelivery() {
-  const orders = loadOrders();
-  const el = document.getElementById('wd-count');
-  const tel = document.getElementById('wd-total');
-  if (el) el.textContent = orders.length;
-  let grandTotal = 0;
-  orders.forEach(o => { grandTotal += (o.qtyOrdered||0) * (o.costPerUnit||0); });
-  if (tel) tel.textContent = lkr(grandTotal);
-
-  const tbody = document.getElementById('wd-body');
-  if (!orders.length) {
-    tbody.innerHTML = '<tr><td colspan="7" style="color:var(--text3);text-align:center;padding:28px;">No items ordered yet — go to Next order tab to place orders</td></tr>';
-    return;
-  }
-  tbody.innerHTML = orders.map(o => `
-    <tr style="border-bottom:1px solid var(--border);">
-      <td style="font-weight:500">${o.productName}</td>
-      <td><span class="badge badge-info">${o.unit||'—'}</span></td>
-      <td class="mono" style="text-align:right;font-weight:600">${num(o.qtyOrdered,2)}</td>
-      <td class="mono" style="text-align:right">${lkr(o.costPerUnit||0)}</td>
-      <td class="mono" style="text-align:right;font-weight:600;color:var(--accent)">${lkr((o.qtyOrdered||0)*(o.costPerUnit||0))}</td>
-      <td style="color:var(--text3);font-size:12px">${o.orderedOn||'—'}</td>
-      <td style="text-align:center">
-        <button class="wd-remove-btn" onclick="removeFromWaiting('${o.sku}')" title="Remove from waiting">✕</button>
-      </td>
-    </tr>`).join('');
-  updateNavBadges();
-}
-
-function removeFromWaiting(sku) {
-  if (!confirm('Remove this item from the waiting list?')) return;
-  saveOrders(loadOrders().filter(o => o.sku !== sku));
-  renderWaitingDelivery();
-  updateNavBadges();
-  toast('Removed from waiting list');
-}
-
-function loadWaitingToGoodsIn() {
-  const orders = loadOrders();
-  if (!orders.length) { toast('No items waiting — place orders first'); return; }
-
-  // Switch to goods-in page using IDs
-  document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('active'); });
-  document.querySelectorAll('.nav-item').forEach(function(n) { n.classList.remove('active'); });
-  document.getElementById('page-goods-in').classList.add('active');
-  var navGi = document.getElementById('nav-goods-in');
-  if (navGi) navGi.classList.add('active');
-  document.getElementById('pageTitle').textContent = 'Goods in';
-
-  // Build suggested lines from ordered items (keep any existing lines)
-  var existingSkus = new Set(giLines.map(function(l) { return l.sku; }));
-  var added = 0;
-  orders.forEach(function(o) {
-    if (existingSkus.has(o.sku)) return;
-    giLines.push({
-      id: Date.now() + Math.random(),
-      sku: o.sku,
-      qty: o.qtyOrdered,
-      cost: o.costPerUnit || '',
-      market: '',
-      fromOrder: true
-    });
-    added++;
-  });
-
-  renderGiLines();
-  toast(added + ' item' + (added !== 1 ? 's' : '') + ' loaded from order list');
-}
-
-
+function printNextOrder() { window.print(); }
 
 // ═══════════════════════════════
 // WAITING FOR DELIVERY TAB
@@ -2430,6 +2068,36 @@ function removeFromWaiting(sku) {
   toast('Removed from waiting list');
 }
 
+function loadWaitingToGoodsIn() {
+  const orders = loadOrders();
+  if (!orders.length) { toast('No items waiting — place orders first'); return; }
+
+  document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('active'); });
+  document.querySelectorAll('.nav-item').forEach(function(n) { n.classList.remove('active'); });
+  document.getElementById('page-goods-in').classList.add('active');
+  var navGi = document.getElementById('nav-goods-in');
+  if (navGi) navGi.classList.add('active');
+  document.getElementById('pageTitle').textContent = 'Goods in';
+
+  var existingSkus = new Set(giLines.map(function(l) { return l.sku; }));
+  var added = 0;
+  orders.forEach(function(o) {
+    if (existingSkus.has(o.sku)) return;
+    giLines.push({
+      id: Date.now() + Math.random(),
+      sku: o.sku,
+      qty: o.qtyOrdered,
+      cost: o.costPerUnit || '',
+      market: '',
+      fromOrder: true
+    });
+    added++;
+  });
+
+  renderGiLines();
+  toast(added + ' item(s) loaded from order list');
+}
+
 function clearStoreCacheAndReload() {
   if (!confirm('Clear local cache and reload all data from Google Sheets?')) return;
   if (GS) GS.clearCache();
@@ -2438,7 +2106,7 @@ function clearStoreCacheAndReload() {
       localStorage.removeItem(k);
     }
   });
-  products = []; stock = []; goodsIn = []; movements = [];
+  products = []; stock = []; goodsIn = []; movements = []; giLines = [];
   settings = { shopName:'Hardware Shop', inflation:12, margin:25, reorder:10, floorDays:7, targetDays:30, leadTime:7 };
   toast('Cache cleared — reloading…');
   refreshAllData();
@@ -2453,7 +2121,6 @@ function refreshAllData() {
     return;
   }
   if (!GS.isOnline()) { toast('No internet connection'); return; }
-  // Clear cache to ensure fresh data from Sheets
   GS.clearCache();
   var btn  = document.getElementById('refreshBtn');
   var icon = document.getElementById('refreshIcon');
@@ -2461,12 +2128,12 @@ function refreshAllData() {
   if (icon) icon.style.animation = 'spin 0.7s linear infinite';
   updateSyncIndicator('syncing');
   syncFromSheets().then(function() {
-    // Re-render current page
     var active = document.querySelector('.page.active');
     if (active) {
       var id = active.id.replace('page-', '');
       if (id === 'goods-in')         { renderGoodsInHistory(); populateSupplierList(); }
       if (id === 'products')         renderProducts();
+      if (id === 'shop-floor')       renderShopFloor();
       if (id === 'stock-view')       renderStockView();
       if (id === 'next-order')       renderNextOrder();
       if (id === 'waiting-delivery') renderWaitingDelivery();
@@ -2484,23 +2151,12 @@ function refreshAllData() {
   });
 }
 
-// CSS for spin animation (add to head if not present)
-if (!document.getElementById('spinStyle')) {
-  var style = document.createElement('style');
-  style.id = 'spinStyle';
-  style.textContent = '@keyframes spin { to { transform: rotate(360deg); } }';
-  document.head.appendChild(style);
-}
-
 function populateSupplierList() {
   var suppliers = JSON.parse(localStorage.getItem('hs_suppliers') || '[]');
   var dl = document.getElementById('supplierList');
   if (dl) dl.innerHTML = suppliers.map(function(s) { return '<option value="' + s.name + '">'; }).join('');
 }
 
-// ══════════════════════════════════════════════
-// SETTINGS
-// ══════════════════════════════════════════════
 function loadSettings() {
   document.getElementById('s-shopname').value = settings.shopName || '';
   document.getElementById('s-inflation').value = settings.inflation || 12;
@@ -2508,6 +2164,7 @@ function loadSettings() {
   document.getElementById('s-reorder').value = settings.reorder || 10;
   document.getElementById('s-floordays').value = settings.floorDays || 7;
 }
+
 function saveSettings() {
   settings.shopName  = document.getElementById('s-shopname').value.trim() || 'Hardware Shop';
   settings.inflation = parseFloat(document.getElementById('s-inflation').value) || 12;
@@ -2518,6 +2175,7 @@ function saveSettings() {
   document.getElementById('shopNameDisplay').textContent = settings.shopName;
   toast('Settings saved');
 }
+
 function clearAllData() {
   if (!confirm('This will delete ALL products, stock, and records. Are you sure?')) return;
   Object.values(KEYS).forEach(function(k) { localStorage.removeItem(k); });
@@ -2529,9 +2187,6 @@ function clearAllData() {
   toast('All data cleared');
 }
 
-// ══════════════════════════════════════════════
-// INIT
-// ══════════════════════════════════════════════
 function initDates() {
   const d = new Date();
   const s = d.toLocaleDateString('en-GB', { weekday:'short', day:'numeric', month:'short', year:'numeric' });
@@ -2543,7 +2198,10 @@ function initDates() {
   document.getElementById('shopNameDisplay').textContent = settings.shopName || 'Hardware Shop';
 }
 
-// ── Google Sheets integration ──
+function populateGoodsInProductDropdown() {
+  renderGiLines();
+}
+
 function initGS() {
   if (typeof GS === 'undefined') return;
   GS.init().then(function(connected) {
@@ -2556,7 +2214,6 @@ function initGS() {
       updateSyncIndicator('offline');
     }
   });
-  // Re-check token every 5 minutes
   setInterval(function() {
     if (typeof GS !== 'undefined' && GS.isTokenExpired && GS.isTokenExpired()) {
       var b = document.getElementById('tokenBanner');
@@ -2578,7 +2235,6 @@ async function syncFromSheets() {
   if (!GS.isOnline()) return;
   updateSyncIndicator('syncing');
   try {
-    // Products
     var prods = await GS.read('Products');
     if (prods.length) {
       var mapped = prods.map(function(r) { return {
@@ -2597,7 +2253,6 @@ async function syncFromSheets() {
       products = mapped;
     }
 
-    // Stock lots → derive stock levels
     var lots = await GS.read('Stock_Lots');
     if (lots.length) {
       localStorage.setItem('hs_goodsin', JSON.stringify(lots.map(function(r) { return {
@@ -2613,24 +2268,15 @@ async function syncFromSheets() {
         extraCostTotal: parseFloat(r.extra_cost_total)||0
       }; })));
 
-      // Rebuild stock from lot remainders
       var stockMap = {};
       lots.forEach(function(r) {
-        if (!stockMap[r.sku]) stockMap[r.sku] = { sku: r.sku, storeQty: 0, floorQty: 0,
-          lastDelivery: '', lastInvoice: '', lastSupplier: '', reorderLevel: 0 };
+        if (!stockMap[r.sku]) stockMap[r.sku] = { sku: r.sku, storeQty: 0, floorQty: 0 };
         stockMap[r.sku].storeQty += parseFloat(r.qty_remaining)||0;
-        if (!stockMap[r.sku].lastDelivery || r.goods_in_date > stockMap[r.sku].lastDelivery) {
-          stockMap[r.sku].lastDelivery  = r.goods_in_date;
-          stockMap[r.sku].lastInvoice   = r.invoice_no;
-          stockMap[r.sku].lastSupplier  = r.supplier;
-          stockMap[r.sku].lastEffectiveCost = parseFloat(r.eff_cost_unit)||0;
-        }
       });
       stock = Object.values(stockMap);
       localStorage.setItem('hs_stock', JSON.stringify(stock));
     }
 
-    // Settings
     var settingsRows = await GS.readSettings();
     if (settingsRows.shop_name) {
       settings = {
@@ -2653,21 +2299,8 @@ async function syncFromSheets() {
   }
 }
 
-// Override saveGoodsIn to also write to Sheets
-var _origSaveGoodsIn = saveGoodsIn;
-function saveGoodsIn_wrapped() {
-  // Call original (writes to localStorage)
-  _origSaveGoodsIn.apply(this, arguments);
-  // Then push to Sheets if online
-  if (GS && GS.isOnline()) {
-    pushDeliveryToSheets();
-  }
-}
-
 async function pushDeliveryToSheets() {
-  // Get the most recent goodsIn records (just saved)
   var allGI = JSON.parse(localStorage.getItem('hs_goodsin')||'[]');
-  // Find the latest deliveryId
   var latest = allGI[allGI.length - 1];
   if (!latest) return;
   var delivId = latest.deliveryId;
@@ -2691,13 +2324,12 @@ async function pushDeliveryToSheets() {
         extra_cost_total: r.extraCostTotal||0
       });
     }
-    // Write Deliveries row
     await GS.append('Deliveries', {
       delivery_id: delivId, goods_in_date: latest.date||'',
       invoice_no: latest.invoice||'', supplier: latest.supplier||'',
       extra_cost: latest.extraCostTotal||0, notes: latest.notes||'',
       total_items: lines.length,
-      total_cost: lines.reduce(function(s,r){return s+(r.qty||0)*(r.effCostUnit||0);},0)
+      total_cost: lines.reduce((s,r) => s + (r.qty||0)*(r.effCostUnit||0), 0)
     });
     updateSyncIndicator('connected');
   } catch(e) {
