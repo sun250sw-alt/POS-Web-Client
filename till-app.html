@@ -1416,11 +1416,19 @@ function daysBetween(dateStr) {
 }
 function inflFactor(days) { return Math.pow(1 + settings.inflation / 100, days / 365); }
 
+// AUDIT CORRECTION: Safe and resilient local stock lot lookup with null-guards
 function getActiveLots(sku) {
   var goodsIn = JSON.parse(localStorage.getItem('hs_goodsin') || '[]');
+  if (!Array.isArray(goodsIn)) return [];
   return goodsIn
-    .filter(function(r) { return r.sku === sku && (r.qtyRemaining || r.qty || 0) > 0; })
-    .sort(function(a, b) { return a.date < b.date ? -1 : 1; });
+    .filter(function(r) { 
+      return r && r.sku === sku && (r.qtyRemaining !== undefined ? r.qtyRemaining : r.qty || 0) > 0; 
+    })
+    .sort(function(a, b) { 
+      var ad = a.goods_in_date || a.date || '';
+      var bd = b.goods_in_date || b.date || '';
+      return ad < bd ? -1 : 1; 
+    });
 }
 
 function lotInflValue(lot) {
@@ -1445,8 +1453,10 @@ function sellingPrice(p) {
   return cv * (1 + (settings.margin||25) / 100);
 }
 
+// AUDIT CORRECTION: Guard against null entries in the local stock cache
 function getStockQty(sku) {
-  const s = stock.find(x => x.sku === sku);
+  if (!Array.isArray(stock)) return 0;
+  const s = stock.find(x => x && x.sku === sku);
   return s ? (s.floorQty || 0) : 0;
 }
 
@@ -1500,7 +1510,7 @@ function renderProducts() {
   grid.innerHTML = filtered.map(p => {
     const price = sellingPrice(p);
     const floorQty = getStockQty(p.sku);
-    const reorder = (stock.find(s => s.sku === p.sku)||{}).reorderLevel || settings.reorder;
+    const reorder = (stock.find(s => s && s.sku === p.sku)||{}).reorderLevel || settings.reorder;
     const isOut = floorQty <= 0;
     const isLow = !isOut && floorQty < reorder;
     const stockLine = isOut ? '<span style="color:var(--danger)">&#10005; Out</span>' : isLow ? '<span style="color:var(--warn)">&#9888; Low: ' + num(floorQty,1) + ' ' + p.unit + '</span>' : '<span>&#10003; ' + num(floorQty,1) + ' ' + p.unit + '</span>';
@@ -1540,7 +1550,7 @@ function openUnitModal(sku) {
   if (!p) return;
   document.getElementById('unitModalTitle').textContent = 'Select unit';
   document.getElementById('unitModalProduct').textContent = p.name;
-  const s = stock.find(x => x.sku === sku) || { floorQty: 0 };
+  const s = stock.find(x => x && x.sku === sku) || { floorQty: 0 };
   const btns = document.getElementById('unitModalBtns');
   btns.innerHTML = `<button class="unit-select-btn" data-which="primary" onclick="selectUnit(this.dataset.which)">
     <div><div class="usb-unit">${p.unit}</div><div class="usb-desc">Floor: ${num(s.floorQty,2)}</div></div>
@@ -1782,7 +1792,7 @@ function processPayment() {
 
   stock = load(KEYS.stock);
   cart.forEach(item => {
-    const idx = stock.findIndex(s => s.sku === item.sku);
+    const idx = stock.findIndex(s => s && s.sku === item.sku);
     if (idx >= 0) {
       stock[idx].floorQty = Math.max(0, (stock[idx].floorQty || 0) - item.qty);
     }
@@ -1827,15 +1837,6 @@ function showReceipt(sale) {
   html += `<div class="receipt-footer">Thank you for your business!</div>`;
   document.getElementById('receiptContent').innerHTML = html;
   document.getElementById('receiptModal').classList.add('open');
-}
-
-function printReceipt() { window.print(); }
-function newSale() {
-  document.getElementById('receiptModal').classList.remove('open');
-  cart = []; document.getElementById('discountVal').value = '0';
-  renderCart(); updateTotals(); renderProducts();
-  document.getElementById('cashReceived').value = ''; noteCounts = {};
-  selectPayment('cash'); document.getElementById('searchInput').value = '';
 }
 
 // ══════════════════════════════════════════
@@ -1948,7 +1949,7 @@ async function confirmRefund() {
 
   stock = load(KEYS.stock);
   s.items.forEach(item => {
-    const idx = stock.findIndex(x => x.sku === item.sku);
+    const idx = stock.findIndex(x => x && x.sku === item.sku);
     if (idx >= 0) {
       stock[idx].floorQty = (stock[idx].floorQty || 0) + item.qty;
     }
