@@ -33,7 +33,7 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); font-size: 14px; height: 100vh; overflow: hidden; }
 
-/* ── LAYOUT: left panel (products) + right panel (cart) ── */
+/* ── LAYOUT ── */
 .shell { display: grid; grid-template-columns: 1fr 380px; height: 100vh; gap: 0; }
 
 /* ── LEFT PANEL ── */
@@ -189,7 +189,7 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
 .cart-empty { padding: 48px 20px; text-align: center; color: var(--text3); }
 .cart-empty svg { width: 40px; height: 40px; margin-bottom: 10px; opacity: 0.3; }
 
-/* ── CART FOOTER (totals + payment) ── */
+/* ── CART FOOTER ── */
 .cart-footer { border-top: 1px solid var(--border); flex-shrink: 0; }
 
 .discount-row {
@@ -966,7 +966,7 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
 </head>
 <body>
 
-<!-- ═══════════════ STARTUP / LOCK SCREEN ═══════════════ -->
+<!-- ══ STARTUP / LOCK SCREEN ══ -->
 <div id="startupScreen">
 
   <!-- LEFT: clock + recent bills -->
@@ -1148,7 +1148,7 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
   </div>
 </div>
 
-<!-- ═══════════════ QTY MODAL ═══════════════ -->
+<!-- ══ QTY MODAL ══ -->
 <div class="modal-overlay" id="qtyModal">
   <div class="qty-modal">
     <h3 id="qtyModalTitle">Enter quantity</h3>
@@ -1174,7 +1174,7 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
   </div>
 </div>
 
-<!-- ═══════════════ RECEIPT MODAL ═══════════════ -->
+<!-- ══ RECEIPT MODAL ══ -->
 <div class="modal-overlay" id="receiptModal">
   <div class="receipt">
     <div class="receipt-inner" id="receiptContent"></div>
@@ -1186,7 +1186,7 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
 </div>
 
 
-<!-- ═══════════════ CASH NUMPAD ═══════════════ -->
+<!-- ══ CASH NUMPAD ══ -->
 <div class="cash-numpad-overlay" id="cashNumpadOverlay" onclick="if(event.target===this)closeCashNumpad()">
   <div class="cash-numpad-popup">
     <div class="cnp-display">
@@ -1217,7 +1217,57 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
   </div>
 </div>
 
-<!-- ═══════════════ ADMIN / DAY END PANEL ═══════════════ -->
+<!-- ══ TRANSACTIONS PANEL ══ -->
+<div class="txn-panel" id="txnPanel">
+  <div class="txn-backdrop" onclick="closeTxnPanel()"></div>
+  <div class="txn-drawer">
+    <div class="txn-header">
+      <h2>Recent bills</h2>
+      <button class="txn-close" onclick="closeTxnPanel()">✕ Close</button>
+    </div>
+    <div class="txn-search-row">
+      <input type="text" class="txn-search" id="txnSearch" placeholder="Search by receipt #, product…" oninput="renderTxnList()">
+      <select class="txn-filter" id="txnFilter" onchange="renderTxnList()">
+        <option value="all">All</option>
+        <option value="today">Today</option>
+        <option value="active">Active only</option>
+        <option value="refunded">Refunded</option>
+      </select>
+    </div>
+    <div class="txn-list" id="txnList"></div>
+  </div>
+</div>
+
+<!-- ══ TXN DETAIL MODAL ══ -->
+<div class="modal-overlay" id="txnDetailModal">
+  <div class="txn-detail">
+    <div class="txn-detail-header">
+      <h3 id="txnDetailTitle">Bill detail</h3>
+      <button class="txn-close" onclick="closeTxnDetail()">✕</button>
+    </div>
+    <div class="txn-detail-body" id="txnDetailBody"></div>
+    <div class="txn-actions" id="txnDetailActions"></div>
+  </div>
+</div>
+
+<!-- ══ REFUND CONFIRM ══ -->
+<div class="modal-overlay" id="refundModal">
+  <div class="qty-modal" style="width:340px;">
+    <h3 style="margin-bottom:10px;">Confirm refund</h3>
+    <div id="refundInfo" style="font-size:13px;color:var(--text2);margin-bottom:14px;line-height:1.6;"></div>
+    <div class="form-group" style="margin-bottom:12px;">
+      <label style="font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:var(--text3);font-weight:600;">Refund reason</label>
+      <input type="text" id="refundReason" placeholder="e.g. Wrong item, customer return…"
+        style="width:100%;padding:8px 10px;background:var(--surface2);border:1px solid var(--border2);border-radius:6px;font-family:inherit;font-size:13px;color:var(--text);margin-top:5px;">
+    </div>
+    <div style="display:flex;gap:8px;">
+      <button class="np-btn cancel-btn" style="flex:1;padding:10px;" onclick="closeRefundModal()">Cancel</button>
+      <button class="qty-confirm" style="flex:1;" onclick="confirmRefund()">Confirm refund</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ ADMIN PANEL ══ -->
 <div class="admin-panel" id="adminPanel">
   <div class="admin-topbar">
     <svg width="18" height="18" fill="none" stroke="var(--gold)" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
@@ -1452,7 +1502,7 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
 
 <script>
 // ══════════════════════════════════════════
-// SHARED STORAGE (same keys as store app)
+// DATA STORAGE & NAMESPACE MANAGEMENT
 // ══════════════════════════════════════════
 const KEYS = {
   products: 'hs_products',
@@ -1462,8 +1512,8 @@ const KEYS = {
   movements:'hs_movements'
 };
 
-function load(key) { try { return JSON.parse(localStorage.getItem(key)) || []; } catch { return []; } }
-function loadObj(key, def) { try { return JSON.parse(localStorage.getItem(key)) || def; } catch { return def; } }
+function load(key) { try { return JSON.parse(localStorage.getItem(key)) || []; } catch(e) { return []; } }
+function loadObj(key, def) { try { return JSON.parse(localStorage.getItem(key)) || def; } catch(e) { return def; } }
 function save(key, val) { localStorage.setItem(key, JSON.stringify(val)); }
 
 let products  = load(KEYS.products);
@@ -1472,7 +1522,6 @@ let sales     = load(KEYS.sales);
 let movements = load(KEYS.movements);
 let settings  = loadObj(KEYS.settings, { shopName:'Hardware Shop', inflation:12, margin:25, reorder:10, floorDays:7 });
 
-// ── All module state (declared here to avoid temporal dead zone) ──
 let cart            = [];
 let activeCat       = 'ALL';
 let selectedPayment = 'cash';
@@ -1482,24 +1531,16 @@ const NOTES         = [5, 10, 20, 50, 100, 500, 1000, 5000];
 let noteCounts      = {};
 let cnpStr          = '';
 let currentTxnSale  = null;
-// refundingSaleId declared at top
-let   refundingSaleId = null;
+let refundingSaleId = null;
 const KEYS_REPORTS  = 'hs_day_reports';
 let pendingUnit     = null;
 let pendingUnit2    = null;
 let pendingConv     = 0;
 
 // ══════════════════════════════════════════
-// STATE
-// ══════════════════════════════════════════
-// (all state vars declared at top of script)
-
-// ══════════════════════════════════════════
 // HELPERS
 // ══════════════════════════════════════════
-function lkr(n) {
-  return 'LKR ' + Number(n).toLocaleString('en-LK', { minimumFractionDigits:2, maximumFractionDigits:2 });
-}
+function lkr(n) { return 'LKR ' + Number(n).toLocaleString('en-LK', { minimumFractionDigits:2, maximumFractionDigits:2 }); }
 function num(n, dp) {
   dp = dp !== undefined ? dp : 2;
   if (isNaN(n) || n === null) return '—';
@@ -1513,16 +1554,21 @@ function daysBetween(dateStr) {
   const t = new Date(); t.setHours(0,0,0,0);
   return Math.max(0, Math.floor((t - d) / 86400000));
 }
-function inflFactor(days) {
-  return Math.pow(1 + settings.inflation / 100, days / 365);
-}
-// ── FIFO lot helpers ──
+function inflFactor(days) { return Math.pow(1 + settings.inflation / 100, days / 365); }
+
+// AUDIT CORRECTION: Safe and resilient local stock lot lookup with null-guards
 function getActiveLots(sku) {
-  // Read lots from goodsIn records that have qtyRemaining > 0
   var goodsIn = JSON.parse(localStorage.getItem('hs_goodsin') || '[]');
+  if (!Array.isArray(goodsIn)) return [];
   return goodsIn
-    .filter(function(r) { return r.sku === sku && (r.qtyRemaining || r.qty || 0) > 0; })
-    .sort(function(a, b) { return a.date < b.date ? -1 : 1; }); // oldest first
+    .filter(function(r) { 
+      return r && r.sku === sku && (r.qtyRemaining !== undefined ? r.qtyRemaining : r.qty || 0) > 0; 
+    })
+    .sort(function(a, b) { 
+      var ad = a.goods_in_date || a.date || '';
+      var bd = b.goods_in_date || b.date || '';
+      return ad < bd ? -1 : 1; 
+    });
 }
 
 function lotInflValue(lot) {
@@ -1533,37 +1579,34 @@ function lotInflValue(lot) {
 }
 
 function sellingPrice(p) {
-  // 1. Check active lots for set selling prices
-  var lots   = getActiveLots(p.sku);
+  var lots = getActiveLots(p.sku);
   var prices = lots.map(function(l) { return l.sellingPrice || 0; }).filter(function(v) { return v > 0; });
-
   if (prices.length > 0) return Math.max.apply(null, prices);
-
-  // 2. Fall back to product last_selling_price cache
   if (p.lastSellingPrice && p.lastSellingPrice > 0) return p.lastSellingPrice;
-
-  // 3. Suggested from oldest active lot
   if (lots.length > 0) {
     var cv = lotInflValue(lots[0]);
     return cv * (1 + (settings.margin||25) / 100);
   }
-
-  // 4. Legacy fallback
   if (p.sellingPrice && p.sellingPrice > 0) return p.sellingPrice;
   var days = daysBetween(p.costDate);
   var cv   = (p.costPrice||0) * inflFactor(days);
   return cv * (1 + (settings.margin||25) / 100);
 }
+
+// AUDIT CORRECTION: Guard against null entries in the local stock cache
 function getStockQty(sku) {
-  const s = stock.find(x => x.sku === sku);
-  return s ? ((s.floorQty || 0)) : 0; // till sells from floor stock
+  if (!Array.isArray(stock)) return 0;
+  const s = stock.find(x => x && x.sku === sku);
+  return s ? (s.floorQty || 0) : 0;
 }
+
 function reloadData() {
   products = load(KEYS.products);
   stock    = load(KEYS.stock);
   settings = loadObj(KEYS.settings, { shopName:'Hardware Shop', inflation:12, margin:25, reorder:10, floorDays:7 });
   document.getElementById('shopNameDisplay').textContent = settings.shopName || 'Hardware Shop';
 }
+
 function toast(msg) {
   const el = document.getElementById('toast');
   el.textContent = msg; el.style.opacity = '1';
@@ -1571,24 +1614,17 @@ function toast(msg) {
 }
 
 // ══════════════════════════════════════════
-// PRODUCT GRID
+// PRODUCT GRID & CART
 // ══════════════════════════════════════════
-function getCategories() {
-  const cats = [...new Set(products.map(p => p.category).filter(Boolean))].sort();
-  return cats;
-}
+function getCategories() { return [...new Set(products.map(p => p.category).filter(Boolean))].sort(); }
 
 function renderCatTabs() {
   const cats = getCategories();
   const tabs = document.getElementById('catTabs');
   tabs.innerHTML = `<div class="cat-tab ${activeCat === 'ALL' ? 'active' : ''}" data-cat="ALL">All</div>`
-    + cats.map(c => {
-        const safe = c.replace(/&/g,'&amp;').replace(/"/g,'&quot;');
-        return `<div class="cat-tab ${activeCat === c ? 'active' : ''}" data-cat="${safe}">${c}</div>`;
-      }).join('');
+    + cats.map(c => `<div class="cat-tab ${activeCat === c ? 'active' : ''}" data-cat="${c}">${c}</div>`).join('');
 }
 
-// Category click via event delegation — no inline onclick, no quote issues
 document.getElementById('catTabs').addEventListener('click', function(e) {
   const tab = e.target.closest('.cat-tab');
   if (!tab) return;
@@ -1600,430 +1636,243 @@ document.getElementById('catTabs').addEventListener('click', function(e) {
 function renderProducts() {
   reloadData();
   renderCatTabs();
-
   const q = (document.getElementById('searchInput').value || '').toLowerCase().trim();
   let filtered = products.filter(p => {
     if (activeCat !== 'ALL' && p.category !== activeCat) return false;
     if (!q) return true;
-    return (p.name||'').toLowerCase().includes(q)
-      || (p.category||'').toLowerCase().includes(q)
-      || (p.sku||'').toLowerCase().includes(q);
+    return (p.name||'').toLowerCase().includes(q) || (p.category||'').toLowerCase().includes(q) || (p.sku||'').toLowerCase().includes(q);
   });
-
   const grid = document.getElementById('productGrid');
   if (!filtered.length) {
-    grid.innerHTML = `<div class="empty-state">${q ? 'No products match "'+q+'"' : 'No products — add them in the Store app'}</div>`;
+    grid.innerHTML = `<div class="empty-state">${q ? 'No products match search' : 'No products loaded'}</div>`;
     return;
   }
-
   grid.innerHTML = filtered.map(p => {
     const price = sellingPrice(p);
     const floorQty = getStockQty(p.sku);
-    const reorder = (stock.find(s => s.sku === p.sku)||{}).reorderLevel || settings.reorder;
+    const reorder = (stock.find(s => s && s.sku === p.sku)||{}).reorderLevel || settings.reorder;
     const isOut = floorQty <= 0;
     const isLow = !isOut && floorQty < reorder;
-
-    const price2 = (p.unit2 && p.sellingPrice2 > 0) ? p.sellingPrice2 : 0;
-    const stockLine = isOut
-      ? '<span style="color:var(--danger)">&#10005; Out</span>'
-      : isLow
-        ? '<span style="color:var(--warn)">&#9888; Low: ' + floorQty + ' ' + p.unit + '</span>'
-        : '<span>&#10003; ' + floorQty + ' ' + p.unit + '</span>';
-    const dualPrices = (p.unit2 && p.sellingPrice2 > 0)
-      ? '<div style="font-size:11px;color:var(--text3);margin-top:2px">' + lkr(price2) + ' / ' + p.unit2 + '</div>'
-      : '';
-    return '<div class="product-card' + (isOut ? ' out-stock' : isLow ? ' low-stock' : '') + '"'
-      + ' data-sku="' + p.sku + '" onclick="addToCart(this.dataset.sku)">'
+    const stockLine = isOut ? '<span style="color:var(--danger)">&#10005; Out</span>' : isLow ? '<span style="color:var(--warn)">&#9888; Low: ' + num(floorQty,1) + ' ' + p.unit + '</span>' : '<span>&#10003; ' + num(floorQty,1) + ' ' + p.unit + '</span>';
+    return '<div class="product-card' + (isOut ? ' out-stock' : isLow ? ' low-stock' : '') + '" data-sku="' + p.sku + '" onclick="addToCart(this.dataset.sku)">'
       + '<div class="pc-cat">' + (p.category || '') + '</div>'
       + '<div class="pc-name">' + p.name + '</div>'
       + '<div class="pc-unit">per ' + p.unit + (p.unit2 ? ' / ' + p.unit2 : '') + '</div>'
-      + '<div class="pc-price">' + lkr(price) + dualPrices + '</div>'
+      + '<div class="pc-price">' + lkr(price) + '</div>'
       + '<div class="pc-stock">' + stockLine + '</div>'
       + '</div>';
   }).join('');
 }
 
-// ══════════════════════════════════════════
-// CART
-// ══════════════════════════════════════════
 function addToCart(sku) {
-  const p = products.find(function(x) { return x.sku === sku; });
+  const p = products.find(x => x.sku === sku);
   if (!p) return;
-
-  // If product has a second unit, always show unit selector first
-  if (p.unit2) {
-    openUnitModal(sku);
-    return;
-  }
-
-  // Single-unit flow
-  const inCart = cart.find(function(x) { return x.sku === sku && x.unit === p.unit; });
+  if (p.unit2) { openUnitModal(sku); return; }
+  const inCart = cart.find(x => x.sku === sku && x.unit === p.unit);
   if (p.unit === 'pc' && inCart) {
     inCart.qty += 1;
     renderCart(); updateTotals();
     toast('+1 ' + p.name);
     return;
   }
-  pendingSku   = sku;
-  pendingUnit  = 'primary';
-  pendingUnit2 = null;
-  pendingConv  = 0;
-  numpadStr    = inCart ? String(inCart.qty) : (p.unit === 'pc' ? '1' : '');
-  document.getElementById('qtyModalInput').value = numpadStr || '';
+  pendingSku = sku;
+  pendingUnit = 'primary';
+  numpadStr = inCart ? String(inCart.qty) : (p.unit === 'pc' ? '1' : '');
+  document.getElementById('qtyModalInput').value = numpadStr;
   document.getElementById('qtyModalTitle').textContent = p.name + ' — qty (' + p.unit + ')';
   document.getElementById('qtyModal').classList.add('open');
-  setTimeout(function() { document.getElementById('qtyModalInput').focus(); }, 50);
+  setTimeout(() => document.getElementById('qtyModalInput').focus(), 50);
 }
 
-// ── UNIT SELECTOR MODAL ──
 function openUnitModal(sku) {
   pendingSku = sku;
-  const p = products.find(function(x) { return x.sku === sku; });
+  const p = products.find(x => x.sku === sku);
   if (!p) return;
-
-  document.getElementById('unitModalTitle').textContent = 'How are you selling this?';
+  document.getElementById('unitModalTitle').textContent = 'Select unit';
   document.getElementById('unitModalProduct').textContent = p.name;
-
-  // Use manager-set prices directly — no calculation
-  const price1 = p.sellingPrice  > 0 ? p.sellingPrice  : sellingPrice(p);
-  const price2 = p.sellingPrice2 > 0 ? p.sellingPrice2 : 0;
-
-  const s = reloadStock(sku);
-  const floorQty = s ? (s.floorQty || 0) : 0;
-
-  const price2Display = price2 > 0 ? lkr(price2) : '<span style="color:var(--warn);font-size:12px">price not set</span>';
-
+  const s = stock.find(x => x && x.sku === sku) || { floorQty: 0 };
   const btns = document.getElementById('unitModalBtns');
-  btns.innerHTML =
-    '<button class="unit-select-btn" data-which="primary" onclick="selectUnit(this.dataset.which)">'
-    + '<div>'
-    +   '<div class="usb-unit">' + p.unit + '</div>'
-    +   '<div class="usb-desc">Floor stock: ' + num(floorQty, 2) + ' ' + p.unit + '</div>'
-    + '</div>'
-    + '<div class="usb-price">' + lkr(price1) + '</div>'
-    + '</button>'
-    + '<button class="unit-select-btn' + (price2 <= 0 ? ' low-stock' : '') + '"'
-    + ' data-which="secondary" onclick="selectUnit(this.dataset.which)">'
-    + '<div>'
-    +   '<div class="usb-unit">' + p.unit2 + '</div>'
-    +   '<div class="usb-desc">Sell by ' + p.unit2 + '</div>'
-    + '</div>'
-    + '<div class="usb-price">' + price2Display + '</div>'
-    + '</button>';
-
+  btns.innerHTML = `<button class="unit-select-btn" data-which="primary" onclick="selectUnit(this.dataset.which)">
+    <div><div class="usb-unit">${p.unit}</div><div class="usb-desc">Floor: ${num(s.floorQty,2)}</div></div>
+    <div class="usb-price">${lkr(p.sellingPrice || sellingPrice(p))}</div>
+  </button>
+  <button class="unit-select-btn" data-which="secondary" onclick="selectUnit(this.dataset.which)">
+    <div><div class="usb-unit">${p.unit2}</div><div class="usb-desc">Sell as ${p.unit2}</div></div>
+    <div class="usb-price">${lkr(p.sellingPrice2 || 0)}</div>
+  </button>`;
   document.getElementById('unitModal').classList.add('open');
-}
-
-function reloadStock(sku) {
-  const st = JSON.parse(localStorage.getItem('hs_stock') || '[]');
-  return st.find(function(s) { return s.sku === sku; }) || null;
-}
-
-function closeUnitModal() {
-  document.getElementById('unitModal').classList.remove('open');
-  pendingSku = null;
 }
 
 function selectUnit(which) {
   document.getElementById('unitModal').classList.remove('open');
-  const p = products.find(function(x) { return x.sku === pendingSku; });
+  const p = products.find(x => x.sku === pendingSku);
   if (!p) return;
-
-  pendingUnit  = which;
+  pendingUnit = which;
   pendingUnit2 = which === 'secondary' ? p.unit2 : null;
-
   const unitLabel = which === 'primary' ? p.unit : p.unit2;
   numpadStr = '';
   document.getElementById('qtyModalInput').value = '';
   document.getElementById('qtyModalTitle').textContent = p.name + ' — qty (' + unitLabel + ')';
   document.getElementById('qtyModal').classList.add('open');
-  setTimeout(function() { document.getElementById('qtyModalInput').focus(); }, 50);
+  setTimeout(() => document.getElementById('qtyModalInput').focus(), 50);
 }
 
+function closeUnitModal() { document.getElementById('unitModal').classList.remove('open'); }
 function numpad(val) {
   const input = document.getElementById('qtyModalInput');
-  if (val === 'del') {
-    numpadStr = numpadStr.slice(0, -1);
-  } else if (val === '.' && numpadStr.includes('.')) {
-    return;
-  } else {
-    numpadStr += val;
-  }
+  if (val === 'del') numpadStr = numpadStr.slice(0, -1);
+  else if (val === '.' && numpadStr.includes('.')) return;
+  else numpadStr += val;
   input.value = numpadStr;
 }
-function qtyInputChanged() {
-  numpadStr = document.getElementById('qtyModalInput').value;
-}
-function closeQtyModal() {
-  document.getElementById('qtyModal').classList.remove('open');
-  pendingSku = null; numpadStr = '';
-}
+function qtyInputChanged() { numpadStr = document.getElementById('qtyModalInput').value; }
+function closeQtyModal() { document.getElementById('qtyModal').classList.remove('open'); pendingSku = null; }
+
 function confirmQty() {
   const qty = parseFloat(document.getElementById('qtyModalInput').value);
   if (!qty || qty <= 0) { toast('Enter a valid quantity'); return; }
-
-  const p = products.find(function(x) { return x.sku === pendingSku; });
-  if (!p) { closeQtyModal(); return; }
-
-  // Determine which unit is being sold and its price — no conversion calculation
+  const p = products.find(x => x.sku === pendingSku);
+  if (!p) return;
   const isSec = (pendingUnit === 'secondary' && pendingUnit2);
-  const unit  = isSec ? pendingUnit2 : p.unit;
-  const price = isSec
-    ? (p.sellingPrice2 > 0 ? p.sellingPrice2 : sellingPrice(p))
-    : (p.sellingPrice  > 0 ? p.sellingPrice  : sellingPrice(p));
-
-  // Cart key: sku + unit so bag and kg sit as separate cart lines
-  const cartKey  = pendingSku + '|' + unit;
-  const existing = cart.find(function(x) { return x.cartKey === cartKey; });
-
+  const unit = isSec ? pendingUnit2 : p.unit;
+  const price = isSec ? (p.sellingPrice2 || 0) : (p.sellingPrice || sellingPrice(p));
+  const cartKey = pendingSku + '|' + unit;
+  const existing = cart.find(x => x.cartKey === cartKey);
   if (existing) {
-    existing.qty   = qty;
-    existing.price = price;
+    existing.qty = qty;
   } else {
-    cart.push({
-      cartKey,
-      sku:      pendingSku,
-      name:     p.name,
-      unit,
-      qty,
-      price,
-      category: p.category,
-      isSec
-    });
+    cart.push({ cartKey: cartKey, sku: pendingSku, name: p.name, unit: unit, qty: qty, price: price, category: p.category, isSec: isSec });
   }
-
-  renderCart();
-  updateTotals();
-  closeQtyModal();
-  pendingUnit  = null;
-  pendingUnit2 = null;
-  pendingConv  = 0;
-  toast('Added: ' + p.name + ' (' + qty + ' ' + unit + ')');
+  renderCart(); updateTotals(); closeQtyModal();
+  toast('Added: ' + p.name);
 }
 
-function removeFromCart(cartKey) {
-  cart = cart.filter(function(x) { return x.cartKey !== cartKey; });
-  renderCart();
-  updateTotals();
-}
-
+function removeFromCart(cartKey) { cart = cart.filter(x => x.cartKey !== cartKey); renderCart(); updateTotals(); }
 function changeQty(cartKey, delta) {
-  const item = cart.find(function(x) { return x.cartKey === cartKey; });
+  const item = cart.find(x => x.cartKey === cartKey);
   if (!item) return;
-  const p = products.find(function(x) { return x.sku === item.sku; });
   if (item.unit !== 'pc') {
-    // Open qty modal for non-piece units
-    pendingSku   = item.sku;
-    pendingUnit  = item.isSec ? 'secondary' : 'primary';
+    pendingSku = item.sku;
+    pendingUnit = item.isSec ? 'secondary' : 'primary';
     pendingUnit2 = item.isSec ? item.unit : null;
-    numpadStr    = String(item.qty);
+    numpadStr = String(item.qty);
     document.getElementById('qtyModalInput').value = numpadStr;
-    document.getElementById('qtyModalTitle').textContent = p.name + ' — qty (' + item.unit + ')';
+    document.getElementById('qtyModalTitle').textContent = item.name + ' — qty (' + item.unit + ')';
     document.getElementById('qtyModal').classList.add('open');
     return;
   }
   item.qty = Math.max(1, (item.qty || 1) + delta);
-  renderCart();
-  updateTotals();
+  renderCart(); updateTotals();
 }
 
 function updateCartQty(cartKey, val) {
   const qty = parseFloat(val);
   if (!qty || qty <= 0) { removeFromCart(cartKey); return; }
-  const item = cart.find(function(x) { return x.cartKey === cartKey; });
-  if (item) { item.qty = qty; }
+  const item = cart.find(x => x.cartKey === cartKey);
+  if (item) item.qty = qty;
   updateTotals();
 }
 
-function clearCart() {
-  if (cart.length === 0) return;
-  if (!confirm('Clear the current sale?')) return;
-  cart = [];
-  renderCart();
-  updateTotals();
-}
+function clearCart() { cart = []; renderCart(); updateTotals(); }
 
 function renderCart() {
   const el = document.getElementById('cartItems');
-  const count = cart.reduce((s, i) => s + i.qty, 0);
   document.getElementById('cartCount').textContent = cart.length;
-
   if (!cart.length) {
-    el.innerHTML = `<div class="cart-empty">
-      <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
-      <div>Tap a product to add it</div></div>`;
+    el.innerHTML = `<div class="cart-empty"><svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><polyline points="3 6 21 6"/><path d="M16 10a4 4 0 01-8 0"/></svg><div>Tap a product to add it</div></div>`;
     return;
   }
-
-  el.innerHTML = cart.map(function(item) {
-    return '<div class="cart-item">'
-      + '<div>'
-      +   '<div class="ci-name">' + item.name + '</div>'
-      +   '<div class="ci-unit-price">' + lkr(item.price) + ' / ' + item.unit + '</div>'
-      + '</div>'
-      + '<div class="ci-total">' + lkr(item.qty * item.price) + '</div>'
-      + '<div class="ci-controls">'
-      +   '<button class="qty-btn" data-key="' + item.cartKey + '" onclick="changeQty(this.dataset.key,-1)">&#8722;</button>'
-      +   '<input class="qty-input" type="number" value="' + item.qty + '" min="0" step="any"'
-      +     ' data-key="' + item.cartKey + '" onchange="updateCartQty(this.dataset.key, this.value)"'
-      +     ' onfocus="this.select()">'
-      +   '<button class="qty-btn" data-key="' + item.cartKey + '" onclick="changeQty(this.dataset.key,1)">+</button>'
-      + '</div>'
-      + '<button class="ci-remove" data-key="' + item.cartKey + '" onclick="removeFromCart(this.dataset.key)">&#10005;</button>'
-      + '</div>';
-  }).join('');
+  el.innerHTML = cart.map(item => `
+    <div class="cart-item">
+      <div><div class="ci-name">${item.name}</div><div class="ci-unit-price">${lkr(item.price)} / ${item.unit}</div></div>
+      <div class="ci-total">${lkr(item.qty * item.price)}</div>
+      <div class="ci-controls">
+        <button class="qty-btn" onclick="changeQty('${item.cartKey}',-1)">&#8722;</button>
+        <input class="qty-input" type="number" value="${item.qty}" onchange="updateCartQty('${item.cartKey}', this.value)" onfocus="this.select()">
+        <button class="qty-btn" onclick="changeQty('${item.cartKey}',1)">+</button>
+      </div>
+      <button class="ci-remove" onclick="removeFromCart('${item.cartKey}')">&#10005;</button>
+    </div>`).join('');
 }
 
-// ══════════════════════════════════════════
-// TOTALS
-// ══════════════════════════════════════════
-function calcSubtotal() {
-  return cart.reduce((s, i) => s + i.qty * i.price, 0);
-}
-function isDiscountAllowed() {
-  return currentUser && (currentUser.role === 'Admin' || currentUser.role === 'Manager');
-}
-
+function calcSubtotal() { return cart.reduce((s, i) => s + i.qty * i.price, 0); }
+function isDiscountAllowed() { return currentUser && (currentUser.role === 'Admin' || currentUser.role === 'Manager'); }
 function calcDiscount(subtotal) {
   if (!isDiscountAllowed()) return 0;
   const val = parseFloat(document.getElementById('discountVal').value) || 0;
   const type = document.getElementById('discountType').value;
-  if (type === 'pct') return subtotal * (val / 100);
-  return Math.min(val, subtotal);
+  return type === 'pct' ? subtotal * (val / 100) : Math.min(val, subtotal);
 }
-function calcGrand() {
-  const sub = calcSubtotal();
-  return Math.max(0, sub - calcDiscount(sub));
-}
+function calcGrand() { const sub = calcSubtotal(); return Math.max(0, sub - calcDiscount(sub)); }
 
 function calcMaxDiscount() {
-  // Only show for Admin or Manager roles
   var badge = document.getElementById('maxDiscountBadge');
   if (!badge) return;
-
   var isAdminUser = currentUser && (currentUser.role === 'Admin' || currentUser.role === 'Manager');
-  if (!isAdminUser || cart.length === 0) {
-    badge.classList.remove('show');
-    return;
-  }
-
-  // Calculate cart sell total and inflation cost total
-  var cartSellTotal = 0;
-  var cartInflTotal = 0;
-
-  cart.forEach(function(item) {
-    var p    = products.find(function(x) { return x.sku === item.sku; });
+  if (!isAdminUser || cart.length === 0) { badge.classList.remove('show'); return; }
+  var cartSellTotal = 0, cartInflTotal = 0;
+  cart.forEach(item => {
+    var p = products.find(x => x.sku === item.sku);
     if (!p) return;
     var lots = getActiveLots(item.sku);
-    var inflCost;
-    if (lots.length > 0) {
-      inflCost = lotInflValue(lots[0]);
-    } else {
-      var days = daysBetween(p.costDate);
-      inflCost = (p.lastEffectiveCost || p.costPrice || 0) * inflFactor(days);
-    }
+    var inflCost = lots.length > 0 ? lotInflValue(lots[0]) : (p.lastEffectiveCost || p.costPrice || 0) * inflFactor(daysBetween(p.costDate));
     cartSellTotal += item.qty * item.price;
     cartInflTotal += item.qty * inflCost;
   });
-
   if (cartSellTotal <= 0) { badge.classList.remove('show'); return; }
-
   var rawPct = ((cartSellTotal - cartInflTotal) / cartSellTotal) * 100;
-  // Floor to nearest 5
   var maxPct = Math.floor(rawPct / 5) * 5;
-
   badge.classList.add('show');
-  if (maxPct <= 0) {
-    badge.textContent = 'no discount';
-    badge.classList.add('no-discount');
-  } else {
-    badge.textContent = 'max ' + maxPct + '%';
-    badge.classList.remove('no-discount');
-  }
+  if (maxPct <= 0) { badge.textContent = 'no discount'; badge.classList.add('no-discount'); }
+  else { badge.textContent = 'max ' + maxPct + '%'; badge.classList.remove('no-discount'); }
 }
 
 function updateTotals() {
-  const sub   = calcSubtotal();
-  const disc  = calcDiscount(sub);
+  const sub = calcSubtotal();
+  const disc = calcDiscount(sub);
   const grand = Math.max(0, sub - disc);
-
-  document.getElementById('subtotal').textContent    = lkr(sub);
-  document.getElementById('grandTotal').textContent  = lkr(grand);
-  document.getElementById('chargeBtn').textContent   = 'Charge — ' + lkr(grand);
-  document.getElementById('chargeBtn').disabled      = cart.length === 0;
-
-  if (disc > 0) {
-    document.getElementById('discountRow').style.display = 'flex';
-    document.getElementById('discountAmt').textContent   = '− ' + lkr(disc);
-  } else {
-    document.getElementById('discountRow').style.display = 'none';
-  }
-
-  calcMaxDiscount();
-  calcChange();
+  document.getElementById('subtotal').textContent = lkr(sub);
+  document.getElementById('grandTotal').textContent = lkr(grand);
+  document.getElementById('chargeBtn').textContent = 'Charge — ' + lkr(grand);
+  document.getElementById('chargeBtn').disabled = cart.length === 0;
+  document.getElementById('discountRow').style.display = disc > 0 ? 'flex' : 'none';
+  if (disc > 0) document.getElementById('discountAmt').textContent = '− ' + lkr(disc);
+  calcMaxDiscount(); calcChange();
 }
 
 // ══════════════════════════════════════════
-// PAYMENT
+// PAYMENT & CASH NUMPAD
 // ══════════════════════════════════════════
-
-function noteTotal() {
-  return Object.entries(noteCounts).reduce((s, [n, c]) => s + Number(n) * c, 0);
-}
-
+function noteTotal() { return Object.entries(noteCounts).reduce((s, [n, c]) => s + Number(n) * c, 0); }
 function renderCashNotes() {
   const grid = document.getElementById('cashNoteGrid');
   grid.innerHTML = NOTES.map(n => {
     const count = noteCounts[n] || 0;
-    const isActive = count > 0;
-    const label = n >= 1000 ? (n/1000)+'K' : n;
     const badge = count > 1 ? `<span style="position:absolute;top:2px;right:4px;font-size:9px;background:var(--accent);color:#fff;border-radius:8px;padding:0 4px;line-height:14px;">${count}</span>` : '';
-    return `<div class="cash-note${isActive ? ' active' : ''}" data-note="${n}" onclick="tapNote(${n})" style="position:relative;">
-      ${label}${badge}
-    </div>`;
+    return `<div class="cash-note${count > 0 ? ' active' : ''}" onclick="tapNote(${n})" style="position:relative;">${n >= 1000 ? (n/1000)+'K' : n}${badge}</div>`;
   }).join('');
 }
-
 function tapNote(note) {
-  // Each tap adds one of that note (accumulates), right-click or long-press removes
   noteCounts[note] = (noteCounts[note] || 0) + 1;
   const total = noteTotal();
   document.getElementById('cashReceived').value = total > 0 ? total : '';
-  renderCashNotes();
-  calcChange();
+  renderCashNotes(); calcChange();
 }
-
 function clearCashInput() {
-  noteCounts = {};
-  cnpStr = '';
+  noteCounts = {}; cnpStr = '';
   document.getElementById('cashReceived').value = '';
-  renderCashNotes();
-  calcChange();
+  renderCashNotes(); calcChange();
 }
-
-function onCashInput() {
-  // When user types manually, clear note selection
-  noteCounts = {};
-  renderCashNotes();
-  calcChange();
-}
+function onCashInput() { noteCounts = {}; renderCashNotes(); calcChange(); }
 
 function selectPayment(method) {
   selectedPayment = method;
-  ['cash','card','transfer','credit'].forEach(m => {
-    document.getElementById('pm-'+m).classList.toggle('active', m === method);
-  });
+  ['cash','card','transfer','credit'].forEach(m => document.getElementById('pm-'+m).classList.toggle('active', m === method));
   const isCash = method === 'cash';
   document.getElementById('cashInputRow').classList.toggle('show', isCash);
   document.getElementById('cashNotes').classList.toggle('show', isCash);
   document.getElementById('changeDisplay').classList.toggle('show', isCash);
-  if (isCash) {
-    noteCounts = {};
-    document.getElementById('cashReceived').value = '';
-    renderCashNotes();
-    calcChange();
-    // numpad only opens when user taps the input — not automatically
-  }
+  if (isCash) { clearCashInput(); }
 }
 
 function calcChange() {
@@ -2031,32 +1880,38 @@ function calcChange() {
   const cash = parseFloat(document.getElementById('cashReceived').value) || 0;
   const change = cash - grand;
   const changeEl = document.getElementById('changeDue');
-  if (change >= 0) {
-    changeEl.textContent = lkr(change);
-    changeEl.style.color = 'var(--gold)';
-  } else if (cash > 0) {
-    changeEl.textContent = '− ' + lkr(Math.abs(change)) + ' short';
-    changeEl.style.color = 'var(--danger)';
-  } else {
-    changeEl.textContent = lkr(0);
-    changeEl.style.color = 'var(--gold)';
-  }
+  if (change >= 0) { changeEl.textContent = lkr(change); changeEl.style.color = 'var(--gold)'; }
+  else if (cash > 0) { changeEl.textContent = '− ' + lkr(Math.abs(change)) + ' short'; changeEl.style.color = 'var(--danger)'; }
+  else { changeEl.textContent = lkr(0); changeEl.style.color = 'var(--gold)'; }
+}
+
+function openCashNumpad() {
+  cnpStr = '';
+  document.getElementById('cnpDisplay').textContent = '0';
+  document.getElementById('cnpChange').textContent = '—';
+  document.getElementById('cashNumpadOverlay').classList.add('open');
+}
+function closeCashNumpad() { document.getElementById('cashNumpadOverlay').classList.remove('open'); }
+function cnpPress(key) {
+  if (key === 'del') cnpStr = cnpStr.slice(0, -1);
+  else cnpStr += key;
+  const val = parseFloat(cnpStr) || 0;
+  document.getElementById('cnpDisplay').textContent = val > 0 ? val.toLocaleString('en-LK') : '0';
+  const change = val - calcGrand();
+  document.getElementById('cnpChange').textContent = change >= 0 ? lkr(change) : '—';
+}
+function cnpConfirm() {
+  const val = parseFloat(cnpStr) || 0;
+  document.getElementById('cashReceived').value = val > 0 ? val : '';
+  closeCashNumpad(); onCashInput(); calcChange();
 }
 
 function processPayment() {
   if (cart.length === 0) return;
   const grand = calcGrand();
   const cash = parseFloat(document.getElementById('cashReceived').value) || 0;
-
-  if (selectedPayment === 'cash' && cash < grand && cash > 0) {
-    toast('Cash received is less than total');
-    return;
-  }
-  if (selectedPayment === 'cash' && cash === 0) {
-    openCashNumpad();
-    toast('Enter cash received');
-    return;
-  }
+  if (selectedPayment === 'cash' && cash < grand && cash > 0) { toast('Cash received is less than total'); return; }
+  if (selectedPayment === 'cash' && cash === 0) { openCashNumpad(); toast('Enter cash received'); return; }
 
   const sub = calcSubtotal();
   const disc = calcDiscount(sub);
@@ -2065,276 +1920,499 @@ function processPayment() {
   const timeStr = nowTime();
   const change = selectedPayment === 'cash' ? Math.max(0, cash - grand) : 0;
 
-  // Build sale record
   const saleRecord = {
-    id: saleId,
-    date: todayStr,
-    time: timeStr,
-    items: cart.map(function(i) { return { sku: i.sku, name: i.name, unit: i.unit, qty: i.qty, price: i.price, lineTotal: i.qty * i.price }; }),
-    subtotal: sub,
-    discount: disc,
-    total: grand,
-    payment: selectedPayment,
-    cashReceived: selectedPayment === 'cash' ? cash : 0,
-    change,
+    id: saleId, date: todayStr, time: timeStr,
+    items: cart.map(i => ({ sku: i.sku, name: i.name, unit: i.unit, qty: i.qty, price: i.price, lineTotal: i.qty * i.price })),
+    subtotal: sub, discount: disc, total: grand, payment: selectedPayment,
+    cashReceived: selectedPayment === 'cash' ? cash : 0, change: change, refunded: false
   };
 
-  // Save sale
   sales.push(saleRecord);
   save(KEYS.sales, sales);
 
-  // Deduct from floor stock — qty is always in primary unit (stock tracked in primary)
-  // For secondary-unit sales, the store decides what to deduct — floor shows primary qty
   stock = load(KEYS.stock);
-  // Group by sku to combine deductions from same product sold in different units
-  var deductions = {};
-  cart.forEach(function(item) {
-    deductions[item.sku] = (deductions[item.sku] || 0) + item.qty;
-  });
-  Object.keys(deductions).forEach(function(sku) {
-    const idx = stock.findIndex(function(s) { return s.sku === sku; });
+  cart.forEach(item => {
+    const idx = stock.findIndex(s => s && s.sku === item.sku);
     if (idx >= 0) {
-      stock[idx].floorQty = Math.max(0, (stock[idx].floorQty || 0) - deductions[sku]);
+      stock[idx].floorQty = Math.max(0, (stock[idx].floorQty || 0) - item.qty);
     }
+    movements.push({
+      id: Date.now() + Math.random(), date: todayStr, time: timeStr,
+      type: 'sale', sku: item.sku, productName: item.name, qty: item.qty,
+      from_loc: 'floor', to_loc: 'sold', note: saleId
+    });
   });
   save(KEYS.stock, stock);
-
-  // Log movement
-  cart.forEach(item => {
-    movements.push({
-      id: Date.now() + Math.random(),
-      date: todayStr, time: timeStr,
-      type: 'sale',
-      sku: item.sku, productName: item.name,
-      qty: item.qty, from: 'floor', to: 'sold',
-      note: saleId
-    });
-  });
   save(KEYS.movements, movements);
 
-  // Push sale to Google Sheets
   if (typeof GS !== 'undefined' && GS.isOnline()) {
     updateSyncTill('syncing');
-    pushLastSaleToSheets().then(function() {
-      updateSyncTill('connected');
-    }).catch(function(e) {
-      console.warn('pushLastSaleToSheets error:', e);
-      updateSyncTill('offline');
-    });
+    pushLastSaleToSheets().then(() => updateSyncTill('connected')).catch(e => { console.warn(e); updateSyncTill('offline'); });
   }
-
   showReceipt(saleRecord);
 }
 
-// ══════════════════════════════════════════
-// RECEIPT
-// ══════════════════════════════════════════
 function showReceipt(sale) {
-  const change = sale.change || 0;
   const payLabel = { cash:'Cash', card:'Card', transfer:'Bank transfer', credit:'Credit' }[sale.payment] || sale.payment;
-
-  let html = `
-    <div class="receipt-shop">${settings.shopName || 'Hardware Shop'}</div>
-    <div class="receipt-sub">Sale receipt</div>
+  let html = `<div class="receipt-shop">${settings.shopName || 'Hardware Shop'}</div>
+    <div class="receipt-sub">${sale.refunded ? 'REFUND RECEIPT' : 'Cash sale receipt'}</div>
     <hr class="receipt-divider">
     <div class="receipt-row header"><span>ITEM</span><span>TOTAL</span></div>`;
-
-  sale.items.forEach(item => {
-    html += `<div class="receipt-row">
-      <span>${item.name}<br><small style="color:#888">${item.qty} ${item.unit} × ${lkr(item.price)}</small></span>
-      <span>${lkr(item.lineTotal)}</span>
-    </div>`;
+  sale.items.forEach(i => {
+    html += `<div class="receipt-row"><span>${i.name}<br><small style="color:#666">${i.qty} ${i.unit} × ${lkr(i.price)}</small></span><span>${lkr(i.lineTotal)}</span></div>`;
   });
-
   html += `<hr class="receipt-divider">
     <div class="receipt-row total"><span>Subtotal</span><span>${lkr(sale.subtotal)}</span></div>`;
-
-  if (sale.discount > 0) {
-    html += `<div class="receipt-row"><span>Discount</span><span>− ${lkr(sale.discount)}</span></div>`;
-  }
-
+  if (sale.discount > 0) html += `<div class="receipt-row"><span>Discount</span><span>− ${lkr(sale.discount)}</span></div>`;
   html += `<div class="receipt-row grand"><span>TOTAL</span><span>${lkr(sale.total)}</span></div>
-    <hr class="receipt-divider">
-    <div class="receipt-row"><span>Payment</span><span>${payLabel}</span></div>`;
-
+    <hr class="receipt-divider"><div class="receipt-row"><span>Payment</span><span>${payLabel}</span></div>`;
   if (sale.payment === 'cash') {
     html += `<div class="receipt-row"><span>Cash</span><span>${lkr(sale.cashReceived)}</span></div>
-      <div class="receipt-row change"><span>Change</span><span>${lkr(change)}</span></div>`;
+      <div class="receipt-row change"><span>Change</span><span>${lkr(sale.change)}</span></div>`;
   }
-
   html += `<hr class="receipt-divider">
-    <div class="receipt-row" style="font-size:11px;color:#888"><span>Receipt #</span><span>${sale.id}</span></div>
-    <div class="receipt-row" style="font-size:11px;color:#888"><span>Date / Time</span><span>${sale.date} ${sale.time}</span></div>
-    <div class="receipt-footer">Thank you for your business!</div>`;
-
+    <div class="receipt-row" style="font-size:11px;color:#888"><span>Bill #</span><span>${sale.id}</span></div>
+    <div class="receipt-row" style="font-size:11px;color:#888"><span>Date / Time</span><span>${sale.date} ${sale.time}</span></div>`;
+  if (sale.refunded) html += `<div class="receipt-row" style="color:var(--danger);font-weight:700;"><span>Refund reason:</span><span>${sale.refundReason||'—'}</span></div>`;
+  html += `<div class="receipt-footer">Thank you for your business!</div>`;
   document.getElementById('receiptContent').innerHTML = html;
   document.getElementById('receiptModal').classList.add('open');
 }
 
-function printReceipt() {
-  window.print();
-}
-
-function newSale() {
-  document.getElementById('receiptModal').classList.remove('open');
-  cart = [];
-  document.getElementById('discountVal').value = '0';
-  renderCart();
-  updateTotals();
-  renderProducts();
-  document.getElementById('cashReceived').value = '';
-  noteCounts = {};
-  selectPayment('cash');
-  document.getElementById('searchInput').value = '';
-  activeCat = 'ALL';
-}
-
 // ══════════════════════════════════════════
-// KEYBOARD SHORTCUTS
+// RECENT BILLS / TRANSACTIONS DRAWER
 // ══════════════════════════════════════════
-document.addEventListener('keydown', e => {
-  if (document.getElementById('qtyModal').classList.contains('open')) {
-    if (e.key === 'Enter') confirmQty();
-    if (e.key === 'Escape') closeQtyModal();
+function openTxnPanel() {
+  document.getElementById('txnPanel').classList.add('open');
+  renderTxnList();
+}
+function closeTxnPanel() { document.getElementById('txnPanel').classList.remove('open'); }
+
+function renderTxnList() {
+  const q = document.getElementById('txnSearch').value.toLowerCase().trim();
+  const filter = document.getElementById('txnFilter').value;
+  const listEl = document.getElementById('txnList');
+
+  let filtered = [...sales].reverse();
+  if (filter === 'today') { const todayStr = today(); filtered = filtered.filter(s => s.date === todayStr); }
+  else if (filter === 'active') { filtered = filtered.filter(s => !s.refunded); }
+  else if (filter === 'refunded') { filtered = filtered.filter(s => s.refunded); }
+
+  if (q) {
+    filtered = filtered.filter(s => {
+      const matchId = s.id.toLowerCase().includes(q);
+      const matchProduct = s.items.some(i => i.name.toLowerCase().includes(q));
+      return matchId || matchProduct;
+    });
+  }
+
+  if (!filtered.length) {
+    listEl.innerHTML = `<div style="text-align:center;color:var(--text3);padding:40px;">No bills found</div>`;
     return;
   }
-  if (document.getElementById('receiptModal').classList.contains('open')) {
-    if (e.key === 'Enter' || e.key === 'Escape') newSale();
+
+  listEl.innerHTML = filtered.map(s => {
+    const isRef = s.refunded;
+    const badgeClass = isRef ? 'refunded' : s.payment;
+    const preview = s.items.map(i => i.qty + '× ' + i.name).join(', ');
+    return `<div class="txn-item ${isRef ? 'refunded' : ''}" onclick="showTxnDetail('${s.id}')">
+      <div class="txn-item-top">
+        <span class="txn-id">${s.id}</span>
+        <span class="txn-total">${lkr(s.total)}</span>
+      </div>
+      <div class="txn-item-mid">
+        <span class="txn-datetime">${s.date} ${s.time}</span>
+        <span class="txn-badge txn-badge-${badgeClass}">${isRef ? 'Refunded' : s.payment}</span>
+      </div>
+      <div class="txn-items-preview">${preview}</div>
+    </div>`;
+  }).join('');
+}
+
+function showTxnDetail(saleId) {
+  const s = sales.find(x => x.id === saleId);
+  if (!s) return;
+  currentTxnSale = s;
+  document.getElementById('txnDetailTitle').textContent = 'Bill ' + s.id;
+  let itemsHtml = s.items.map(i => `
+    <div class="txn-detail-row">
+      <span class="dl">${i.name}<br><small>${i.qty} ${i.unit} × ${lkr(i.price)}</small></span>
+      <span class="dv">${lkr(i.lineTotal)}</span>
+    </div>`).join('');
+
+  let bodyHtml = `<div class="txn-detail-row"><span class="dl">Date</span><span class="dv">${s.date} ${s.time}</span></div>
+    <div class="txn-detail-row"><span class="dl">Cashier</span><span class="dv">${s.cashier || '—'}</span></div>
+    <div class="txn-detail-row"><span class="dl">Status</span><span class="dv" style="color:${s.refunded?'var(--danger)':'var(--accent)'}">${s.refunded?'Refunded':'Active'}</span></div>
+    <div style="font-size:11px;text-transform:uppercase;color:var(--text3);margin-top:14px;margin-bottom:6px;">Items</div>
+    ${itemsHtml}
+    <hr style="border:none;border-top:1px solid var(--border);margin:10px 0;">
+    <div class="txn-detail-row"><span class="dl">Subtotal</span><span class="dv">${lkr(s.subtotal)}</span></div>
+    <div class="txn-detail-row"><span class="dl">Discount</span><span class="dv" style="color:var(--warn)">${lkr(s.discount||0)}</span></div>
+    <div class="txn-detail-row grand-row"><span class="dl">Total</span><span class="dv">${lkr(s.total)}</span></div>`;
+
+  if (s.refunded) {
+    bodyHtml += `<div class="txn-detail-row" style="color:var(--danger)"><span class="dl">Refund reason</span><span class="dv">${s.refundReason || '—'}</span></div>`;
+  }
+
+  document.getElementById('txnDetailBody').innerHTML = bodyHtml;
+
+  const actionsEl = document.getElementById('txnDetailActions');
+  actionsEl.innerHTML = `<button class="txn-action-btn btn-reprint" onclick="reprintTxn()">🖨 Reprint</button>
+    <button class="txn-action-btn btn-refund" ${s.refunded ? 'disabled' : ''} onclick="openRefundModal('${s.id}')">✕ Refund bill</button>`;
+
+  document.getElementById('txnDetailModal').classList.add('open');
+}
+
+function closeTxnDetail() { document.getElementById('txnDetailModal').classList.remove('open'); currentTxnSale = null; }
+function reprintTxn() { if (currentTxnSale) showReceipt(currentTxnSale); }
+
+function openRefundModal(saleId) {
+  refundingSaleId = saleId;
+  const s = sales.find(x => x.id === saleId);
+  document.getElementById('refundInfo').textContent = `Refunding bill ${s.id} for ${lkr(s.total)}. This will restore the sold quantities back to shop floor stock.`;
+  document.getElementById('refundReason').value = '';
+  document.getElementById('refundModal').classList.add('open');
+}
+function closeRefundModal() { document.getElementById('refundModal').classList.remove('open'); refundingSaleId = null; }
+
+async function confirmRefund() {
+  const reason = document.getElementById('refundReason').value.trim();
+  if (!reason) { toast('Enter a refund reason'); return; }
+
+  const s = sales.find(x => x.id === refundingSaleId);
+  if (!s) return;
+
+  s.refunded = true;
+  s.refundReason = reason;
+  s.refundDate = today();
+  save(KEYS.sales, sales);
+
+  stock = load(KEYS.stock);
+  s.items.forEach(item => {
+    const idx = stock.findIndex(x => x && x.sku === item.sku);
+    if (idx >= 0) {
+      stock[idx].floorQty = (stock[idx].floorQty || 0) + item.qty;
+    }
+    movements.push({
+      id: Date.now() + Math.random(), date: today(), time: nowTime(),
+      type: 'refund', sku: item.sku, productName: item.name, qty: item.qty,
+      from_loc: 'sold', to_loc: 'floor', note: s.id + ' | ' + reason
+    });
+  });
+  save(KEYS.stock, stock);
+  save(KEYS.movements, movements);
+
+  if (typeof GS !== 'undefined' && GS.isOnline()) {
+    updateSyncTill('syncing');
+    try {
+      GS.read('Sales').then(rows => {
+        let rIdx = -1;
+        for (let i = 0; i < rows.length; i++) {
+          if (rows[i].sale_id === s.id) { rIdx = i + 1; break; }
+        }
+        if (rIdx > 0) {
+          var matchedSaleRow = rows[rIdx - 1];
+          matchedSaleRow.refunded = 'true';
+          matchedSaleRow.refund_reason = reason;
+          matchedSaleRow.refund_date = today();
+          
+          return GS.update('Sales', rIdx, matchedSaleRow);
+        }
+      }).then(() => {
+        updateSyncTill('connected');
+        toast('Refund synced to Google Sheets');
+      });
+    } catch(e) {
+      console.warn('Refund sync fail:', e);
+      updateSyncTill('offline');
+    }
+  }
+
+  closeRefundModal(); closeTxnDetail(); renderTxnList(); renderProducts(); renderStartupBills();
+  toast('Bill refunded successfully');
+}
+
+// ══════════════════════════════════════════
+// ADMIN & CLOSED DAY END REPORTING
+// ══════════════════════════════════════════
+function openAdminPanel() {
+  document.getElementById('adminDateLabel').textContent = today();
+  document.getElementById('adminPanel').classList.add('open');
+  calculateTodaySummary();
+  renderSavedReportsList();
+}
+function closeAdminPanel() { document.getElementById('adminPanel').classList.remove('open'); }
+
+function calculateTodaySummary() {
+  const todayStr = today();
+  const todaySales = sales.filter(s => s.date === todayStr);
+  const active = todaySales.filter(s => !s.refunded);
+  const refunded = todaySales.filter(s => s.refunded);
+
+  const tSales = active.reduce((s, x) => s + x.total, 0);
+  const tBills = active.length;
+  const avgB   = tBills > 0 ? tSales / tBills : 0;
+
+  const cashS  = active.filter(s => s.payment === 'cash').reduce((s, x) => s + x.total, 0);
+  const cashC  = active.filter(s => s.payment === 'cash').length;
+  const cardS  = active.filter(s => s.payment === 'card' || s.payment === 'transfer').reduce((s, x) => s + x.total, 0);
+  const cardC  = active.filter(s => s.payment === 'card' || s.payment === 'transfer').length;
+  const credS  = active.filter(s => s.payment === 'credit').reduce((s, x) => s + x.total, 0);
+  const credC  = active.filter(s => s.payment === 'credit').length;
+
+  const refAmt = refunded.reduce((s, x) => s + x.total, 0);
+  const refCnt = refunded.length;
+
+  const discAmt = active.reduce((s, x) => s + (x.discount || 0), 0);
+  const discCnt = active.filter(s => (s.discount || 0) > 0).length;
+
+  let itemsSold = 0;
+  const prodTotals = {};
+  active.forEach(s => {
+    s.items.forEach(i => {
+      itemsSold += i.qty;
+      if (!prodTotals[i.name]) prodTotals[i.name] = { qty:0, rev:0 };
+      prodTotals[i.name].qty += i.qty;
+      prodTotals[i.name].rev += i.lineTotal;
+    });
+  });
+
+  document.getElementById('adTotalSales').textContent   = lkr(tSales);
+  document.getElementById('adBillCount').textContent    = tBills;
+  document.getElementById('adAvgBill').textContent      = 'avg ' + lkr(avgB);
+  document.getElementById('adCashSales').textContent    = lkr(cashS);
+  document.getElementById('adCashCount').textContent    = cashC;
+  document.getElementById('adCardSales').textContent    = lkr(cardS);
+  document.getElementById('adCardCount').textContent    = cardC;
+  document.getElementById('adCreditSales').textContent  = lkr(credS);
+  document.getElementById('adCreditCount').textContent  = credC;
+  document.getElementById('adRefunds').textContent      = lkr(refAmt);
+  document.getElementById('adRefundCount').textContent  = refCnt;
+  document.getElementById('adDiscounts').textContent    = lkr(discAmt);
+  document.getElementById('adDiscountCount').textContent = discCnt;
+  document.getElementById('adItemsSold').textContent    = itemsSold;
+
+  const top = Object.entries(prodTotals).sort((a,b) => b[1].rev - a[1].rev).slice(0, 5);
+  document.getElementById('adTopProducts').innerHTML = top.length
+    ? top.map(p => `<tr><td style="padding:10px 16px;font-weight:500;">${p[0]}</td><td style="padding:10px 16px;text-align:center;font-family:monospace;">${p[1].qty}</td><td style="padding:10px 16px;text-align:right;font-family:monospace;font-weight:600;color:var(--accent);">${lkr(p[1].rev)}</td></tr>`).join('')
+    : `<tr><td colspan="3" style="text-align:center;color:var(--text3);padding:20px;">No sales today</td></tr>`;
+
+  const refundsToday = todaySales.filter(s => s.refunded && s.payment === 'cash');
+  const totalCashRefunds = refundsToday.reduce((s, x) => s + x.total, 0);
+
+  const expCash = cashS - totalCashRefunds;
+  document.getElementById('adExpectedCash').value = expCash.toFixed(2);
+  recalcCashBalance();
+}
+
+function recalcCashBalance() {
+  const expCash = parseFloat(document.getElementById('adExpectedCash').value) || 0;
+  const floatVal = parseFloat(document.getElementById('adOpeningFloat').value) || 0;
+  const actual = parseFloat(document.getElementById('adActualCash').value) || 0;
+
+  const expectedTotal = expCash + floatVal;
+  const variance = actual - expectedTotal;
+
+  const varEl = document.getElementById('adVariance');
+  const statEl = document.getElementById('adVarianceStatus');
+
+  varEl.textContent = lkr(variance);
+  if (Math.abs(variance) < 1) {
+    statEl.textContent = 'Balanced ✓';
+    varEl.style.color = 'var(--accent)';
+    statEl.style.color = 'var(--accent)';
+  } else if (variance > 0) {
+    statEl.textContent = 'Overage +';
+    varEl.style.color = 'var(--warn)';
+    statEl.style.color = 'var(--warn)';
+  } else {
+    statEl.textContent = 'Shortage —';
+    varEl.style.color = 'var(--danger)';
+    statEl.style.color = 'var(--danger)';
+  }
+}
+
+async function generateDayEnd() {
+  const actual = parseFloat(document.getElementById('adActualCash').value);
+  if (isNaN(actual)) { toast('Enter actual counted cash to close'); return; }
+
+  const expCash = parseFloat(document.getElementById('adExpectedCash').value) || 0;
+  const floatVal = parseFloat(document.getElementById('adOpeningFloat').value) || 0;
+  const variance = actual - (expCash + floatVal);
+  const notes = document.getElementById('adDayNotes').value.trim();
+
+  const todayStr = today();
+  const timeStr = nowTime();
+  const todaySales = sales.filter(s => s.date === todayStr);
+  const active = todaySales.filter(s => !s.refunded);
+  const refunded = todaySales.filter(s => s.refunded);
+
+  const reportId = 'REP-' + Date.now().toString(36).toUpperCase();
+
+  const rpt = {
+    id: reportId, date: todayStr, time: timeStr, shopName: settings.shopName || 'Hardware Shop',
+    billCount: active.length,
+    totalSales: active.reduce((s, x) => s + x.total, 0),
+    cashSales: active.filter(s => s.payment === 'cash').reduce((s, x) => s + x.total, 0),
+    cardSales: active.filter(s => s.payment === 'card' || s.payment === 'transfer').reduce((s, x) => s + x.total, 0),
+    creditSales: active.filter(s => s.payment === 'credit').reduce((s, x) => s + x.total, 0),
+    discounts: active.reduce((s, x) => s + (x.discount || 0), 0),
+    refundAmt: refunded.reduce((s, x) => s + x.total, 0),
+    refundCount: refunded.length,
+    openFloat: floatVal,
+    changeGiven: active.filter(s => s.payment === 'cash').reduce((s, x) => s + (x.change || 0), 0),
+    expectedCash: expCash + floatVal,
+    actualCash: actual, variance: variance, notes: notes
+  };
+
+  let reports = load(KEYS_REPORTS);
+  reports = reports.filter(r => r.date !== todayStr);
+  reports.push(rpt);
+  save(KEYS_REPORTS, reports);
+
+  if (typeof GS !== 'undefined' && GS.isOnline()) {
+    updateSyncTill('syncing');
+    try {
+      await GS.append('Day_End_Reports', {
+        id: rpt.id, date: rpt.date, time: rpt.time, shop_name: rpt.shopName,
+        bill_count: rpt.billCount, total_sales: rpt.totalSales, cash_sales: rpt.cashSales,
+        card_sales: rpt.cardSales, credit_sales: rpt.creditSales, discounts: rpt.discounts,
+        refund_amt: rpt.refundAmt, refund_count: rpt.refundCount, open_float: rpt.openFloat,
+        change_given: rpt.changeGiven, expected_cash: rpt.expectedCash,
+        actual_cash: rpt.actualCash, variance: rpt.variance, notes: rpt.notes
+      });
+      updateSyncTill('connected');
+      toast('Day-end closed and synced');
+    } catch(e) {
+      console.warn('Day-end report sync error:', e);
+      updateSyncTill('offline');
+    }
+  }
+
+  showDayEndReport(rpt);
+  renderSavedReportsList();
+}
+
+function showDayEndReport(r) {
+  const el = document.getElementById('dayEndReport');
+  el.classList.add('show');
+  const varColor = Math.abs(r.variance) < 1 ? 'var(--accent)' : r.variance > 0 ? 'var(--warn)' : 'var(--danger)';
+  const varLabel = Math.abs(r.variance) < 1 ? 'Balanced ✓' : r.variance > 0 ? 'Over +' + lkr(r.variance) : 'Short ' + lkr(r.variance);
+
+  el.innerHTML = `<div class="der-title">${r.shopName}<br><small>Day End Closing Report</small></div>
+    <div class="der-row"><span>Closed date</span><span class="dv">${r.date} ${r.time}</span></div>
+    <div class="der-row"><span>Report ID</span><span class="dv">${r.id}</span></div>
+    <div class="der-row section-head">Trading Summary</div>
+    <div class="der-row"><span>Total active sales</span><span class="dv">${lkr(r.totalSales)}</span></div>
+    <div class="der-row"><span>Customers served</span><span class="dv">${r.billCount}</span></div>
+    <div class="der-row"><span>Discounts granted</span><span class="dv">− ${lkr(r.discounts)}</span></div>
+    <div class="der-row"><span>Refunds processed</span><span class="dv" style="color:var(--danger)">− ${lkr(r.refundAmt)} (${r.refundCount})</span></div>
+    <div class="der-row section-head">Payment Split</div>
+    <div class="der-row"><span>Cash Sales</span><span class="dv">${lkr(r.cashSales)}</span></div>
+    <div class="der-row"><span>Card / Transfer Sales</span><span class="dv">${lkr(r.cardSales)}</span></div>
+    <div class="der-row"><span>Credit Invoices</span><span class="dv">${lkr(r.creditSales)}</span></div>
+    <div class="der-row section-head">Drawer Reconciliation</div>
+    <div class="der-row"><span>Opening float</span><span class="dv">${lkr(r.openFloat)}</span></div>
+    <div class="der-row"><span>Expected cash in drawer</span><span class="dv">${lkr(r.expectedCash)}</span></div>
+    <div class="der-row"><span>Actual counted cash</span><span class="dv">${lkr(r.actualCash)}</span></div>
+    <div class="der-row total"><span>Variance</span><span class="dv" style="color:${varColor}">${varLabel}</span></div>
+    ${r.notes ? `<div class="der-row section-head">Closing notes</div><div style="font-size:12px;color:var(--text2);padding-top:4px;">${r.notes}</div>` : ''}`;
+}
+
+function printDayEnd() { window.print(); }
+
+function renderSavedReportsList() {
+  const reports = load(KEYS_REPORTS);
+  const el = document.getElementById('savedReportsList');
+  document.getElementById('adSavedCount').textContent = reports.length + ' saved';
+  if (!reports.length) {
+    el.innerHTML = `<div style="text-align:center;color:var(--text3);padding:20px;">No closing reports saved</div>`;
     return;
   }
-  // Focus search on any letter key (not in an input)
-  if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'SELECT' && !e.ctrlKey && !e.metaKey) {
-    if (e.key.length === 1) {
-      document.getElementById('searchInput').focus();
-    }
-    if (e.key === 'Escape') {
-      document.getElementById('searchInput').value = '';
-      activeCat = 'ALL';
-      renderProducts();
-    }
-  }
-});
+  el.innerHTML = [...reports].reverse().map(r => `
+    <div class="saved-report-item" onclick="showDayEndReport(${JSON.stringify(r).replace(/"/g, '&quot;')})">
+      <div>
+        <div style="font-weight:600;font-size:13px">${r.date}</div>
+        <div style="font-size:11px;color:var(--text3)">${r.billCount} customers · Float: ${lkr(r.openFloat)}</div>
+      </div>
+      <div style="font-family:'DM Mono',monospace;font-weight:600;color:var(--accent);">${lkr(r.totalSales)}</div>
+    </div>`).join('');
+}
 
 // ══════════════════════════════════════════
-// INIT
+// KEYBOARD SHORTCUTS & LOGIN
 // ══════════════════════════════════════════
-// ══════════════════════════════════════════
-// STARTUP / LOCK SCREEN
-// ══════════════════════════════════════════
-const KEYS_USERS = 'hs_users'; // set by admin app
-let currentUser  = null;
-let startupClockInterval = null;
-
-const DEFAULT_USERS = [
-  { id: 'cashier1', name: 'Cashier',  role: 'Cashier' },
-  { id: 'manager1', name: 'Manager',  role: 'Manager' },
-];
-
+const KEYS_USERS = 'hs_users';
+const DEFAULT_USERS = [{ id: 'cashier1', name: 'Cashier', role: 'Cashier' }, { id: 'manager1', name: 'Manager', role: 'Manager' }];
 function getUsers() {
   try {
     const u = JSON.parse(localStorage.getItem(KEYS_USERS) || '[]');
-    return u.length ? u : DEFAULT_USERS;
-  } catch(e) { return DEFAULT_USERS; }
+    if (!Array.isArray(u)) return DEFAULT_USERS;
+    const valid = u.filter(x => x && x.id && x.name);
+    return valid.length ? valid : DEFAULT_USERS;
+  } catch(e) {
+    return DEFAULT_USERS;
+  }
 }
 
 function startupTick() {
-  const now  = new Date();
-  const time = now.toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit' });
-  const date = now.toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
-  const clk  = document.getElementById('startupClock');
-  const dat  = document.getElementById('startupDate');
-  if (clk) clk.textContent = time;
-  if (dat) dat.textContent = date;
+  const now = new Date();
+  document.getElementById('startupClock').textContent = now.toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit' });
+  document.getElementById('startupDate').textContent = now.toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
 }
 
 function renderStartupBills() {
-  const todayStr = new Date().toISOString().split('T')[0];
-  const allSales = JSON.parse(localStorage.getItem('hs_sales') || '[]');
-  const todayBills = allSales.filter(function(s) { return s.date === todayStr && !s.refunded; })
-    .slice(-6).reverse();
-
+  const todayStr = today();
+  const todayBills = sales.filter(s => s.date === todayStr && !s.refunded).slice(-6).reverse();
   const el = document.getElementById('startupBills');
-  if (!todayBills.length) {
-    el.innerHTML = '<div style="color:var(--text3);font-size:13px;">No sales yet today</div>';
-    return;
-  }
-  el.innerHTML = todayBills.map(function(s) {
-    const preview = (s.items||[]).map(function(i) { return i.qty + ' × ' + i.name; }).join(', ');
-    return '<div class="startup-bill">'
-      + '<div class="startup-bill-top">'
-      +   '<span class="startup-bill-id">' + s.id + '</span>'
-      +   '<span class="startup-bill-total">' + lkr(s.total) + '</span>'
-      + '</div>'
-      + '<div class="startup-bill-items">' + preview + '</div>'
-      + '<div class="startup-bill-time">' + (s.time || '') + ' · ' + (s.payment || '') + '</div>'
-      + '</div>';
-  }).join('');
+  if (!todayBills.length) { el.innerHTML = '<div style="color:var(--text3);font-size:13px;">No sales yet today</div>'; return; }
+  el.innerHTML = todayBills.map(s => `
+    <div class="startup-bill">
+      <div class="startup-bill-top"><span class="startup-bill-id">${s.id}</span><span class="startup-bill-total">${lkr(s.total)}</span></div>
+      <div class="startup-bill-items">${s.items.map(i => i.qty + '× ' + i.name).join(', ')}</div>
+      <div class="startup-bill-time">${s.time} · ${s.payment}</div>
+    </div>`).join('');
 }
 
 function renderStartupUsers() {
-  const users = getUsers();
-  const el    = document.getElementById('startupUsers');
-  const footer = document.getElementById('startupFooter');
-
-  el.innerHTML = users.map(function(u) {
-    const uName = u.name || u.id || 'User';
-    const initials = uName.split(' ').map(function(w) { return w[0]; }).join('').toUpperCase().slice(0,2);
-    return '<button class="startup-user-btn" data-uid="' + u.id + '" onclick="loginUser(this.dataset.uid)">'
-      + '<div class="startup-user-avatar">' + initials + '</div>'
-      + '<div>'
-      +   '<div class="startup-user-name">' + uName + '</div>'
-      +   '<div class="startup-user-role">' + (u.role || 'Cashier') + '</div>'
-      + '</div>'
-      + '</button>';
+  const el = document.getElementById('startupUsers');
+  el.innerHTML = getUsers().map(u => {
+    const initials = (u.name || 'User').split(' ').map(w => w[0]).join('').toUpperCase().slice(0,2);
+    return `<button class="startup-user-btn" onclick="loginUser('${u.id}')">
+      <div class="startup-user-avatar">${initials}</div>
+      <div><div class="startup-user-name">${u.name}</div><div class="startup-user-role">${u.role}</div></div>
+    </button>`;
   }).join('');
-
-  footer.textContent = 'Users are managed in the Admin app';
 }
 
 function loginUser(uid) {
   const users = getUsers();
-  currentUser = users.find(function(u) { return u.id === uid; }) || { id: uid, name: uid, role: 'Cashier' };
-
-  // Persist to session so user survives page refresh
+  currentUser = users.find(u => u.id === uid) || { id: uid, name: uid, role: 'Cashier' };
   try { sessionStorage.setItem('hs_current_user', JSON.stringify(currentUser)); } catch(e) {}
 
-  // Hide startup screen
   const screen = document.getElementById('startupScreen');
   screen.style.transition = 'opacity 0.2s';
-  screen.style.opacity    = '0';
-  setTimeout(function() {
-    screen.style.display = 'none';
-    clearInterval(startupClockInterval);
-  }, 200);
+  screen.style.opacity = '0';
+  setTimeout(() => { screen.style.display = 'none'; clearInterval(startupClockInterval); }, 200);
 
-  // Update topbar
-  const userBadge = document.getElementById('topbarUser');
-  if (userBadge) userBadge.textContent = currentUser.name;
-
-  // Refresh discount badge visibility for this role
+  document.getElementById('topbarUser').textContent = currentUser.name;
+  const isPrivileged = currentUser.role === 'Admin' || currentUser.role === 'Manager';
+  document.getElementById('discountSection').style.display = isPrivileged ? 'flex' : 'none';
+  document.getElementById('discountCashierNote').style.display = isPrivileged ? 'none' : 'block';
   updateTotals();
 }
 
 function lockScreen() {
-  // Confirm if cart has items
-  if (cart.length > 0 && !confirm('Lock till? Current cart will be cleared.')) return;
-  currentUser = null;
-  cart = [];
+  if (cart.length > 0 && !confirm('Lock till? Current sale progress will be reset.')) return;
+  currentUser = null; cart = [];
   try { sessionStorage.removeItem('hs_current_user'); } catch(e) {}
-  renderCart();
-  updateTotals();
+  renderCart(); updateTotals();
   const screen = document.getElementById('startupScreen');
-  screen.style.display = '';
-  screen.style.opacity = '0';
-  setTimeout(function() { screen.style.opacity = '1'; }, 10);
-  renderStartupBills();
-  renderStartupUsers();
-  startupTick();
+  screen.style.display = ''; screen.style.opacity = '0';
+  setTimeout(() => { screen.style.opacity = '1'; }, 10);
+  renderStartupBills(); renderStartupUsers(); startupTick();
   startupClockInterval = setInterval(startupTick, 10000);
 }
-
-
-
 
 // ══════════════════════════════════════════
 // GOOGLE SHEETS SYNC
@@ -2345,90 +2423,106 @@ function updateSyncTill(state) {
   var colors = { connected:'#52b788', syncing:'#60a5fa', offline:'#6b6860' };
   var labels = { connected:'Synced', syncing:'Syncing…', offline:'Offline' };
   var c = colors[state] || colors.offline;
-  el.innerHTML = '<span style="width:6px;height:6px;border-radius:50%;background:' + c + ';display:inline-block;"></span>'
-    + '<span style="color:' + c + ';font-size:11px">' + (labels[state]||'') + '</span>';
+  el.innerHTML = `<span style="width:6px;height:6px;border-radius:50%;background:${c};display:inline-block;"></span> <span style="color:${c};font-size:11px">${labels[state]}</span>`;
 }
 
 async function initGSTill() {
   if (typeof GS === 'undefined') return;
   var connected = await GS.init();
   updateSyncTill(connected ? 'syncing' : 'offline');
-  if (!connected) return;
 
-  try {
-    // Products
-    var prods = await GS.read('Products');
-    if (prods.length) {
-      products = prods.map(function(r) { return {
-        sku: r.sku, name: (r.product_name || r.name || ''), category: (r.category || ''),
-        unit: r.unit, unit2: r.unit2||'', unit2Conv: parseFloat(r.unit2_conv)||0,
-        unit3: r.unit3||'', unit3Conv: parseFloat(r.unit3_conv)||0,
-        reorderLevel: parseFloat(r.reorder_level)||0,
-        lastSellingPrice: parseFloat(r.last_selling_price)||0,
-        lastEffectiveCost: parseFloat(r.last_effective_cost)||0,
-        sellingPrice: parseFloat(r.last_selling_price)||0,
-        notes: r.notes||''
-      }; });
-      localStorage.setItem('hs_products', JSON.stringify(products));
-    }
+  if (connected) {
+    // 1. Products (Independent Try-Catch)
+    try {
+      var prods = await GS.read('Products');
+      if (prods.length) {
+        products = prods.map(r => ({
+          sku: r.sku, name: (r.product_name || r.name || ''), category: (r.category || ''),
+          unit: r.unit, unit2: r.unit2||'', unit2Conv: parseFloat(r.unit2_conv)||0,
+          unit3: r.unit3||'', unit3Conv: parseFloat(r.unit3_conv)||0,
+          reorderLevel: parseFloat(r.reorder_level)||0,
+          lastSellingPrice: parseFloat(r.last_selling_price)||0,
+          lastEffectiveCost: parseFloat(r.last_effective_cost)||0,
+          sellingPrice: parseFloat(r.last_selling_price)||0,
+          sellingPrice2: parseFloat(r.selling_price2)||0,
+          notes: r.notes||''
+        }));
+        localStorage.setItem('hs_products', JSON.stringify(products));
+      }
+    } catch(e) { console.warn('Till load Products fail:', e); }
 
-    // Stock Lots (for FIFO + qty)
-    var lots = await GS.read('Stock_Lots');
-    if (lots.length) {
-      localStorage.setItem('hs_goodsin', JSON.stringify(lots.map(function(r) { return {
-        lotId: r.lot_id, deliveryId: r.delivery_id, date: r.goods_in_date,
-        sku: r.sku, productName: (r.product_name || r.productName || ''), unit: r.unit,
-        qty: parseFloat(r.qty_received)||0,
-        qtyRemaining: parseFloat(r.qty_remaining)||0,
-        purchaseCost: parseFloat(r.purchase_cost)||0,
-        effCostUnit: parseFloat(r.eff_cost_unit)||0,
-        sellingPrice: parseFloat(r.selling_price)||0,
-        sellingPrice2: parseFloat(r.selling_price2)||0,
-        sellingPrice3: parseFloat(r.selling_price3)||0
-      }; })));
+    // 2. Stock Lots (Independent Try-Catch)
+    try {
+      var lots = await GS.read('Stock_Lots');
+      if (lots.length) {
+        localStorage.setItem('hs_goodsin', JSON.stringify(lots.map(r => ({
+          lotId: r.lot_id, deliveryId: r.delivery_id, date: r.goods_in_date,
+          sku: r.sku, productName: (r.product_name || ''), unit: r.unit,
+          qty: parseFloat(r.qty_received)||0, qtyRemaining: parseFloat(r.qty_remaining)||0,
+          purchaseCost: parseFloat(r.purchase_cost)||0, effCostUnit: parseFloat(r.eff_cost_unit)||0,
+          sellingPrice: parseFloat(r.selling_price)||0, sellingPrice2: parseFloat(r.selling_price2)||0
+        }))));
 
-      // Rebuild floor stock
-      var stockMap = {};
-      lots.forEach(function(r) {
-        if (!stockMap[r.sku]) stockMap[r.sku] = { sku: r.sku, storeQty: 0, floorQty: 0 };
-        stockMap[r.sku].floorQty += parseFloat(r.qty_remaining)||0;
-      });
-      stock = Object.values(stockMap);
-      localStorage.setItem('hs_stock', JSON.stringify(stock));
-    }
+        var stockMap = {};
+        lots.forEach(r => {
+          if (!stockMap[r.sku]) stockMap[r.sku] = { sku: r.sku, storeQty: 0, floorQty: 0 };
+          stockMap[r.sku].floorQty += parseFloat(r.qty_remaining)||0;
+        });
+        stock = Object.values(stockMap);
+        localStorage.setItem('hs_stock', JSON.stringify(stock));
+      }
+    } catch(e) { console.warn('Till load Stock Lots fail:', e); }
 
-    // Settings
-    var sRows = await GS.readSettings();
-    if (sRows.shop_name) {
-      settings = {
-        shopName: sRows.shop_name, inflation: parseFloat(sRows.inflation)||12,
-        margin: parseFloat(sRows.margin)||25, reorder: parseFloat(sRows.reorder)||10,
-        floorDays: parseFloat(sRows.floor_days)||7,
-        targetDays: parseFloat(sRows.target_days)||30,
-        leadTime: parseFloat(sRows.lead_time)||7,
-      };
-      localStorage.setItem('hs_settings', JSON.stringify(settings));
-      document.getElementById('shopNameDisplay').textContent = settings.shopName;
-      var sn = document.getElementById('startupShopName');
-      if (sn) sn.textContent = settings.shopName;
-    }
+    // 3. Settings (Independent Try-Catch)
+    try {
+      var sRows = await GS.readSettings();
+      if (sRows.shop_name) {
+        settings = {
+          shopName: sRows.shop_name, inflation: parseFloat(sRows.inflation)||12,
+          margin: parseFloat(sRows.margin)||25, reorder: parseFloat(sRows.reorder)||10,
+          floorDays: parseFloat(sRows.floor_days)||7,
+          targetDays: parseFloat(sRows.target_days)||30,
+          leadTime: parseFloat(sRows.lead_time)||7,
+        };
+        localStorage.setItem('hs_settings', JSON.stringify(settings));
+        document.getElementById('shopNameDisplay').textContent = settings.shopName;
+        if (document.getElementById('startupShopName')) document.getElementById('startupShopName').textContent = settings.shopName;
+      }
+    } catch(e) { console.warn('Till load Settings fail:', e); }
 
-    // Users for startup screen
-    var usersData = await GS.read('Users');
-    if (usersData.length) {
-      var u = usersData.map(function(r) { return { id:(r.id||''), name:(r.name||''), role:(r.role||'Cashier'), pin:(r.pin||'')||'' }; });
-      localStorage.setItem('hs_users', JSON.stringify(u));
-    }
+    // 4. Users (Independent Try-Catch)
+    try {
+      var usersData = await GS.read('Users');
+      if (usersData.length) {
+        var u = usersData.map(r => ({ id:(r.id||''), name:(r.name||''), role:(r.role||'Cashier'), pin:(r.pin||'') }));
+        localStorage.setItem('hs_users', JSON.stringify(u));
+      }
+    } catch(e) { console.warn('Till load Users fail:', e); }
 
-    renderStartupBills();
-    renderStartupUsers();  // Re-render with users loaded from Sheets
-    renderProducts();
+    // 5. Sales & Items (Independent Try-Catch)
+    try {
+      var salesRows = await GS.read('Sales');
+      if (salesRows.length) {
+        var itemsData = await GS.read('Sale_Items');
+        var itemsBySale = {};
+        itemsData.forEach(r => {
+          if (!itemsBySale[r.sale_id]) itemsBySale[r.sale_id] = [];
+          itemsBySale[r.sale_id].push({ sku: r.sku, name: r.product_name, unit: r.unit, qty: parseFloat(r.qty)||0, price: parseFloat(r.price)||0, line_total: parseFloat(r.line_total)||0 });
+        });
+        sales = salesRows.map(r => ({
+          id: r.sale_id, date: r.date, time: r.time, subtotal: parseFloat(r.subtotal)||0, discount: parseFloat(r.discount)||0, total: parseFloat(r.total)||0, payment: r.payment, cashReceived: parseFloat(r.cash_received)||0, change: parseFloat(r.change)||0, refunded: r.refunded === 'true' || r.refunded === 'TRUE', refundReason: r.refund_reason||'', refundDate: r.refund_date||'', items: itemsBySale[r.sale_id] || []
+        }));
+        save(KEYS.sales, sales);
+      }
+    } catch(e) { console.warn('Till load Sales fail:', e); }
+
     updateSyncTill('connected');
-
-  } catch(e) {
-    console.warn('Till GS init error:', e);
-    updateSyncTill('offline');
   }
+
+  // Always load startup screens, even if some Sheet reads failed or returned empty!
+  renderStartupBills(); 
+  renderStartupUsers(); 
+  renderProducts();
 }
 
 async function pushLastSaleToSheets() {
@@ -2439,93 +2533,122 @@ async function pushLastSaleToSheets() {
 
   updateSyncTill('syncing');
   try {
-    // Write sale header row
+    // 1. Append sale header
     await GS.append('Sales', {
-      sale_id: sale.id, date: sale.date, time: sale.time||'',
-      cashier: currentUser ? currentUser.name : '',
-      subtotal: sale.subtotal||0, discount: sale.discount||0,
-      total: sale.total||0, payment: sale.payment||'',
-      cash_received: sale.cashReceived||0, change: sale.change||0,
-      refunded: 'false', refund_reason: '', refund_date: ''
+      sale_id: sale.id, date: sale.date, time: sale.time||'', cashier: currentUser ? currentUser.name : '',
+      subtotal: sale.subtotal||0, discount: sale.discount||0, total: sale.total||0, payment: sale.payment||'',
+      cash_received: sale.cashReceived||0, change: sale.change||0, refunded: 'false', refund_reason: '', refund_date: ''
     });
 
-    // Write each line item
-    for (var i = 0; i < (sale.items||[]).length; i++) {
-      var item = sale.items[i];
-      await GS.append('Sale_Items', {
-        sale_id: sale.id, sku: item.sku, product_name: item.name,
-        unit: item.unit, qty: item.qty, price: item.price,
-        line_total: item.lineTotal
-      });
+    // 2. Append sale line items
+    for (let i = 0; i < sale.items.length; i++) {
+      let item = sale.items[i];
+      await GS.append('Sale_Items', { sale_id: sale.id, sku: item.sku, product_name: item.name, unit: item.unit, qty: item.qty, price: item.price, line_total: item.lineTotal });
     }
 
-    // FIFO: update qty_remaining on Stock_Lots in Sheets
-    var goodsIn = JSON.parse(localStorage.getItem('hs_goodsin')||'[]');
-    for (var j = 0; j < (sale.items||[]).length; j++) {
-      var si  = sale.items[j];
-      var skuLots = goodsIn
-        .filter(function(r) { return r.sku === si.sku && (parseFloat(r.qtyRemaining)||0) > 0; })
-        .sort(function(a,b) { return a.date < b.date ? -1 : 1; }); // oldest first
+    // 3. FIFO Deductions using Sheets-first Batch Update
+    var liveLots = await GS.read('Stock_Lots');
+    if (!liveLots.length) {
+      liveLots = JSON.parse(localStorage.getItem('hs_goodsin')||'[]');
+    }
 
-      var remaining = si.qty;
-      for (var k = 0; k < skuLots.length && remaining > 0; k++) {
-        var deduct = Math.min(remaining, parseFloat(skuLots[k].qtyRemaining)||0);
+    var updates = [];
+
+    for (let j = 0; j < sale.items.length; j++) {
+      let si = sale.items[j];
+      var skuLots = [];
+      for (let idx = 0; idx < liveLots.length; idx++) {
+        var lot = liveLots[idx];
+        if (lot.sku === si.sku && (parseFloat(lot.qty_remaining || lot.qtyRemaining) || 0) > 0) {
+          skuLots.push({ index: idx + 1, lot: lot });
+        }
+      }
+      skuLots.sort((a, b) => (a.lot.goods_in_date || a.lot.date) < (b.lot.goods_in_date || b.lot.date) ? -1 : 1);
+
+      let remaining = si.qty;
+      for (let k = 0; k < skuLots.length && remaining > 0; k++) {
+        let currentLot = skuLots[k].lot;
+        let qtyRem = parseFloat(currentLot.qty_remaining || currentLot.qtyRemaining) || 0;
+        let deduct = Math.min(remaining, qtyRem);
+        
         remaining -= deduct;
-        skuLots[k].qtyRemaining = (parseFloat(skuLots[k].qtyRemaining)||0) - deduct;
-        // Update the lot row in Sheets
-        await GS.updateField('Stock_Lots', 'lot_id', skuLots[k].lotId, 'qty_remaining', skuLots[k].qtyRemaining);
+        let newQty = qtyRem - deduct;
+        currentLot.qty_remaining = newQty;
+        currentLot.qtyRemaining = newQty;
+
+        updates.push({
+          rowIndex: skuLots[k].index, 
+          rowObj: {
+            lot_id: currentLot.lot_id || currentLot.lotId,
+            delivery_id: currentLot.delivery_id || currentLot.deliveryId,
+            goods_in_date: currentLot.goods_in_date || currentLot.date,
+            sku: currentLot.sku,
+            product_name: currentLot.product_name || currentLot.productName || '',
+            category: currentLot.category || '',
+            invoice_no: currentLot.invoice_no || currentLot.invoice || '',
+            supplier: currentLot.supplier || '',
+            unit: currentLot.unit,
+            qty_received: currentLot.qty_received || currentLot.qty || 0,
+            qty_remaining: newQty,
+            purchase_cost: currentLot.purchase_cost || currentLot.purchaseCost || 0,
+            extra_share: currentLot.extra_share || currentLot.extraShare || 0,
+            eff_cost_unit: currentLot.eff_cost_unit || currentLot.effCostUnit || 0,
+            selling_price: currentLot.selling_price || currentLot.sellingPrice || '',
+            selling_price2: currentLot.selling_price2 || currentLot.sellingPrice2 || '',
+            selling_price3: currentLot.selling_price3 || currentLot.sellingPrice3 || '',
+            remark: currentLot.remark || '',
+            notes: currentLot.notes || '',
+            extra_cost_total: currentLot.extra_cost_total || currentLot.extraCostTotal || 0
+          }
+        });
       }
     }
-    // Save updated goodsIn back to localStorage
-    localStorage.setItem('hs_goodsin', JSON.stringify(goodsIn));
+
+    if (updates.length > 0) {
+      await GS.batchUpdateRows('Stock_Lots', updates);
+      localStorage.setItem('hs_goodsin', JSON.stringify(liveLots.map(r => ({
+        lotId: r.lot_id || r.lotId, deliveryId: r.delivery_id || r.deliveryId, date: r.goods_in_date || r.date,
+        sku: r.sku, productName: r.product_name || r.productName || '', unit: r.unit,
+        qty: parseFloat(r.qty_received || r.qty)||0, qtyRemaining: parseFloat(r.qty_remaining || r.qtyRemaining)||0,
+        purchaseCost: parseFloat(r.purchase_cost || r.purchaseCost)||0, effCostUnit: parseFloat(r.eff_cost_unit || r.effCostUnit)||0,
+        sellingPrice: parseFloat(r.selling_price || r.sellingPrice)||0, sellingPrice2: parseFloat(r.selling_price2 || r.sellingPrice2)||0
+      }))));
+    }
 
     updateSyncTill('connected');
-  } catch(e) {
-    console.warn('pushLastSaleToSheets error:', e);
+  } catch (e) {
+    console.warn('Batch sale push error:', e);
     updateSyncTill('offline');
   }
 }
 
-// ══════════════════════════════════════════
-// INIT
-// ══════════════════════════════════════════
 function clearTillCacheAndReload() {
   if (!confirm('Clear local cache and reload fresh from Google Sheets?')) return;
   if (GS) GS.clearCache();
-  Object.keys(localStorage).forEach(function(k) {
-    if (k.startsWith('hs_') && k !== 'hs_config' && k !== 'hs_session' && k !== 'hs_sync_queue') {
-      localStorage.removeItem(k);
-    }
-  });
-  products = []; stock = [];
-  settings = { shopName:'Hardware Shop', inflation:12, margin:25, reorder:10, floorDays:7, targetDays:30, leadTime:7 };
-  toast('Cache cleared — reloading from Sheets…');
+  Object.keys(localStorage).forEach(k => { if (k.startsWith('hs_') && k !== 'hs_config' && k !== 'hs_session' && k !== 'hs_sync_queue') localStorage.removeItem(k); });
+  products = []; stock = []; sales = [];
+  toast('Cache cleared — reloading…');
   refreshTillData();
 }
 
 function refreshTillData() {
   if (typeof GS === 'undefined') { toast('Google Sheets not available'); return; }
-  if (GS.isTokenExpired && GS.isTokenExpired()) {
-    toast('Session expired — open Welcome Hub to reconnect');
-    return;
-  }
+  if (GS.isTokenExpired && GS.isTokenExpired()) { toast('Session expired — open Welcome Hub to reconnect'); return; }
   if (!GS.isOnline()) { toast('No internet connection'); return; }
-  // Clear cache to force fresh data from Sheets
   GS.clearCache();
   var btn  = document.getElementById('refreshBtn');
   var icon = document.getElementById('refreshIcon');
-  if (btn)  btn.disabled = true;
+  if (btn) btn.disabled = true;
   if (icon) icon.style.animation = 'spin 0.7s linear infinite';
   updateSyncTill('syncing');
-
-  initGSTill().then(function() {
-    if (btn)  btn.disabled = false;
+  initGSTill().then(() => {
+    if (btn) btn.disabled = false;
     if (icon) icon.style.animation = '';
     updateSyncTill('connected');
-    toast('Products and stock synced');
-  }).catch(function(e) {
+    toast('Synced with Google Sheets');
+  }).catch(e => {
     console.warn('Till refresh error:', e);
-    if (btn)  btn.disabled = false;
+    if (btn) btn.disabled = false;
     if (icon) icon.style.animation = '';
     updateSyncTill('offline');
     toast('Sync failed — check connection');
@@ -2533,30 +2656,35 @@ function refreshTillData() {
 }
 
 function init() {
-  // Restore user session if page was refreshed
   try {
     var savedUser = sessionStorage.getItem('hs_current_user');
     if (savedUser) currentUser = JSON.parse(savedUser);
   } catch(e) {}
-
   const d = new Date();
-  document.getElementById('topbarDate').textContent =
-    d.toLocaleDateString('en-GB', { weekday:'short', day:'numeric', month:'short', year:'numeric' })
-    + ' · ' + d.toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit' });
+  document.getElementById('topbarDate').textContent = d.toLocaleDateString('en-GB', { weekday:'short', day:'numeric', month:'short', year:'numeric' }) + ' · ' + d.toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit' });
   document.getElementById('shopNameDisplay').textContent = settings.shopName || 'Hardware Shop';
-  renderProducts();
-  updateTotals();
-  selectPayment('cash');
-
-  setInterval(function() {
+  
+  // Show startup and load cached users/products instantly!
+  showStartup();
+  
+  setInterval(() => {
     var now = new Date();
-    document.getElementById('topbarDate').textContent =
-      now.toLocaleDateString('en-GB', { weekday:'short', day:'numeric', month:'short', year:'numeric' })
-      + ' · ' + now.toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit' });
+    document.getElementById('topbarDate').textContent = now.toLocaleDateString('en-GB', { weekday:'short', day:'numeric', month:'short', year:'numeric' }) + ' · ' + now.toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit' });
   }, 60000);
+  
+  // Run Google Sheets sync in the background
+  initGSTill();
+}
 
-  // Init Google Sheets then show startup screen
-  initGSTill().then(function() { showStartup(); });
+function showStartup() {
+  try {
+    var savedUser = sessionStorage.getItem('hs_current_user');
+    if (savedUser) { loginUser(JSON.parse(savedUser).id); return; }
+  } catch(e) {}
+  document.getElementById('startupScreen').style.display = '';
+  document.getElementById('startupScreen').style.opacity = '1';
+  renderStartupBills(); renderStartupUsers(); startupTick();
+  startupClockInterval = setInterval(startupTick, 10000);
 }
 
 init();
