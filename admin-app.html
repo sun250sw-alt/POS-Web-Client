@@ -255,7 +255,7 @@ tbody tr:hover { background: var(--surface2); }
   </div>
 
   <!-- Token expiry warning banner -->
-  <div id="tokenBanner" style="display:none;background:#fef3c7;border-bottom:1px solid #fcd34d;padding:9px 28px;display:none;align-items:center;justify-content:space-between;font-size:13px;color:#92400e;">
+  <div id="tokenBanner" style="display:none;background:#fef3c7;border-bottom:1px solid #fcd34d;padding:9px 28px;align-items:center;justify-content:space-between;font-size:13px;color:#92400e;">
     <span>⚠ Your Google session has expired — changes are saving locally only.</span>
     <button onclick="reAuthGoogle()" style="background:#92400e;color:#fff;border:none;border-radius:6px;padding:5px 14px;font-family:inherit;font-size:12px;font-weight:600;cursor:pointer;">Re-connect Google ↗</button>
   </div>
@@ -811,7 +811,13 @@ function renderDashboard() {
       + '<td class="mono" style="text-align:right;color:var(--accent);font-weight:600">' + lkr(r[1].rev) + '</td></tr>';
   }).join('') : '<tr><td colspan="4" style="text-align:center;color:var(--text3);padding:20px;">No sales in period</td></tr>';
 
-  // Low stock — use lot-derived qty for accuracy
+  // Fix low-stock crash by declaring and loading lotQtyMap
+  var lotQtyMap = {};
+  var goodsIn = load('hs_goodsin');
+  goodsIn.forEach(function(g) {
+    lotQtyMap[g.sku] = (lotQtyMap[g.sku] || 0) + (parseFloat(g.qtyRemaining) || 0);
+  });
+
   var lowItems = products.filter(function(p) {
     var qty  = lotQtyMap[p.sku] !== undefined ? lotQtyMap[p.sku]
              : ((getStock(p.sku).storeQty||0) + (getStock(p.sku).floorQty||0));
@@ -859,29 +865,24 @@ function renderDashboard() {
 function renderSalesChart(salesData, from, to) {
   var canvasEl = document.getElementById('salesChart');
   if (!canvasEl) return;
-
-  // Destroy previous chart instance safely
   if (salesChartInst) { try { salesChartInst.destroy(); } catch(e){} salesChartInst = null; }
 
-  // Build date range — use string arithmetic to avoid timezone issues
   var labels = [], dateKeys = [], byDay = {};
   var cur = from;
   while (cur <= to) {
-    labels.push(cur.slice(5));   // MM-DD display
+    labels.push(cur.slice(5));
     dateKeys.push(cur);
     byDay[cur] = 0;
-    // Increment date as string safely
-    var d = new Date(cur + 'T12:00:00'); // noon avoids DST shift
+    var d = new Date(cur + 'T12:00:00');
     d.setDate(d.getDate() + 1);
     cur = d.toISOString().split('T')[0];
-    if (dateKeys.length > 366) break; // safety
+    if (dateKeys.length > 366) break;
   }
 
   salesData.forEach(function(s) {
     if (byDay[s.date] !== undefined) byDay[s.date] += (s.total || 0);
   });
 
-  // Map values using dateKeys (correct order, no Object.keys() ambiguity)
   var values = dateKeys.map(function(dk) { return byDay[dk] || 0; });
 
   salesChartInst = new Chart(canvasEl.getContext('2d'), {
@@ -969,10 +970,9 @@ function saveUser() {
     var idx = users.findIndex(function(u) { return u.id === editingUserId; });
     if (idx >= 0) { users[idx].name = name; users[idx].role = role; if (pin) users[idx].pin = pin; }
   } else {
-    users.push({ id: 'user_' + Date.now(), name, role, pin: pin || '' });
+    users.push({ id: 'user_' + Date.now(), name: name, role: role, pin: pin || '' });
   }
   save(KEYS.users, users);
-  // Find the user just saved — use editingUserId if editing, else the last one added
   var savedUser = editingUserId
     ? users.find(function(u) { return u.id === editingUserId; })
     : users[users.length - 1];
@@ -1004,7 +1004,6 @@ function deleteUser(uid) {
 // ══════════════════════════════════════════
 // PRODUCTS (price editing)
 // ══════════════════════════════════════════
-// ── UNIT CONVERSION LOOKUP TABLE ──
 var UNIT_CONV = {
   'bag|kg':      50,   'bag|g':     50000, 'bag|L':     50,
   'roll|m':      50,   'roll|feet': 164,   'roll|cm':   5000,
@@ -1022,14 +1021,12 @@ function suggestConversion(u1, u2) {
   return UNIT_CONV[u1 + '|' + u2] || UNIT_CONV[u2 + '|' + u1] || '';
 }
 
-// ── PRODUCT MODAL ──
 var editingProductSku = null;
 
 function openProductModal(sku) {
   editingProductSku = sku || null;
   document.getElementById('productModalTitle').textContent = sku ? 'Edit product' : 'Add product';
 
-  // Populate category datalist
   var cats = [...new Set(products.map(function(p) { return p.category; }).filter(Boolean))].sort();
   document.getElementById('pmCategoryList').innerHTML = cats.map(function(c) { return '<option value="' + c + '">'; }).join('');
 
@@ -1108,7 +1105,6 @@ function saveProduct() {
   var u2  = document.getElementById('pm-unit2').value;
   var u3  = document.getElementById('pm-unit3').value;
 
-  // Get conversion — use typed value if present, else standard suggestion
   var conv2Raw = document.getElementById('pm-conv2').value;
   var conv3Raw = document.getElementById('pm-conv3').value;
   var conv2 = conv2Raw ? parseFloat(conv2Raw) : (suggestConversion(unit, u2) || 0);
@@ -1117,7 +1113,7 @@ function saveProduct() {
   var existing = products.find(function(p) { return p.sku === sku; }) || {};
 
   var product = {
-    sku, name, category, unit,
+    sku: sku, name: name, category: category, unit: unit,
     unit2: u2 || '', unit2Conv: u2 ? conv2 : 0,
     unit3: u3 || '', unit3Conv: u3 ? conv3 : 0,
     reorderLevel:  parseFloat(document.getElementById('pm-reorder').value)      || existing.reorderLevel || 0,
@@ -1125,7 +1121,6 @@ function saveProduct() {
     suggestVal:    parseFloat(document.getElementById('pm-suggest-val').value)   || existing.suggestVal  || 0,
     barcode:       document.getElementById('pm-barcode').value.trim(),
     notes:         document.getElementById('pm-notes').value.trim(),
-    // Preserve caches
     lastSellingPrice:  existing.lastSellingPrice  || 0,
     lastEffectiveCost: existing.lastEffectiveCost || 0,
   };
@@ -1138,7 +1133,6 @@ function saveProduct() {
   }
   save(KEYS.products, products);
 
-  // Write directly to Sheets (queued automatically if offline)
   var savedProduct = products.find(function(x) { return x.sku === sku; });
   if (savedProduct) {
     updateSyncIndicator('syncing');
@@ -1159,15 +1153,12 @@ function deleteProduct(sku) {
   if (GS && GS.isOnline()) {
     updateSyncIndicator('syncing');
     GS.read('Products').then(function(rows) {
-      // Find the row index from the freshly read data
       var rowIdx = -1;
       for (var i = 0; i < rows.length; i++) {
-        if (rows[i].sku === sku) { rowIdx = i + 1; break; }  // 1-based
+        if (rows[i].sku === sku) { rowIdx = i + 1; break; }
       }
       if (rowIdx > 0) {
         return GS.deleteRow('Products', rowIdx);
-      } else {
-        console.warn('deleteProduct: row not found in sheet for sku', sku);
       }
     }).then(function() {
       updateSyncIndicator('connected');
@@ -1186,7 +1177,6 @@ function renderAdminProducts() {
   var q   = (document.getElementById('productSearch').value || '').toLowerCase();
   var cat = document.getElementById('productCatFilter').value;
 
-  // Populate cat filter
   var cats = [...new Set(products.map(function(p) { return p.category; }).filter(Boolean))].sort();
   var catSel = document.getElementById('productCatFilter');
   var curCat = catSel.value;
@@ -1301,7 +1291,7 @@ function saveSupplier() {
   if (!name) { toast('Enter a supplier name'); return; }
   var obj = {
     id:      editingSupplierId || ('sup_' + Date.now()),
-    name,
+    name:    name,
     contact: document.getElementById('sm-contact').value.trim(),
     phone:   document.getElementById('sm-phone').value.trim(),
     email:   document.getElementById('sm-email').value.trim(),
@@ -1351,11 +1341,11 @@ function loadSettings() {
   document.getElementById('s-floordays').value  = settings.floorDays  || 7;
   document.getElementById('s-targetdays').value = settings.targetDays || 30;
   document.getElementById('s-leadtime').value   = settings.leadTime   || 7;
-  // Load current admin key from config (masked)
   var cfg = JSON.parse(localStorage.getItem('hs_config')||'{}');
   var keyEl = document.getElementById('s-adminkey');
   if (keyEl) keyEl.placeholder = cfg.adminKey ? 'Key set — enter new to change' : 'Set 6-digit key';
 }
+
 function saveSettings() {
   settings.shopName   = document.getElementById('s-shopname').value.trim()   || 'Hardware Shop';
   settings.inflation  = parseFloat(document.getElementById('s-inflation').value)  || 12;
@@ -1367,7 +1357,6 @@ function saveSettings() {
   save(KEYS.settings, settings);
   document.getElementById('shopNameDisplay').textContent = settings.shopName;
 
-  // Save admin key if entered
   var keyInput = document.getElementById('s-adminkey');
   if (keyInput && keyInput.value.trim()) {
     var newKey = keyInput.value.trim();
@@ -1377,7 +1366,6 @@ function saveSettings() {
     keyInput.placeholder = 'Key set — enter new to change';
   }
 
-  // Write all settings directly to Sheets
   if (GS) {
     updateSyncIndicator('syncing');
     var s = settings;
@@ -1395,10 +1383,10 @@ function saveSettings() {
     }).catch(function(e) {
       console.warn('settings sync error:', e);
       if (GS && GS.isTokenExpired()) {
-      toast('Session expired — reconnect Google to sync'); checkTokenStatus();
-    } else {
-      toast('Settings saved locally (will sync when online)');
-    }
+        toast('Session expired — reconnect Google to sync'); checkTokenStatus();
+      } else {
+        toast('Settings saved locally (will sync when online)');
+      }
     });
   } else {
     toast('Settings saved');
@@ -1500,7 +1488,6 @@ async function initGS() {
   if (!connected) return;
 
   try {
-    // Load products
     var prods = await GS.read('Products');
     if (prods.length) {
       products = prods.map(function(r) { return {
@@ -1516,21 +1503,18 @@ async function initGS() {
       localStorage.setItem('hs_products', JSON.stringify(products));
     }
 
-    // Load users
     var usersData = await GS.read('Users');
     if (usersData.length) {
       users = usersData.map(function(r) { return { id:(r.id||''), name:(r.name||''), role:(r.role||'Cashier'), pin:(r.pin||'')||'' }; });
       localStorage.setItem('hs_users', JSON.stringify(users));
     }
 
-    // Load suppliers
     var suppData = await GS.read('Suppliers');
     if (suppData.length) {
       suppliers = suppData.map(function(r) { return { id:r.id, name:r.name, contact:r.contact||'', phone:r.phone||'', email:r.email||'', notes:r.notes||'' }; });
       localStorage.setItem('hs_suppliers', JSON.stringify(suppliers));
     }
 
-    // Load settings
     var sRows = await GS.readSettings();
     if (sRows.shop_name) {
       settings = {
@@ -1546,17 +1530,14 @@ async function initGS() {
       document.getElementById('shopNameDisplay').textContent = settings.shopName;
     }
 
-    // Load admin key from sheets settings into cfg
     if (sRows.admin_key) {
       var cfg = JSON.parse(localStorage.getItem('hs_config')||'{}');
       cfg.adminKey = sRows.admin_key;
       localStorage.setItem('hs_config', JSON.stringify(cfg));
     }
 
-    // Load sales for dashboard
     var salesData = await GS.read('Sales');
     if (salesData.length) {
-      // Map flat rows + Sale_Items into rich objects
       var itemsData = await GS.read('Sale_Items');
       var itemsBySale = {};
       itemsData.forEach(function(r) {
@@ -1581,7 +1562,6 @@ async function initGS() {
       localStorage.setItem('hs_sales', JSON.stringify(sales));
     }
 
-    // Load day end reports
     var rptData = await GS.read('Day_End_Reports');
     if (rptData.length) {
       reports = rptData.map(function(r) { return {
@@ -1613,30 +1593,6 @@ async function initGS() {
     updateSyncIndicator('offline');
   }
 }
-
-// Override saveSettings to also write to Sheets
-var _origSaveSettings = saveSettings;
-function saveSettings() {
-  _origSaveSettings();
-  if (GS && GS.isOnline()) {
-    var s = settings;
-    Promise.all([
-      GS.writeSetting('shop_name',   s.shopName),
-      GS.writeSetting('inflation',   String(s.inflation)),
-      GS.writeSetting('margin',      String(s.margin)),
-      GS.writeSetting('reorder',     String(s.reorder)),
-      GS.writeSetting('floor_days',  String(s.floorDays)),
-      GS.writeSetting('target_days', String(s.targetDays)),
-      GS.writeSetting('lead_time',   String(s.leadTime)),
-    ]).then(function() { updateSyncIndicator('connected'); })
-      .catch(function(e) { console.warn('settings sync error:', e); });
-  }
-}
-
-// Override saveProduct to also write to Sheets
-// ── DIRECT SHEETS-FIRST SAVE FUNCTIONS ──────────────────────────────
-// Each function saves to localStorage immediately (instant UI response)
-// then writes to Google Sheets. If offline, GS queues the write automatically.
 
 function syncProductToSheets(p) {
   if (!GS) return Promise.resolve();
@@ -1677,7 +1633,6 @@ function saveAdminKeyToSheets(key) {
 function clearCacheAndReload() {
   if (!confirm('Clear local cache and reload all data from Google Sheets?')) return;
   if (GS) GS.clearCache();
-  // Also clear all hs_ keys except config and session
   Object.keys(localStorage).forEach(function(k) {
     if (k.startsWith('hs_') && k !== 'hs_config' && k !== 'hs_session' && k !== 'hs_sync_queue') {
       localStorage.removeItem(k);
@@ -1696,7 +1651,6 @@ function refreshAdminData() {
     return;
   }
   if (!GS.isOnline()) { toast('No internet connection'); return; }
-  // Clear cache so we get fresh data
   GS.clearCache();
   var btn  = document.getElementById('refreshBtn');
   var icon = document.getElementById('refreshIcon');
@@ -1704,9 +1658,7 @@ function refreshAdminData() {
   if (icon) icon.style.animation = 'spin 0.7s linear infinite';
   updateSyncIndicator('syncing');
 
-  // Re-run full GS init to pull latest data
   initGS().then(function() {
-    // Re-render current active page
     var active = document.querySelector('.page.active');
     if (active) {
       var id = active.id.replace('page-', '');
@@ -1730,7 +1682,6 @@ function refreshAdminData() {
 }
 
 function reAuthGoogle() {
-  // Redirect to hub to re-login — hub will refresh the token and set hs_gcontext
   var cfg = JSON.parse(localStorage.getItem('hs_config') || '{}');
   if (cfg.clientId && cfg.clientId !== 'YOUR_CLIENT_ID_HERE.apps.googleusercontent.com') {
     window.open('index.html', '_blank');
@@ -1767,7 +1718,6 @@ function init() {
   document.getElementById('sidebarDate').textContent = ds;
   document.getElementById('shopNameDisplay').textContent = settings.shopName || 'Hardware Shop';
 
-  // Show Open Sheet button if context available
   var ctx = JSON.parse(localStorage.getItem('hs_gcontext') || '{}');
   if (ctx.spreadsheetId) {
     var btn = document.getElementById('openSheetBtn');
@@ -1776,7 +1726,6 @@ function init() {
 
   renderDashboard();
   initGS().then(function() { checkTokenStatus(); });
-  // Re-check token every 5 minutes
   setInterval(checkTokenStatus, 300000);
 }
 
