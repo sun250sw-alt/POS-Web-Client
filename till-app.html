@@ -936,7 +936,7 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
 </head>
 <body>
 
-<!-- ═══════════════ STARTUP SCREEN ═══════════════ -->
+<!-- ══ STARTUP SCREEN ══ -->
 <div id="startupScreen">
   <div class="startup-left">
     <div class="startup-brand">
@@ -2280,83 +2280,99 @@ async function initGSTill() {
   if (typeof GS === 'undefined') return;
   var connected = await GS.init();
   updateSyncTill(connected ? 'syncing' : 'offline');
-  if (!connected) return;
 
-  try {
-    var prods = await GS.read('Products');
-    if (prods.length) {
-      products = prods.map(r => ({
-        sku: r.sku, name: (r.product_name || r.name || ''), category: (r.category || ''),
-        unit: r.unit, unit2: r.unit2||'', unit2Conv: parseFloat(r.unit2_conv)||0,
-        unit3: r.unit3||'', unit3Conv: parseFloat(r.unit3_conv)||0,
-        reorderLevel: parseFloat(r.reorder_level)||0,
-        lastSellingPrice: parseFloat(r.last_selling_price)||0,
-        lastEffectiveCost: parseFloat(r.last_effective_cost)||0,
-        sellingPrice: parseFloat(r.last_selling_price)||0,
-        sellingPrice2: parseFloat(r.selling_price2)||0,
-        notes: r.notes||''
-      }));
-      localStorage.setItem('hs_products', JSON.stringify(products));
-    }
+  if (connected) {
+    // 1. Products (Independent Try-Catch)
+    try {
+      var prods = await GS.read('Products');
+      if (prods.length) {
+        products = prods.map(r => ({
+          sku: r.sku, name: (r.product_name || r.name || ''), category: (r.category || ''),
+          unit: r.unit, unit2: r.unit2||'', unit2Conv: parseFloat(r.unit2_conv)||0,
+          unit3: r.unit3||'', unit3Conv: parseFloat(r.unit3_conv)||0,
+          reorderLevel: parseFloat(r.reorder_level)||0,
+          lastSellingPrice: parseFloat(r.last_selling_price)||0,
+          lastEffectiveCost: parseFloat(r.last_effective_cost)||0,
+          sellingPrice: parseFloat(r.last_selling_price)||0,
+          sellingPrice2: parseFloat(r.selling_price2)||0,
+          notes: r.notes||''
+        }));
+        localStorage.setItem('hs_products', JSON.stringify(products));
+      }
+    } catch(e) { console.warn('Till load Products fail:', e); }
 
-    var lots = await GS.read('Stock_Lots');
-    if (lots.length) {
-      localStorage.setItem('hs_goodsin', JSON.stringify(lots.map(r => ({
-        lotId: r.lot_id, deliveryId: r.delivery_id, date: r.goods_in_date,
-        sku: r.sku, productName: (r.product_name || ''), unit: r.unit,
-        qty: parseFloat(r.qty_received)||0, qtyRemaining: parseFloat(r.qty_remaining)||0,
-        purchaseCost: parseFloat(r.purchase_cost)||0, effCostUnit: parseFloat(r.eff_cost_unit)||0,
-        sellingPrice: parseFloat(r.selling_price)||0, sellingPrice2: parseFloat(r.selling_price2)||0
-      }))));
+    // 2. Stock Lots (Independent Try-Catch)
+    try {
+      var lots = await GS.read('Stock_Lots');
+      if (lots.length) {
+        localStorage.setItem('hs_goodsin', JSON.stringify(lots.map(r => ({
+          lotId: r.lot_id, deliveryId: r.delivery_id, date: r.goods_in_date,
+          sku: r.sku, productName: (r.product_name || ''), unit: r.unit,
+          qty: parseFloat(r.qty_received)||0, qtyRemaining: parseFloat(r.qty_remaining)||0,
+          purchaseCost: parseFloat(r.purchase_cost)||0, effCostUnit: parseFloat(r.eff_cost_unit)||0,
+          sellingPrice: parseFloat(r.selling_price)||0, sellingPrice2: parseFloat(r.selling_price2)||0
+        }))));
 
-      var stockMap = {};
-      lots.forEach(r => {
-        if (!stockMap[r.sku]) stockMap[r.sku] = { sku: r.sku, storeQty: 0, floorQty: 0 };
-        stockMap[r.sku].floorQty += parseFloat(r.qty_remaining)||0;
-      });
-      stock = Object.values(stockMap);
-      localStorage.setItem('hs_stock', JSON.stringify(stock));
-    }
+        var stockMap = {};
+        lots.forEach(r => {
+          if (!stockMap[r.sku]) stockMap[r.sku] = { sku: r.sku, storeQty: 0, floorQty: 0 };
+          stockMap[r.sku].floorQty += parseFloat(r.qty_remaining)||0;
+        });
+        stock = Object.values(stockMap);
+        localStorage.setItem('hs_stock', JSON.stringify(stock));
+      }
+    } catch(e) { console.warn('Till load Stock Lots fail:', e); }
 
-    var sRows = await GS.readSettings();
-    if (sRows.shop_name) {
-      settings = {
-        shopName: sRows.shop_name, inflation: parseFloat(sRows.inflation)||12,
-        margin: parseFloat(sRows.margin)||25, reorder: parseFloat(sRows.reorder)||10,
-        floorDays: parseFloat(sRows.floor_days)||7,
-        targetDays: parseFloat(sRows.target_days)||30,
-        leadTime: parseFloat(sRows.lead_time)||7,
-      };
-      localStorage.setItem('hs_settings', JSON.stringify(settings));
-      document.getElementById('shopNameDisplay').textContent = settings.shopName;
-      if (document.getElementById('startupShopName')) document.getElementById('startupShopName').textContent = settings.shopName;
-    }
+    // 3. Settings (Independent Try-Catch)
+    try {
+      var sRows = await GS.readSettings();
+      if (sRows.shop_name) {
+        settings = {
+          shopName: sRows.shop_name, inflation: parseFloat(sRows.inflation)||12,
+          margin: parseFloat(sRows.margin)||25, reorder: parseFloat(sRows.reorder)||10,
+          floorDays: parseFloat(sRows.floor_days)||7,
+          targetDays: parseFloat(sRows.target_days)||30,
+          leadTime: parseFloat(sRows.lead_time)||7,
+        };
+        localStorage.setItem('hs_settings', JSON.stringify(settings));
+        document.getElementById('shopNameDisplay').textContent = settings.shopName;
+        if (document.getElementById('startupShopName')) document.getElementById('startupShopName').textContent = settings.shopName;
+      }
+    } catch(e) { console.warn('Till load Settings fail:', e); }
 
-    var usersData = await GS.read('Users');
-    if (usersData.length) {
-      var u = usersData.map(r => ({ id:(r.id||''), name:(r.name||''), role:(r.role||'Cashier'), pin:(r.pin||'') }));
-      localStorage.setItem('hs_users', JSON.stringify(u));
-    }
+    // 4. Users (Independent Try-Catch)
+    try {
+      var usersData = await GS.read('Users');
+      if (usersData.length) {
+        var u = usersData.map(r => ({ id:(r.id||''), name:(r.name||''), role:(r.role||'Cashier'), pin:(r.pin||'') }));
+        localStorage.setItem('hs_users', JSON.stringify(u));
+      }
+    } catch(e) { console.warn('Till load Users fail:', e); }
 
-    var salesRows = await GS.read('Sales');
-    if (salesRows.length) {
-      var itemsData = await GS.read('Sale_Items');
-      var itemsBySale = {};
-      itemsData.forEach(r => {
-        if (!itemsBySale[r.sale_id]) itemsBySale[r.sale_id] = [];
-        itemsBySale[r.sale_id].push({ sku: r.sku, name: r.product_name, unit: r.unit, qty: parseFloat(r.qty)||0, price: parseFloat(r.price)||0, lineTotal: parseFloat(r.line_total)||0 });
-      });
-      sales = salesRows.map(r => ({
-        id: r.sale_id, date: r.date, time: r.time, subtotal: parseFloat(r.subtotal)||0, discount: parseFloat(r.discount)||0, total: parseFloat(r.total)||0, payment: r.payment, cashReceived: parseFloat(r.cash_received)||0, change: parseFloat(r.change)||0, refunded: r.refunded === 'true' || r.refunded === 'TRUE', refundReason: r.refund_reason||'', refundDate: r.refund_date||'', items: itemsBySale[r.sale_id] || []
-      }));
-      save(KEYS.sales, sales);
-    }
+    // 5. Sales & Items (Independent Try-Catch)
+    try {
+      var salesRows = await GS.read('Sales');
+      if (salesRows.length) {
+        var itemsData = await GS.read('Sale_Items');
+        var itemsBySale = {};
+        itemsData.forEach(r => {
+          if (!itemsBySale[r.sale_id]) itemsBySale[r.sale_id] = [];
+          itemsBySale[r.sale_id].push({ sku: r.sku, name: r.product_name, unit: r.unit, qty: parseFloat(r.qty)||0, price: parseFloat(r.price)||0, lineTotal: parseFloat(r.line_total)||0 });
+        });
+        sales = salesRows.map(r => ({
+          id: r.sale_id, date: r.date, time: r.time, subtotal: parseFloat(r.subtotal)||0, discount: parseFloat(r.discount)||0, total: parseFloat(r.total)||0, payment: r.payment, cashReceived: parseFloat(r.cash_received)||0, change: parseFloat(r.change)||0, refunded: r.refunded === 'true' || r.refunded === 'TRUE', refundReason: r.refund_reason||'', refundDate: r.refund_date||'', items: itemsBySale[r.sale_id] || []
+        }));
+        save(KEYS.sales, sales);
+      }
+    } catch(e) { console.warn('Till load Sales fail:', e); }
 
-    renderStartupBills(); renderStartupUsers(); renderProducts(); updateSyncTill('connected');
-  } catch(e) {
-    console.warn('Till live boot fail:', e);
-    updateSyncTill('offline');
+    updateSyncTill('connected');
   }
+
+  // Always load startup screens, even if some Sheet reads failed or returned empty!
+  renderStartupBills(); 
+  renderStartupUsers(); 
+  renderProducts();
 }
 
 async function pushLastSaleToSheets() {
