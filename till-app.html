@@ -1358,6 +1358,8 @@ body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--t
   </div>
 </div>
 
+<div id="toast"></div>
+
 <script>
 // ══════════════════════════════════════════
 // DATA STORAGE & NAMESPACE MANAGEMENT
@@ -1968,11 +1970,12 @@ async function confirmRefund() {
           if (rows[i].sale_id === s.id) { rIdx = i + 1; break; }
         }
         if (rIdx > 0) {
-          return Promise.all([
-            GS.updateField('Sales', 'sale_id', s.id, 'refunded', 'true'),
-            GS.updateField('Sales', 'sale_id', s.id, 'refund_reason', reason),
-            GS.updateField('Sales', 'sale_id', s.id, 'refund_date', today())
-          ]);
+          var matchedSaleRow = rows[rIdx - 1];
+          matchedSaleRow.refunded = 'true';
+          matchedSaleRow.refund_reason = reason;
+          matchedSaleRow.refund_date = today();
+          
+          return GS.update('Sales', rIdx, matchedSaleRow);
         }
       }).then(() => {
         updateSyncTill('connected');
@@ -2053,10 +2056,8 @@ function calculateTodaySummary() {
     ? top.map(p => `<tr><td style="padding:10px 16px;font-weight:500;">${p[0]}</td><td style="padding:10px 16px;text-align:center;font-family:monospace;">${p[1].qty}</td><td style="padding:10px 16px;text-align:right;font-family:monospace;font-weight:600;color:var(--accent);">${lkr(p[1].rev)}</td></tr>`).join('')
     : `<tr><td colspan="3" style="text-align:center;color:var(--text3);padding:20px;">No sales today</td></tr>`;
 
-  // expected cash = cash sales - cash refunds
   const refundsToday = todaySales.filter(s => s.refunded && s.payment === 'cash');
   const totalCashRefunds = refundsToday.reduce((s, x) => s + x.total, 0);
-  const changeGivenToday = active.filter(s => s.payment === 'cash').reduce((s, x) => s + (x.change || 0), 0);
 
   const expCash = cashS - totalCashRefunds;
   document.getElementById('adExpectedCash').value = expCash.toFixed(2);
@@ -2124,11 +2125,10 @@ async function generateDayEnd() {
   };
 
   let reports = load(KEYS_REPORTS);
-  reports = reports.filter(r => r.date !== todayStr); // replace if re-generated
+  reports = reports.filter(r => r.date !== todayStr);
   reports.push(rpt);
   save(KEYS_REPORTS, reports);
 
-  // Sync to Sheets
   if (typeof GS !== 'undefined' && GS.isOnline()) {
     updateSyncTill('syncing');
     try {
@@ -2367,33 +2367,91 @@ async function pushLastSaleToSheets() {
 
   updateSyncTill('syncing');
   try {
+    // 1. Append sale header
     await GS.append('Sales', {
       sale_id: sale.id, date: sale.date, time: sale.time||'', cashier: currentUser ? currentUser.name : '',
       subtotal: sale.subtotal||0, discount: sale.discount||0, total: sale.total||0, payment: sale.payment||'',
       cash_received: sale.cashReceived||0, change: sale.change||0, refunded: 'false', refund_reason: '', refund_date: ''
     });
 
+    // 2. Append sale line items
     for (let i = 0; i < sale.items.length; i++) {
       let item = sale.items[i];
       await GS.append('Sale_Items', { sale_id: sale.id, sku: item.sku, product_name: item.name, unit: item.unit, qty: item.qty, price: item.price, line_total: item.lineTotal });
     }
 
-    var goodsIn = JSON.parse(localStorage.getItem('hs_goodsin')||'[]');
+    // 3. FIFO Deductions using Sheets-first Batch Update
+    var liveLots = await GS.read('Stock_Lots');
+    if (!liveLots.length) {
+      liveLots = JSON.parse(localStorage.getItem('hs_goodsin')||'[]');
+    }
+
+    var updates = [];
+
     for (let j = 0; j < sale.items.length; j++) {
       let si = sale.items[j];
-      let skuLots = goodsIn.filter(r => r.sku === si.sku && (parseFloat(r.qtyRemaining)||0) > 0).sort((a,b) => a.date < b.date ? -1 : 1);
+      var skuLots = [];
+      for (let idx = 0; idx < liveLots.length; idx++) {
+        var lot = liveLots[idx];
+        if (lot.sku === si.sku && (parseFloat(lot.qty_remaining || lot.qtyRemaining) || 0) > 0) {
+          skuLots.push({ index: idx + 1, lot: lot });
+        }
+      }
+      skuLots.sort((a, b) => (a.lot.goods_in_date || a.lot.date) < (b.lot.goods_in_date || b.lot.date) ? -1 : 1);
+
       let remaining = si.qty;
       for (let k = 0; k < skuLots.length && remaining > 0; k++) {
-        let deduct = Math.min(remaining, parseFloat(skuLots[k].qtyRemaining)||0);
+        let currentLot = skuLots[k].lot;
+        let qtyRem = parseFloat(currentLot.qty_remaining || currentLot.qtyRemaining) || 0;
+        let deduct = Math.min(remaining, qtyRem);
+        
         remaining -= deduct;
-        skuLots[k].qtyRemaining = (parseFloat(skuLots[k].qtyRemaining)||0) - deduct;
-        await GS.updateField('Stock_Lots', 'lot_id', skuLots[k].lotId, 'qty_remaining', skuLots[k].qtyRemaining);
+        let newQty = qtyRem - deduct;
+        currentLot.qty_remaining = newQty;
+        currentLot.qtyRemaining = newQty;
+
+        updates.push({
+          rowIndex: skuLots[k].index, 
+          rowObj: {
+            lot_id: currentLot.lot_id || currentLot.lotId,
+            delivery_id: currentLot.delivery_id || currentLot.deliveryId,
+            goods_in_date: currentLot.goods_in_date || currentLot.date,
+            sku: currentLot.sku,
+            product_name: currentLot.product_name || currentLot.productName || '',
+            category: currentLot.category || '',
+            invoice_no: currentLot.invoice_no || currentLot.invoice || '',
+            supplier: currentLot.supplier || '',
+            unit: currentLot.unit,
+            qty_received: currentLot.qty_received || currentLot.qty || 0,
+            qty_remaining: newQty,
+            purchase_cost: currentLot.purchase_cost || currentLot.purchaseCost || 0,
+            extra_share: currentLot.extra_share || currentLot.extraShare || 0,
+            eff_cost_unit: currentLot.eff_cost_unit || currentLot.effCostUnit || 0,
+            selling_price: currentLot.selling_price || currentLot.sellingPrice || '',
+            selling_price2: currentLot.selling_price2 || currentLot.sellingPrice2 || '',
+            selling_price3: currentLot.selling_price3 || currentLot.sellingPrice3 || '',
+            remark: currentLot.remark || '',
+            notes: currentLot.notes || '',
+            extra_cost_total: currentLot.extra_cost_total || currentLot.extraCostTotal || 0
+          }
+        });
       }
     }
-    localStorage.setItem('hs_goodsin', JSON.stringify(goodsIn));
+
+    if (updates.length > 0) {
+      await GS.batchUpdateRows('Stock_Lots', updates);
+      localStorage.setItem('hs_goodsin', JSON.stringify(liveLots.map(r => ({
+        lotId: r.lot_id || r.lotId, deliveryId: r.delivery_id || r.deliveryId, date: r.goods_in_date || r.date,
+        sku: r.sku, productName: r.product_name || r.productName || '', unit: r.unit,
+        qty: parseFloat(r.qty_received || r.qty)||0, qtyRemaining: parseFloat(r.qty_remaining || r.qtyRemaining)||0,
+        purchaseCost: parseFloat(r.purchase_cost || r.purchaseCost)||0, effCostUnit: parseFloat(r.eff_cost_unit || r.effCostUnit)||0,
+        sellingPrice: parseFloat(r.selling_price || r.sellingPrice)||0, sellingPrice2: parseFloat(r.selling_price2 || r.sellingPrice2)||0
+      }))));
+    }
+
     updateSyncTill('connected');
-  } catch(e) {
-    console.warn('Sale push error:', e);
+  } catch (e) {
+    console.warn('Batch sale push error:', e);
     updateSyncTill('offline');
   }
 }
