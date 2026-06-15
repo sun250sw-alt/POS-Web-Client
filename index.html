@@ -408,7 +408,7 @@ body {
     <div class="app-grid">
       <div class="app-tile" onclick="openApp('store-app.html')">
         <div class="app-icon green">
-          <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 7H4a2 2 0 00-2 2v10a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2z"/><path d="M16 3H8l-2 4h12l-2-4z"/><path d="M12 12v4m-2-2h4"/></svg>
+          <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 7H4a2 2 0 00-2 2v10a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2z"/><path d="M16 3H8l-2 4h12l-2-4z"/></svg>
         </div>
         <div>
           <div class="app-name">Store</div>
@@ -439,7 +439,7 @@ body {
         <span class="app-badge online">Live</span>
       </div>
 
-      <div class="app-tile locked" onclick="openAdminWithKey()">
+      <div class="app-tile locked" onclick="openApp('admin-app.html')">
         <div class="app-icon gold">
           <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
         </div>
@@ -829,8 +829,15 @@ async function ensureSpreadsheet() {
     { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: '{}' }
   );
 
-  await writeSheetHeaders();
+  // Get sheet IDs first
+  var ssData = await gFetch('https://sheets.googleapis.com/v4/spreadsheets/' + cfg.spreadsheetId + '?fields=sheets.properties');
+  cfg.sheetIds = {};
+  (ssData.sheets || []).forEach(function(s) { cfg.sheetIds[s.properties.title] = s.properties.sheetId; });
   saveCfg();
+
+  // AUDIT CORRECTION: Execute writeSheetHeaders only AFTER sheetIds are resolved
+  await writeSheetHeaders();
+  
   setSyncStatus('syncing', 'Initialising Settings sheet…');
   await writeSettings();
   await writeSampleData();
@@ -862,11 +869,6 @@ async function writeSheetHeaders() {
       }
     };
   });
-
-  var ssData = await gFetch('https://sheets.googleapis.com/v4/spreadsheets/' + cfg.spreadsheetId + '?fields=sheets.properties');
-  cfg.sheetIds = {};
-  (ssData.sheets || []).forEach(function(s) { cfg.sheetIds[s.properties.title] = s.properties.sheetId; });
-  saveCfg();
 
   await gFetch('https://sheets.googleapis.com/v4/spreadsheets/' + cfg.spreadsheetId + ':batchUpdate', {
     method: 'POST',
