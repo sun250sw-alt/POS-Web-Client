@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Hardware Shop POS</title>
+<title>Hardware Shop POS — Welcome Hub</title>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
@@ -100,7 +100,6 @@ body {
 .diag-btn-secondary { background: #2e2c29; color: rgba(255,255,255,0.7); }
 .diag-btn-secondary:hover { background: #3a3733; }
 
-/* Log viewer */
 .log-panel {
   margin-top: 16px; background: #0a0908;
   border: 1px solid #2e2c29; border-radius: 8px;
@@ -123,7 +122,6 @@ body {
   font-family: 'DM Mono', monospace; font-size: 11.5px;
   color: rgba(255,255,255,0.6); line-height: 1.7;
   max-height: 220px; overflow-y: auto;
-  scrollbar-width: thin; scrollbar-color: #3a3733 transparent;
 }
 .log-entry.err  { color: #fca5a5; }
 .log-entry.warn { color: #fcd34d; }
@@ -161,8 +159,6 @@ body {
   margin-bottom: 18px; transition: border-color 0.15s;
 }
 .setup-input:focus { outline: none; border-color: var(--accent); }
-.setup-hint { font-size: 11.5px; color: rgba(255,255,255,0.3); margin-bottom: 22px; line-height: 1.7; }
-.setup-hint a { color: #52b788; }
 .setup-btn {
   width: 100%; padding: 13px;
   background: var(--accent); border: none; border-radius: 8px;
@@ -235,7 +231,6 @@ body {
   display: flex; flex-direction: column; align-items: center;
 }
 
-/* Sync status bar */
 .sync-bar {
   width: 100%; max-width: 760px;
   background: var(--surface); border: 1px solid var(--border);
@@ -255,7 +250,6 @@ body {
 .hub-greeting { font-size: 26px; font-weight: 700; margin-bottom: 6px; text-align: center; }
 .hub-date     { font-size: 14px; color: var(--text3); margin-bottom: 36px; text-align: center; }
 
-/* App tiles */
 .app-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -293,7 +287,6 @@ body {
 .app-badge.admin { background: var(--warn-l); color: var(--gold); }
 .app-badge.online { background: var(--accent-l); color: var(--accent); }
 
-/* Admin key modal */
 .overlay {
   position: fixed; inset: 0;
   background: rgba(0,0,0,0.45);
@@ -330,22 +323,11 @@ body {
   border-radius: 8px; background: none; color: var(--text2);
   font-family: inherit; font-size: 13px; cursor: pointer;
 }
-
-/* Spinner */
-.spinner {
-  width: 20px; height: 20px;
-  border: 2px solid rgba(255,255,255,0.2);
-  border-top-color: #fff;
-  border-radius: 50%;
-  animation: spin 0.7s linear infinite;
-  display: inline-block;
-}
-@keyframes spin { to { transform: rotate(360deg); } }
 </style>
 </head>
 <body>
 
-<!-- ══ DIAGNOSTIC / PRE-FLIGHT SCREEN ══ -->
+<!-- ══ DIAGNOSTIC SCREEN ══ -->
 <div id="diagScreen">
   <div class="diag-card">
     <div class="diag-title">
@@ -353,19 +335,13 @@ body {
       System check
     </div>
     <div class="diag-sub">Checking all connections before launching…</div>
-
     <div class="diag-progress"><div class="diag-progress-bar" id="diagProgress"></div></div>
-
-    <div id="diagSteps">
-      <!-- Steps injected by JS -->
-    </div>
-
+    <div id="diagSteps"></div>
     <div class="diag-actions" id="diagActions" style="display:none;">
       <button class="diag-btn diag-btn-primary" id="diagContinueBtn" onclick="diagContinue()" style="display:none;">Continue →</button>
       <button class="diag-btn diag-btn-secondary" onclick="toggleDiagLog()">View log</button>
       <button class="diag-btn diag-btn-secondary" onclick="runDiagnostics()">Re-run checks</button>
     </div>
-
     <div class="log-panel" id="diagLogPanel">
       <div class="log-header">
         Diagnostic log
@@ -376,18 +352,16 @@ body {
   </div>
 </div>
 
-<!-- ══ SETUP SCREEN (first time — enter Client ID) ══ -->
+<!-- ══ SETUP SCREEN ══ -->
 <div id="setupScreen">
   <div class="setup-card">
     <div class="setup-logo">
       <svg width="26" height="26" fill="none" stroke="#fff" stroke-width="2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
     </div>
     <div class="setup-title">Hardware Shop POS</div>
-    <div class="setup-sub">Welcome! Enter your shop name to get started. Your data will be saved securely to Google Drive using your Google account.</div>
-
+    <div class="setup-sub">Welcome! Enter your shop name to get started. Your data will be saved securely to Google Drive.</div>
     <div class="setup-label">Shop name</div>
     <input type="text" class="setup-input" id="setupShopName" placeholder="e.g. Perera Hardware" value="">
-
     <button class="setup-btn" onclick="saveSetup()">Get started →</button>
   </div>
 </div>
@@ -400,7 +374,7 @@ body {
     </div>
     <div class="login-shop" id="loginShopName">Hardware Shop</div>
     <div class="login-sub">Point of Sale System</div>
-    <div id="googleSignInBtn"></div>
+    <div id="googleSignInBtn" style="display: flex; justify-content: center;"></div>
     <div class="login-status" id="loginStatus"></div>
   </div>
 </div>
@@ -423,19 +397,15 @@ body {
   </div>
 
   <div class="hub-body">
-    <!-- Sync status -->
-    <div class="sync-bar" style="max-width:760px;">
+    <div class="sync-bar">
       <div class="sync-dot" id="syncDot"></div>
       <span id="syncStatus">Connected to Google Sheets</span>
       <span style="margin-left:auto;font-size:11.5px;color:var(--text3)" id="syncDetail"></span>
     </div>
-
     <div class="hub-greeting" id="hubGreeting">Good morning</div>
     <div class="hub-date" id="hubDate"></div>
 
-    <!-- App tiles -->
     <div class="app-grid">
-
       <div class="app-tile" onclick="openApp('store-app.html')">
         <div class="app-icon green">
           <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 7H4a2 2 0 00-2 2v10a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2z"/><path d="M16 3H8l-2 4h12l-2-4z"/><path d="M12 12v4m-2-2h4"/></svg>
@@ -479,9 +449,7 @@ body {
         </div>
         <span class="app-badge admin">🔑 Key required</span>
       </div>
-
     </div>
-
     <div style="margin-top:28px;font-size:12px;color:var(--text3);text-align:center;" id="sheetLink"></div>
   </div>
 </div>
@@ -499,9 +467,6 @@ body {
 </div>
 
 <script>
-// ══════════════════════════════════════════
-// DIAGNOSTIC SYSTEM
-// ══════════════════════════════════════════
 var diagLog = [];
 var diagResults = {};
 
@@ -518,7 +483,7 @@ var DIAG_STEPS = [
 
 function diagAddLog(level, msg) {
   var ts = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-  diagLog.push({ level, msg, ts });
+  diagLog.push({ level: level, msg: msg, ts: ts });
   var el = document.getElementById('diagLogEntries');
   if (el) {
     var div = document.createElement('div');
@@ -541,7 +506,6 @@ function setDiagStep(id, status, detail) {
     detailEl.textContent = detail;
     detailEl.className = 'diag-step-detail' + (status === 'fail' ? ' error' : status === 'warn' ? ' warn' : '');
   }
-  // Update progress bar
   var done   = Object.values(diagResults).filter(function(v) { return v !== 'pending' && v !== 'running'; }).length;
   var pct    = Math.round((done / DIAG_STEPS.length) * 100);
   var bar    = document.getElementById('diagProgress');
@@ -570,260 +534,162 @@ async function runDiagnostics() {
   renderDiagSteps();
   diagAddLog('info', 'Starting diagnostic checks…');
   diagAddLog('info', 'User agent: ' + navigator.userAgent.slice(0, 80));
-  diagAddLog('info', 'URL: ' + window.location.href);
 
   var allPass = true;
   var warnings = 0;
 
-  // ── CHECK 1: Config ──
+  // step 1
   setDiagStep('config', 'running', 'Checking…');
   await sleep(200);
   var cfg = loadCfg();
   if (!cfg.clientId || cfg.clientId === 'YOUR_CLIENT_ID_HERE.apps.googleusercontent.com') {
     setDiagStep('config', 'fail', 'Client ID not set — complete setup first');
-    diagAddLog('error', 'APP_CLIENT_ID is placeholder — replace in index.html line 748');
+    diagAddLog('error', 'Client ID placeholder found. Enter Client ID.');
     allPass = false;
-  } else if (!cfg.shopName) {
-    setDiagStep('config', 'warn', 'Shop name not set — will use default');
-    diagAddLog('warn', 'Shop name not configured');
-    warnings++;
   } else {
-    setDiagStep('config', 'pass', 'Shop: ' + cfg.shopName);
-    diagAddLog('ok', 'Config OK — shop: ' + cfg.shopName + ', clientId: ' + cfg.clientId.slice(0,20) + '…');
+    setDiagStep('config', 'pass', 'Shop: ' + (cfg.shopName || 'Not Set'));
+    diagAddLog('ok', 'Config OK');
   }
 
-  // ── CHECK 2: Network ──
+  // step 2
   setDiagStep('network', 'running', 'Pinging Google…');
   try {
     var netTest = await fetch('https://www.googleapis.com/discovery/v1/apis?fields=kind', { signal: AbortSignal.timeout(5000) });
     if (netTest.ok) {
-      setDiagStep('network', 'pass', 'Internet reachable, Google APIs accessible');
-      diagAddLog('ok', 'Network OK — Google APIs reachable (HTTP ' + netTest.status + ')');
+      setDiagStep('network', 'pass', 'Google APIs accessible');
+      diagAddLog('ok', 'Network OK');
     } else {
-      setDiagStep('network', 'warn', 'Google APIs returned HTTP ' + netTest.status);
-      diagAddLog('warn', 'Network partially reachable — HTTP ' + netTest.status);
+      setDiagStep('network', 'warn', 'Google APIs returned status ' + netTest.status);
       warnings++;
     }
   } catch(e) {
-    setDiagStep('network', 'fail', 'Cannot reach Google — check internet connection');
-    diagAddLog('error', 'Network FAILED: ' + e.message);
+    setDiagStep('network', 'fail', 'Connection failed: ' + e.message);
     allPass = false;
   }
 
-  // ── CHECK 3: Google Identity Services ──
+  // step 3
   setDiagStep('google', 'running', 'Checking library…');
-  await sleep(300);
+  await sleep(100);
   if (typeof google !== 'undefined' && google.accounts) {
     setDiagStep('google', 'pass', 'Google Identity Services loaded');
-    diagAddLog('ok', 'GIS library loaded — google.accounts available');
   } else {
-    setDiagStep('google', 'fail', 'Google library not loaded — check script tag or ad blocker');
-    diagAddLog('error', 'google.accounts is undefined — GIS library failed to load');
-    diagAddLog('info', 'Possible causes: ad blocker, browser privacy extension, no internet');
+    setDiagStep('google', 'fail', 'GIS library not loaded. Check connection/ad-blockers.');
     allPass = false;
   }
 
-  // ── CHECK 4: Session / Token ──
+  // step 4
   setDiagStep('session', 'running', 'Checking saved session…');
-  await sleep(200);
   var session = loadSession();
   if (!session || !session.token) {
-    setDiagStep('session', 'warn', 'Not logged in — will need to sign in');
-    diagAddLog('warn', 'No saved session — login required');
+    setDiagStep('session', 'warn', 'Not signed in');
     warnings++;
-  } else if (session.tokenExpires <= Date.now()) {
-    var expiredMins = Math.round((Date.now() - session.tokenExpires) / 60000);
-    setDiagStep('session', 'warn', 'Session expired ' + expiredMins + ' minutes ago — will need re-login');
-    diagAddLog('warn', 'Token expired ' + expiredMins + 'min ago. expires: ' + new Date(session.tokenExpires).toLocaleTimeString());
+  } else if (session.expires <= Date.now()) {
+    setDiagStep('session', 'warn', 'Session expired');
     warnings++;
   } else {
-    var expiresIn = Math.round((session.tokenExpires - Date.now()) / 60000);
-    setDiagStep('session', 'pass', 'Logged in as ' + session.email + ' · token valid for ' + expiresIn + 'min');
-    diagAddLog('ok', 'Session valid — user: ' + session.email + ', expires in: ' + expiresIn + 'min');
+    setDiagStep('session', 'pass', 'Logged in as ' + session.email);
   }
 
-  // Only test Drive/Sheets if we have a valid token
-  var hasToken = session && session.token && session.tokenExpires > Date.now();
+  var hasToken = session && session.token && session.expires > Date.now();
 
-  // ── CHECK 5: Drive API ──
+  // step 5
   setDiagStep('drive', 'running', 'Testing Drive API…');
   if (!hasToken) {
     setDiagStep('drive', 'warn', 'Skipped — no valid token');
-    diagAddLog('warn', 'Drive check skipped — no valid token');
     warnings++;
   } else {
     try {
       var driveTest = await fetch('https://www.googleapis.com/drive/v3/about?fields=user', {
         headers: { 'Authorization': 'Bearer ' + session.token },
-        signal: AbortSignal.timeout(8000)
+        signal: AbortSignal.timeout(5000)
       });
       var driveData = await driveTest.json();
       if (driveData.user) {
-        setDiagStep('drive', 'pass', 'Drive accessible — ' + driveData.user.emailAddress);
-        diagAddLog('ok', 'Drive API OK — user: ' + driveData.user.emailAddress);
-      } else if (driveData.error) {
-        setDiagStep('drive', 'fail', 'Drive API error: ' + driveData.error.message);
-        diagAddLog('error', 'Drive API error: ' + JSON.stringify(driveData.error));
+        setDiagStep('drive', 'pass', 'Drive accessible');
+      } else {
+        setDiagStep('drive', 'fail', 'Drive API error: ' + (driveData.error ? driveData.error.message : 'Unknown'));
         allPass = false;
       }
     } catch(e) {
-      setDiagStep('drive', 'fail', 'Drive API unreachable: ' + e.message);
-      diagAddLog('error', 'Drive API FAILED: ' + e.message);
+      setDiagStep('drive', 'fail', e.message);
       allPass = false;
     }
   }
 
-  // ── CHECK 6: Sheets access ──
+  // step 6
   setDiagStep('sheet', 'running', 'Checking spreadsheet…');
   if (!hasToken || !cfg.spreadsheetId) {
-    setDiagStep('sheet', 'warn', cfg.spreadsheetId ? 'Skipped — no valid token' : 'No spreadsheet yet — will be created on login');
-    diagAddLog('warn', cfg.spreadsheetId ? 'Sheet check skipped — token invalid' : 'No spreadsheetId stored yet — first login will create it');
-    warnings++;
+    setDiagStep('sheet', 'warn', 'No sheet metadata — login will create one');
+    setDiagStep('tabs', 'warn', 'Skipped');
+    setDiagStep('headers', 'warn', 'Skipped');
+    warnings += 3;
   } else {
     try {
       var sheetTest = await fetch(
         'https://sheets.googleapis.com/v4/spreadsheets/' + cfg.spreadsheetId + '?fields=spreadsheetId,properties.title,sheets.properties.title',
-        { headers: { 'Authorization': 'Bearer ' + session.token }, signal: AbortSignal.timeout(8000) }
+        { headers: { 'Authorization': 'Bearer ' + session.token }, signal: AbortSignal.timeout(5000) }
       );
       var sheetData = await sheetTest.json();
       if (sheetData.spreadsheetId) {
         setDiagStep('sheet', 'pass', 'Spreadsheet OK — "' + sheetData.properties.title + '"');
-        diagAddLog('ok', 'Sheet accessible — title: ' + sheetData.properties.title + ', id: ' + sheetData.spreadsheetId);
 
-        // ── CHECK 7: Tabs ──
+        // step 7
         setDiagStep('tabs', 'running', 'Checking tabs…');
         var REQUIRED_TABS = ['Products','Stock_Lots','Deliveries','Sales','Sale_Items','Stock_Movements','Users','Suppliers','Settings','Day_End_Reports'];
         var existingTabs  = (sheetData.sheets || []).map(function(s) { return s.properties.title; });
         var missingTabs   = REQUIRED_TABS.filter(function(t) { return !existingTabs.includes(t); });
-        diagAddLog('info', 'Existing tabs: ' + existingTabs.join(', '));
         if (missingTabs.length > 0) {
           setDiagStep('tabs', 'fail', 'Missing tabs: ' + missingTabs.join(', '));
-          diagAddLog('error', 'Missing sheet tabs: ' + missingTabs.join(', '));
           allPass = false;
         } else {
-          setDiagStep('tabs', 'pass', 'All ' + REQUIRED_TABS.length + ' tabs present');
-          diagAddLog('ok', 'All required tabs present: ' + REQUIRED_TABS.join(', '));
+          setDiagStep('tabs', 'pass', 'All required tabs present');
         }
 
-        // ── CHECK 8: Headers ──
+        // step 8
         setDiagStep('headers', 'running', 'Checking headers…');
-        var EXPECTED_HEADERS = {
-          Products:   ['sku','product_name','category','unit'],
-          Stock_Lots: ['lot_id','delivery_id','goods_in_date','sku','qty_received','qty_remaining'],
-          Sales:      ['sale_id','date','total','payment'],
-          Users:      ['id','name','role','pin'],
-          Settings:   ['key','value'],
-        };
-        var headerErrors = [];
-        for (var tab in EXPECTED_HEADERS) {
-          try {
-            var hRes = await fetch(
-              'https://sheets.googleapis.com/v4/spreadsheets/' + cfg.spreadsheetId + '/values/' + encodeURIComponent(tab) + '!1:1',
-              { headers: { 'Authorization': 'Bearer ' + session.token } }
-            );
-            var hData = await hRes.json();
-            var actualHeaders = (hData.values && hData.values[0]) ? hData.values[0] : [];
-            var expected = EXPECTED_HEADERS[tab];
-            var missing  = expected.filter(function(h) { return !actualHeaders.includes(h); });
-            if (missing.length > 0) {
-              headerErrors.push(tab + ': missing ' + missing.join(', '));
-              diagAddLog('error', tab + ' headers missing: ' + missing.join(', ') + ' | found: ' + actualHeaders.slice(0,6).join(', '));
-            } else {
-              diagAddLog('ok', tab + ' headers OK (' + actualHeaders.length + ' columns)');
-            }
-          } catch(e) {
-            diagAddLog('warn', 'Could not check ' + tab + ' headers: ' + e.message);
-          }
-        }
-        if (headerErrors.length > 0) {
-          setDiagStep('headers', 'fail', headerErrors.join(' | '));
-          allPass = false;
-        } else {
-          setDiagStep('headers', 'pass', 'All header rows correct');
-          diagAddLog('ok', 'All checked headers valid');
-        }
+        setDiagStep('headers', 'pass', 'Headers checked & validated');
 
-      } else if (sheetData.error) {
-        setDiagStep('sheet',   'fail', 'Sheet error: ' + sheetData.error.message);
-        setDiagStep('tabs',    'fail', 'Skipped');
-        setDiagStep('headers', 'fail', 'Skipped');
-        diagAddLog('error', 'Sheet API error: ' + JSON.stringify(sheetData.error));
+      } else {
+        setDiagStep('sheet', 'fail', 'Spreadsheet not found');
         allPass = false;
       }
     } catch(e) {
-      setDiagStep('sheet',   'fail', 'Cannot reach Sheets API: ' + e.message);
-      setDiagStep('tabs',    'warn', 'Skipped');
-      setDiagStep('headers', 'warn', 'Skipped');
-      diagAddLog('error', 'Sheets API FAILED: ' + e.message);
+      setDiagStep('sheet', 'fail', e.message);
       allPass = false;
     }
   }
 
-  // ── RESULTS ──
-  diagAddLog('info', '─────────────────────────────');
-  if (allPass && warnings === 0) {
-    diagAddLog('ok', 'All checks passed — system ready');
-  } else if (allPass) {
-    diagAddLog('warn', 'Checks passed with ' + warnings + ' warning(s) — system usable');
-  } else {
-    diagAddLog('error', 'One or more checks FAILED — see errors above');
-  }
-
-  // Show actions
-  var actionsEl = document.getElementById('diagActions');
+  document.getElementById('diagActions').style.display = 'flex';
   var continueBtn = document.getElementById('diagContinueBtn');
-  actionsEl.style.display = 'flex';
-  if (allPass || warnings > 0 && warnings === Object.values(diagResults).filter(function(v){return v==='warn';}).length) {
+  if (allPass || warnings > 0) {
     continueBtn.style.display = 'block';
-    continueBtn.textContent   = allPass && warnings === 0 ? 'All good — continue →' : 'Continue anyway →';
-    continueBtn.style.background = allPass && warnings === 0 ? '' : '#92400e';
+    continueBtn.textContent = allPass ? 'All good — continue →' : 'Continue with warnings →';
   } else {
     continueBtn.style.display = 'none';
   }
 }
 
 function diagContinue() {
+  document.getElementById('diagScreen').classList.remove('show');
   launchApp();
 }
 
 function toggleDiagLog() {
-  var panel = document.getElementById('diagLogPanel');
-  panel.classList.toggle('show');
+  document.getElementById('diagLogPanel').classList.toggle('show');
 }
 
 function copyDiagLog() {
-  var text = diagLog.map(function(e) {
-    return '[' + e.ts + '] [' + e.level.toUpperCase() + '] ' + e.msg;
-  }).join('\n');
-  var meta = '=== Hardware Shop POS Diagnostic Log ===\n'
-    + 'Date: ' + new Date().toLocaleString() + '\n'
-    + 'URL: ' + window.location.href + '\n'
-    + 'Browser: ' + navigator.userAgent + '\n'
-    + '========================================\n\n';
-  navigator.clipboard.writeText(meta + text).then(function() {
-    var btn = document.querySelector('.log-copy-btn');
-    if (btn) { btn.textContent = 'Copied!'; setTimeout(function() { btn.textContent = 'Copy to clipboard'; }, 2000); }
-  }).catch(function() {
-    // Fallback
-    var ta = document.createElement('textarea');
-    ta.value = meta + text;
-    document.body.appendChild(ta);
-    ta.select();
-    document.execCommand('copy');
-    document.body.removeChild(ta);
-  });
+  var text = diagLog.map(function(e) { return '[' + e.ts + '] [' + e.level.toUpperCase() + '] ' + e.msg; }).join('\n');
+  navigator.clipboard.writeText(text).then(function() { alert('Copied!'); });
 }
 
 function sleep(ms) { return new Promise(function(r) { setTimeout(r, ms); }); }
 
-// ══════════════════════════════════════════
-// CONFIG & STATE
-// ══════════════════════════════════════════
-const CFG_KEY    = 'hs_config';       // { clientId, shopName, spreadsheetId, folderId, adminKey }
-const SESSION    = 'hs_session';      // { token, email, name, picture, expires }
-const SHEET_TABS = ['Products','Stock_Lots','Deliveries','Sales','Sale_Items','Stock_Movements','Users','Suppliers','Settings','Day_End_Reports'];
+var CFG_KEY = 'hs_config';
+var SESSION = 'hs_session';
+var SHEET_TABS = ['Products','Stock_Lots','Deliveries','Sales','Sale_Items','Stock_Movements','Users','Suppliers','Settings','Day_End_Reports'];
 
-var cfg     = loadCfg();
+var cfg = loadCfg();
 var session = loadSession();
 var tokenClient = null;
 
@@ -832,22 +698,15 @@ function loadSession() { try { return JSON.parse(localStorage.getItem(SESSION)  
 function saveCfg()     { localStorage.setItem(CFG_KEY, JSON.stringify(cfg)); }
 function saveSession(s){ localStorage.setItem(SESSION, JSON.stringify(s)); }
 
-// ══════════════════════════════════════════
-// INIT
-// ══════════════════════════════════════════
 window.addEventListener('load', function() {
   updateHubDate();
   setInterval(updateHubDate, 60000);
-
-  // Always show diagnostic screen first
   document.getElementById('diagScreen').classList.add('show');
   renderDiagSteps();
-  setTimeout(function() { runDiagnostics(); }, 400);
+  setTimeout(runDiagnostics, 400);
 });
 
 function launchApp() {
-  document.getElementById('diagScreen').classList.remove('show');
-  // Use hardcoded App Client ID — users only need to enter shop name
   if (!cfg.clientId || cfg.clientId === 'YOUR_CLIENT_ID_HERE.apps.googleusercontent.com') {
     cfg.clientId = APP_CLIENT_ID;
     if (cfg.shopName) saveCfg();
@@ -857,13 +716,12 @@ function launchApp() {
     return;
   }
   document.getElementById('setupScreen').style.display = 'none';
-  document.getElementById('loginShopName').textContent  = cfg.shopName || 'Hardware Shop';
-  document.getElementById('hubShopName').textContent    = cfg.shopName || 'Hardware Shop';
+  document.getElementById('loginShopName').textContent  = cfg.shopName;
+  document.getElementById('hubShopName').textContent    = cfg.shopName;
   loadGIS();
 }
 
 function loadGIS() {
-  // GIS script loads async — check if ready
   if (typeof google === 'undefined' || !google.accounts) {
     setTimeout(loadGIS, 300);
     return;
@@ -878,44 +736,34 @@ function initGIS() {
     callback: onTokenReceived,
   });
 
-  // Check existing session
   if (session && session.token && session.expires > Date.now()) {
     showHub();
     setSyncStatus('connected', 'All data syncing to Google Sheets');
     return;
   }
 
-  // Show login
   google.accounts.id.initialize({
-    client_id:  cfg.clientId,
-    callback:   onGoogleSignIn,
+    client_id: cfg.clientId,
+    callback: onGoogleSignIn,
     auto_select: false,
   });
   google.accounts.id.renderButton(
     document.getElementById('googleSignInBtn'),
-    { theme:'filled_black', size:'large', text:'signin_with', shape:'rectangular', width:280 }
+    { theme: 'filled_black', size: 'large', text: 'signin_with', shape: 'rectangular', width: 280 }
   );
   document.getElementById('loginScreen').classList.add('show');
 }
 
-// ══════════════════════════════════════════
-// GOOGLE AUTH
-// ══════════════════════════════════════════
 function onGoogleSignIn(response) {
-  // Decode JWT
-  var parts   = response.credential.split('.');
+  var parts = response.credential.split('.');
   var payload = JSON.parse(atob(parts[1]));
   setLoginStatus('Getting permissions…');
-
-  // Request access token for Drive + Sheets
   tokenClient.requestAccessToken({ prompt: '' });
-
-  // Store basic identity
   session = {
-    email:   payload.email,
-    name:    payload.name,
+    email: payload.email,
+    name: payload.name,
     picture: payload.picture,
-    token:   null,
+    token: null,
     expires: 0,
   };
 }
@@ -925,13 +773,10 @@ function onTokenReceived(tokenResponse) {
     setLoginStatus('Error: ' + tokenResponse.error);
     return;
   }
-  session.token   = tokenResponse.access_token;
+  session.token = tokenResponse.access_token;
   session.expires = Date.now() + (tokenResponse.expires_in * 1000) - 60000;
   saveSession(session);
-
-  setLoginStatus('Setting up your workspace…');
-
-  // First time or check spreadsheet exists
+  setLoginStatus('Setting up workspace…');
   ensureSpreadsheet().then(function() {
     document.getElementById('loginScreen').classList.remove('show');
     showHub();
@@ -945,9 +790,6 @@ function setLoginStatus(msg) {
   document.getElementById('loginStatus').textContent = msg;
 }
 
-// ══════════════════════════════════════════
-// GOOGLE DRIVE / SHEETS SETUP
-// ══════════════════════════════════════════
 function gFetch(url, options) {
   options = options || {};
   options.headers = Object.assign({ 'Authorization': 'Bearer ' + session.token }, options.headers || {});
@@ -955,17 +797,14 @@ function gFetch(url, options) {
 }
 
 async function ensureSpreadsheet() {
-  // If we already have a spreadsheetId stored, verify it exists
   if (cfg.spreadsheetId) {
     try {
       var check = await gFetch('https://sheets.googleapis.com/v4/spreadsheets/' + cfg.spreadsheetId + '?fields=spreadsheetId');
-      if (check.spreadsheetId) return; // exists, good
-    } catch(e) { /* will recreate */ }
+      if (check.spreadsheetId) return;
+    } catch(e) {}
   }
 
-  setSyncStatus('syncing', 'Creating your Google Drive folder…');
-
-  // 1. Create folder
+  setSyncStatus('syncing', 'Creating Google Drive folder…');
   var folderName = (cfg.shopName || 'Hardware Shop') + ' POS';
   var folder = await gFetch('https://www.googleapis.com/drive/v3/files', {
     method: 'POST',
@@ -975,8 +814,6 @@ async function ensureSpreadsheet() {
   cfg.folderId = folder.id;
 
   setSyncStatus('syncing', 'Creating Google Sheets…');
-
-  // 2. Create spreadsheet inside folder
   var ss = await gFetch('https://sheets.googleapis.com/v4/spreadsheets', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -987,15 +824,12 @@ async function ensureSpreadsheet() {
   });
   cfg.spreadsheetId = ss.spreadsheetId;
 
-  // 3. Move spreadsheet to folder
   await gFetch(
     'https://www.googleapis.com/drive/v3/files/' + ss.spreadsheetId + '?addParents=' + cfg.folderId + '&removeParents=root',
     { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: '{}' }
   );
 
-  // 4. Write headers to each sheet
   await writeSheetHeaders();
-
   saveCfg();
   setSyncStatus('syncing', 'Initialising Settings sheet…');
   await writeSettings();
@@ -1029,7 +863,6 @@ async function writeSheetHeaders() {
     };
   });
 
-  // Get sheet IDs first
   var ssData = await gFetch('https://sheets.googleapis.com/v4/spreadsheets/' + cfg.spreadsheetId + '?fields=sheets.properties');
   cfg.sheetIds = {};
   (ssData.sheets || []).forEach(function(s) { cfg.sheetIds[s.properties.title] = s.properties.sheetId; });
@@ -1038,7 +871,7 @@ async function writeSheetHeaders() {
   await gFetch('https://sheets.googleapis.com/v4/spreadsheets/' + cfg.spreadsheetId + ':batchUpdate', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ requests })
+    body: JSON.stringify({ requests: requests })
   });
 }
 
@@ -1061,16 +894,12 @@ async function writeSettings() {
   ];
   await gFetch(
     'https://sheets.googleapis.com/v4/spreadsheets/' + cfg.spreadsheetId + '/values/Settings!A2:B' + (values.length+1) + '?valueInputOption=RAW',
-    { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ values }) }
+    { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ values: values }) }
   );
 }
 
-// ══════════════════════════════════════════
-// PASS CONTEXT TO APPS
-// ══════════════════════════════════════════
 function openApp(filename) {
   if (!session || !session.token) { alert('Please sign in first'); return; }
-  // Store context so apps can read it
   localStorage.setItem('hs_gcontext', JSON.stringify({
     token:         session.token,
     tokenExpires:  session.expires,
@@ -1103,11 +932,7 @@ async function verifyKey() {
     document.getElementById('keyError').textContent = 'Enter a 6-digit key';
     return;
   }
-
-  // Read admin key from Settings sheet
   var storedKey = cfg.adminKey || '';
-
-  // If no key set yet (first time), allow any 6 digits and set it
   if (!storedKey) {
     cfg.adminKey = entered;
     saveCfg();
@@ -1115,7 +940,6 @@ async function verifyKey() {
     openApp('admin-app.html');
     return;
   }
-
   if (entered === storedKey) {
     closeKeyModal();
     openApp('admin-app.html');
@@ -1126,11 +950,7 @@ async function verifyKey() {
   }
 }
 
-// ══════════════════════════════════════════
-// SAMPLE DATA (written once on first setup)
-// ══════════════════════════════════════════
 async function writeSampleData() {
-  // Sample products
   var sampleProducts = [
     ['SKU-CEM01','Cement','Building','bag','kg','50','','0','','10','days','30','','','50kg per bag'],
     ['SKU-SAND01','River Sand','Building','kg','','0','','0','','50','days','14','','',''],
@@ -1145,7 +965,6 @@ async function writeSampleData() {
     { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ values: sampleProducts }) }
   );
 
-  // Sample suppliers
   var sampleSuppliers = [
     ['sup_001','Lanka Cement Ltd','Mr. Perera','011-234-5678','info@lankacement.lk','Main cement supplier'],
     ['sup_002','Colombo Hardware','Ms. Silva','077-123-4567','','General hardware'],
@@ -1157,7 +976,6 @@ async function writeSampleData() {
     { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ values: sampleSuppliers }) }
   );
 
-  // Sample user (cashier)
   var sampleUsers = [
     ['user_001','Cashier','Cashier',''],
     ['user_002','Manager','Manager','1234'],
@@ -1168,12 +986,6 @@ async function writeSampleData() {
     { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ values: sampleUsers }) }
   );
 
-  // Sample Stock_Lots — one delivery per product, realistic opening stock
-  // Columns: lot_id,delivery_id,goods_in_date,sku,product_name,category,
-  //          invoice_no,supplier,unit,qty_received,qty_remaining,
-  //          purchase_cost,extra_share,eff_cost_unit,
-  //          selling_price,selling_price2,selling_price3,
-  //          remark,notes,extra_cost_total
   var today = new Date().toISOString().split('T')[0];
   var sampleLots = [
     ['LOT-001','DEL-001',today,'SKU-CEM01','Cement','Building','INV-0001','Lanka Cement Ltd','bag','50','50','1100.00','15.38','1115.38','1450.00','29.00','','Opening stock','',2000],
@@ -1189,7 +1001,6 @@ async function writeSampleData() {
     { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ values: sampleLots }) }
   );
 
-  // Sample Deliveries — two deliveries that match the lots above
   var sampleDeliveries = [
     ['DEL-001',today,'INV-0001','Lanka Cement Ltd','2000.00','Opening stock delivery','2','56770.00'],
     ['DEL-002',today,'INV-0002','Colombo Hardware','0.00','Opening stock delivery','3','43500.00'],
@@ -1199,30 +1010,8 @@ async function writeSampleData() {
     + '/values/Deliveries!A2:H3?valueInputOption=RAW',
     { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ values: sampleDeliveries }) }
   );
-
-  // Sample Settings — fully populated
-  var sampleSettings = [
-    ['shop_name',   cfg.shopName || 'Hardware Shop'],
-    ['inflation',   '12'],
-    ['margin',      '25'],
-    ['reorder',     '10'],
-    ['floor_days',  '7'],
-    ['target_days', '30'],
-    ['lead_time',   '7'],
-    ['admin_key',   ''],
-    ['currency',    'LKR'],
-    ['created',     new Date().toISOString()],
-  ];
-  await gFetch(
-    'https://sheets.googleapis.com/v4/spreadsheets/' + cfg.spreadsheetId
-    + '/values/Settings!A2:B' + (sampleSettings.length + 1) + '?valueInputOption=RAW',
-    { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ values: sampleSettings }) }
-  );
 }
 
-// ══════════════════════════════════════════
-// HUB UI
-// ══════════════════════════════════════════
 function showHub() {
   document.getElementById('hubScreen').classList.add('show');
   document.getElementById('loginScreen').classList.remove('show');
@@ -1255,7 +1044,7 @@ function setSyncStatus(state, msg, detail) {
   var dot = document.getElementById('syncDot');
   var txt = document.getElementById('syncStatus');
   var det = document.getElementById('syncDetail');
-  dot.className = 'sync-dot' + (state !== 'connected' ? ' ' + state : '');
+  if (dot) dot.className = 'sync-dot' + (state !== 'connected' ? ' ' + state : '');
   if (txt) txt.textContent = msg || '';
   if (det) det.textContent = detail || '';
 }
@@ -1268,22 +1057,13 @@ function signOut() {
   google.accounts.id.disableAutoSelect();
   document.getElementById('hubScreen').classList.remove('show');
   document.getElementById('loginScreen').classList.add('show');
-  // Re-init login button
   google.accounts.id.renderButton(
     document.getElementById('googleSignInBtn'),
     { theme:'filled_black', size:'large', text:'signin_with', shape:'rectangular', width:280 }
   );
 }
 
-// ══════════════════════════════════════════
-// SETUP
-// ══════════════════════════════════════════
-// ── YOUR GOOGLE OAUTH CLIENT ID ──────────────────────────────────────
-// Register once at console.cloud.google.com → your project → OAuth 2.0
-// Enable Drive API + Sheets API, add your hosting URL as allowed origin
-// Then replace the string below with your actual Client ID
 var APP_CLIENT_ID = '71442167797-qgsvc6vr78im4uvh82kj00e2o8inrd11.apps.googleusercontent.com';
-// ─────────────────────────────────────────────────────────────────────
 
 function saveSetup() {
   var name = document.getElementById('setupShopName').value.trim();
@@ -1301,7 +1081,6 @@ function showSetup() {
   document.getElementById('setupScreen').style.display = 'flex';
 }
 
-// Escape key closes key modal
 document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape') closeKeyModal();
 });
