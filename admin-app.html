@@ -27,8 +27,6 @@
   --warn-light: #fef3c7;
   --danger: #991b1b;
   --danger-light: #fee2e2;
-  --gold: #92400e;
-  --gold-light: #fef3c7;
   --radius: 8px;
   --radius-lg: 12px;
   --shadow: 0 1px 3px rgba(0,0,0,0.07), 0 1px 2px rgba(0,0,0,0.04);
@@ -740,7 +738,7 @@ function getPeriodSales() {
     from = document.getElementById('dateFrom').value || today();
     to   = document.getElementById('dateTo').value   || today();
   }
-  return { data: sales.filter(function(s) { return s.date >= from && s.date <= to; }), from, to };
+  return { data: sales.filter(function(s) { return s.date >= from && s.date <= to; }), from: from, to: to };
 }
 
 function renderDashboard() {
@@ -811,7 +809,7 @@ function renderDashboard() {
       + '<td class="mono" style="text-align:right;color:var(--accent);font-weight:600">' + lkr(r[1].rev) + '</td></tr>';
   }).join('') : '<tr><td colspan="4" style="text-align:center;color:var(--text3);padding:20px;">No sales in period</td></tr>';
 
-  // Fix low-stock crash by declaring and loading lotQtyMap
+  // Load lotQtyMap from local cache
   var lotQtyMap = {};
   var goodsIn = load('hs_goodsin');
   goodsIn.forEach(function(g) {
@@ -994,7 +992,7 @@ function deleteUser(uid) {
         if (rows[i].id === uid) { rowIdx = i + 1; break; }
       }
       if (rowIdx > 0) return GS.deleteRow('Users', rowIdx);
-    }).then(function() { toast('User deleted'); })
+    }).then(function() { toast('User deleted from Sheets'); })
       .catch(function(e) { console.warn('deleteUser Sheets error:', e); toast('User deleted locally'); });
   } else {
     toast('User deleted');
@@ -1323,7 +1321,7 @@ function deleteSupplier(sid) {
         if (rows[i].id === sid) { rowIdx = i + 1; break; }
       }
       if (rowIdx > 0) return GS.deleteRow('Suppliers', rowIdx);
-    }).then(function() { toast('Supplier deleted'); })
+    }).then(function() { toast('Supplier deleted from Sheets'); })
       .catch(function(e) { console.warn('deleteSupplier Sheets error:', e); toast('Supplier deleted locally'); });
   } else {
     toast('Supplier deleted');
@@ -1501,6 +1499,33 @@ async function initGS() {
         notes: r.notes||''
       }; });
       localStorage.setItem('hs_products', JSON.stringify(products));
+    }
+
+    // AUDIT CORRECTION: Load Stock Lots to rebuild "hs_stock" for dashboard metrics
+    var lots = await GS.read('Stock_Lots');
+    if (lots.length) {
+      localStorage.setItem('hs_goodsin', JSON.stringify(lots.map(function(r) { return {
+        lotId: r.lot_id, deliveryId: r.delivery_id, date: r.goods_in_date,
+        sku: r.sku, productName: (r.product_name || ''), unit: r.unit,
+        qty: parseFloat(r.qty_received)||0,
+        qtyRemaining: parseFloat(r.qty_remaining)||0,
+        purchaseCost: parseFloat(r.purchase_cost)||0,
+        effCostUnit: parseFloat(r.eff_cost_unit)||0,
+        sellingPrice: parseFloat(r.selling_price)||0,
+        sellingPrice2: parseFloat(r.selling_price2)||0
+      }; })));
+
+      var stockMap = {};
+      lots.forEach(function(r) {
+        if (!stockMap[r.sku]) stockMap[r.sku] = { sku: r.sku, storeQty: 0, floorQty: 0, reorderLevel: 0 };
+        stockMap[r.sku].storeQty += parseFloat(r.qty_remaining)||0;
+        if (!stockMap[r.sku].lastDelivery || r.goods_in_date > stockMap[r.sku].lastDelivery) {
+          stockMap[r.sku].lastDelivery = r.goods_in_date;
+          stockMap[r.sku].lastEffectiveCost = parseFloat(r.eff_cost_unit)||0;
+        }
+      });
+      stock = Object.values(stockMap);
+      localStorage.setItem('hs_stock', JSON.stringify(stock));
     }
 
     var usersData = await GS.read('Users');
