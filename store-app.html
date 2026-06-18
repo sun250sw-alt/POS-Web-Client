@@ -461,7 +461,7 @@ tbody tr:hover .gi-remove-btn { opacity: 1; }
         <!-- Main delivery form -->
         <div class="card">
           <div class="card-header">
-            <h3>Record delivery</h3>
+            <h3 id="goodsInFormTitle">Record delivery</h3>
             <button class="btn btn-ghost btn-sm" onclick="clearGoodsInForm()">Clear all</button>
           </div>
           <div class="card-body">
@@ -574,11 +574,11 @@ tbody tr:hover .gi-remove-btn { opacity: 1; }
             <thead>
               <tr>
                 <th>SKU</th><th>Product</th><th>Category</th>
-                <th>Primary unit</th><th>Unit 2</th><th>Reorder</th><th>Status</th><th>Actions</th>
+                <th>Primary unit</th><th>Unit 2</th><th>Unit 3</th><th>Reorder</th><th>Status</th><th>Actions</th>
               </tr>
             </thead>
             <tbody id="productsTable">
-              <tr><td colspan="8" style="color:var(--text3);text-align:center;padding:24px;">No products yet — manage above or in Admin</td></tr>
+              <tr><td colspan="9" style="color:var(--text3);text-align:center;padding:24px;">No products yet — manage above or in Admin</td></tr>
             </tbody>
           </table>
         </div>
@@ -683,7 +683,7 @@ tbody tr:hover .gi-remove-btn { opacity: 1; }
               <tr>
                 <th>SKU</th><th>Product</th><th>Unit</th>
                 <th>Total qty</th><th style="color:var(--accent)">Optimum qty</th><th>Avg/day</th>
-                <th>Selling price</th>
+                <th>Selling prices</th>
                 <th>Last delivery</th><th>Invoice</th><th>Status</th>
               </tr>
             </thead>
@@ -862,20 +862,6 @@ tbody tr:hover .gi-remove-btn { opacity: 1; }
           </div>
         </div>
 
-        <div class="card" style="margin-bottom:16px;">
-          <div class="card-header"><h3>Inflation calculator</h3></div>
-          <div class="card-body">
-            <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:14px;font-size:12.5px;line-height:1.8;font-family:monospace;color:var(--text2);">
-              days = today − date_stock_received<br>
-              years = days ÷ 365<br>
-              factor = (1 + inflation_rate ÷ 100) ^ years<br>
-              current_value = cost_price × factor<br>
-              suggested_price = current_value × (1 + margin ÷ 100)<br>
-              final_price = max(suggested_price, market_price)
-            </div>
-          </div>
-        </div>
-
         <div style="display:flex;gap:8px;">
           <button class="btn btn-primary" onclick="saveSettings()">Save settings</button>
           <button class="btn btn-ghost" onclick="clearAllData()" style="color:var(--danger);">Clear all data</button>
@@ -934,6 +920,17 @@ tbody tr:hover .gi-remove-btn { opacity: 1; }
             <option value="L">L (volume / litres)</option>
           </select>
         </div>
+        <div class="form-group">
+          <label class="form-label">Third unit <span style="font-weight:400;color:var(--text3)">(optional)</span></label>
+          <select class="form-control" id="pm-unit3" onchange="onUnit2Change()">
+            <option value="">— none —</option>
+            <option value="pc">pc (pieces)</option>
+            <option value="bag">bag</option>
+            <option value="kg">kg (weight)</option>
+            <option value="m">m (length / metres)</option>
+            <option value="L">L (volume / litres)</option>
+          </select>
+        </div>
 
         <div class="form-group">
           <label class="form-label">Reorder level</label>
@@ -963,7 +960,7 @@ tbody tr:hover .gi-remove-btn { opacity: 1; }
       </div>
 
       <div style="font-size:12px;color:var(--text3);background:var(--surface2);border-radius:var(--radius);padding:10px 12px;margin-top:4px;">
-        Set cost price and selling price later in <strong>Stock view</strong> after saving the product.
+        Cost prices and selling prices are set and updated directly in the **Admin App**.
       </div>
     </div>
     <div class="modal-footer">
@@ -1011,12 +1008,12 @@ tbody tr:hover .gi-remove-btn { opacity: 1; }
 
 <script>
 // ══════════════════════════════════════════════
-// DATA STORE
+// DATA STORE (localStorage)
 // ══════════════════════════════════════════════
 const KEYS = { products:'hs_products', stock:'hs_stock', goodsIn:'hs_goodsin', movements:'hs_movements', settings:'hs_settings' };
 
-function load(key) { try { return JSON.parse(localStorage.getItem(key)) || []; } catch(e) { return []; } }
-function loadObj(key, def) { try { return JSON.parse(localStorage.getItem(key)) || def; } catch(e) { return def; } }
+function load(key) { try { return JSON.parse(localStorage.getItem(key)) || []; } catch { return []; } }
+function loadObj(key, def) { try { return JSON.parse(localStorage.getItem(key)) || def; } catch { return def; } }
 function save(key, val) { localStorage.setItem(key, JSON.stringify(val)); }
 
 let products = load(KEYS.products);
@@ -1025,6 +1022,8 @@ let goodsIn  = load(KEYS.goodsIn);
 let movements = load(KEYS.movements);
 let settings = loadObj(KEYS.settings, { shopName:'Hardware Shop', inflation:12, margin:25, reorder:10, floorDays:7, targetDays:30, leadTime:7 });
 
+let editingDeliveryId = null; // Stores target delivery id if editing
+
 // ══════════════════════════════════════════════
 // HELPERS
 // ══════════════════════════════════════════════
@@ -1032,8 +1031,7 @@ function lkr(n) {
   if (isNaN(n) || n === null) return '—';
   return 'LKR ' + Number(n).toLocaleString('en-LK', {minimumFractionDigits:2, maximumFractionDigits:2});
 }
-function num(n, dp) {
-  dp = dp !== undefined ? dp : 2;
+function num(n, dp=2) {
   if (isNaN(n) || n === null) return '—';
   return Number(n).toLocaleString('en-LK', {minimumFractionDigits:dp, maximumFractionDigits:dp});
 }
@@ -1045,7 +1043,8 @@ function daysBetween(dateStr) {
   return Math.max(0, Math.floor((t - d) / 86400000));
 }
 function inflFactor(days) {
-  return Math.pow(1 + settings.inflation / 100, days / 365);
+  const r = settings.inflation / 100;
+  return Math.pow(1 + r, days / 365);
 }
 function currentValue(costPrice, costDate) {
   const days = daysBetween(costDate);
@@ -1062,35 +1061,48 @@ function genSKU() {
 }
 function toast(msg) {
   const el = document.getElementById('toast');
-  el.textContent = msg; el.style.opacity = '1';
-  setTimeout(() => el.style.opacity = '0', 2200);
+  if (el) {
+    el.textContent = msg; el.style.opacity = '1';
+    setTimeout(() => el.style.opacity = '0', 2200);
+  }
 }
 function getStock(sku) {
-  return stock.find(s => s.sku === sku) || { sku: sku, storeQty:0, floorQty:0, reorderLevel: settings.reorder, suggestMethod:'days', suggestVal: settings.floorDays, managerOverride: null };
+  return stock.find(s => s.sku === sku) || { sku, storeQty:0, floorQty:0, reorderLevel: settings.reorder, suggestMethod:'days', suggestVal: settings.floorDays, managerOverride: null };
 }
 function setStock(sku, updates) {
   const idx = stock.findIndex(s => s.sku === sku);
   if (idx >= 0) stock[idx] = { ...stock[idx], ...updates };
-  else stock.push({ sku: sku, storeQty:0, floorQty:0, reorderLevel: settings.reorder, suggestMethod:'days', suggestVal: settings.floorDays, managerOverride: null, ...updates });
+  else stock.push({ sku, storeQty:0, floorQty:0, reorderLevel: settings.reorder, suggestMethod:'days', suggestVal: settings.floorDays, managerOverride: null, ...updates });
   save(KEYS.stock, stock);
 }
 function getSuggestedFloor(sku) {
   const s = getStock(sku);
   if (s.managerOverride !== null && s.managerOverride !== undefined) return s.managerOverride;
   if (s.suggestMethod === 'fixed') return parseFloat(s.suggestVal) || settings.floorDays;
-  return avgDailySales(sku) * (parseFloat(s.suggestVal) || settings.floorDays);
+  const avgDaily = avgDailySales(sku);
+  return avgDaily * (parseFloat(s.suggestVal) || settings.floorDays);
 }
-
+function avgDailySales(sku) {
+  return 1;
+}
+function getCategories() {
+  return [...new Set(products.map(p => p.category).filter(Boolean))].sort();
+}
+function updateCategoryList() {
+  const dl = document.getElementById('categoryList');
+  if (!dl) return;
+  dl.innerHTML = getCategories().map(c => `<option value="${c}">`).join('');
+}
 function logMovement(type, sku, productName, qty, from, to, note) {
   var unit = (products.find(function(p){return p.sku===sku;})||{}).unit||'';
-  var m = { id: Date.now(), date: today(), time: new Date().toTimeString().slice(0,5), type: type, sku: sku, productName: productName, qty: qty, unit: unit, from_loc: from, to_loc: to, note: note||'' };
+  var m = { id: Date.now(), date: today(), time: new Date().toTimeString().slice(0,5), type, sku, productName, qty, unit, from, to, note: note||'' };
   movements.push(m);
   save(KEYS.movements, movements);
   if (typeof GS !== 'undefined' && GS.isOnline()) {
     GS.append('Stock_Movements', {
       id: m.id, date: m.date, time: m.time, type: m.type,
       sku: m.sku, product_name: m.productName, qty: m.qty, unit: m.unit,
-      from_loc: m.from_loc, to_loc: m.to_loc, note: m.note
+      from_loc: m.from, to_loc: m.to, note: m.note
     }).catch(function(e) { console.warn('movement sync:', e); });
   }
 }
@@ -1115,10 +1127,21 @@ function showPage(id) {
 }
 
 // ══════════════════════════════════════════════
+// DATE DISPLAY
+// ══════════════════════════════════════════════
+function initDates() {
+  const d = new Date();
+  const s = d.toLocaleDateString('en-GB', { weekday:'short', day:'numeric', month:'short', year:'numeric' });
+  document.getElementById('topbarDate').textContent = s;
+  document.getElementById('sidebarDate').textContent = s;
+  const giDate = document.getElementById('gi-date');
+  if (giDate) giDate.value = today();
+  document.getElementById('shopNameDisplay').textContent = settings.shopName || 'Hardware Shop';
+}
+
+// ══════════════════════════════════════════════
 // GOODS IN (fifo / purchase lots)
 // ══════════════════════════════════════════════
-let giLines = [];
-
 function productOptionsHtml() {
   return '<option value="">— select product —</option>' +
     products.map(p => `<option value="${p.sku}">${p.name} (${p.unit})</option>`).join('');
@@ -1126,7 +1149,7 @@ function productOptionsHtml() {
 
 function addGoodsInLine() {
   const id = Date.now() + Math.random();
-  giLines.push({ id: id, sku: '', qty: '', cost: '', market: '' });
+  giLines.push({ id, sku: '', qty: '', cost: '', remark: '', fromOrder: false });
   renderGiLines();
 }
 
@@ -1225,6 +1248,8 @@ function onGiLineInputEvt(el) {
 
 function clearGoodsInForm() {
   giLines = [];
+  editingDeliveryId = null;
+  document.getElementById('goodsInFormTitle').textContent = "Record delivery";
   renderGiLines();
   ['gi-supplier','gi-invoice','gi-notes','gi-extra-cost'].forEach(id => {
     const el = document.getElementById(id);
@@ -1253,9 +1278,20 @@ function saveGoodsIn() {
     if (validLines.find(l => l.sku === line.sku)) {
       toast('Row ' + (i+1) + ': duplicate product — combine into one row'); return;
     }
-    validLines.push({ sku: line.sku, qty: qty, cost: cost, remark: line.remark || '', fromOrder: line.fromOrder || false });
+    validLines.push({ sku: line.sku, qty, cost, remark: line.remark || '', fromOrder: line.fromOrder || false });
   }
   if (!validLines.length) { toast('Add at least one item'); return; }
+
+  // REVERT STOCK QUANTITIES IF EDITING EXISTING RECORD
+  if (editingDeliveryId) {
+    const oldLots = goodsIn.filter(r => r.deliveryId === editingDeliveryId);
+    oldLots.forEach(oldLot => {
+      const s = getStock(oldLot.sku);
+      setStock(oldLot.sku, { storeQty: Math.max(0, (s.storeQty || 0) - oldLot.qty) });
+    });
+    // Remove old lots from memory
+    goodsIn = goodsIn.filter(r => r.deliveryId !== editingDeliveryId);
+  }
 
   const totalQtyAll = validLines.reduce((s, l) => s + l.qty, 0);
   validLines.forEach(line => {
@@ -1264,7 +1300,7 @@ function saveGoodsIn() {
     line.effCostUnit  = line.cost + (line.qty > 0 ? share / line.qty : 0);
   });
 
-  const deliveryId  = 'DEL-' + Date.now().toString(36).toUpperCase();
+  const deliveryId  = editingDeliveryId || ('DEL-' + Date.now().toString(36).toUpperCase());
 
   validLines.forEach(line => {
     const p           = products.find(x => x.sku === line.sku);
@@ -1299,13 +1335,14 @@ function saveGoodsIn() {
       lastEffectiveCost: line.effCostUnit
     });
 
+    // COST PROPAGATION: Direct, safe local cost update
     const pi = products.findIndex(x => x.sku === line.sku);
     if (pi >= 0) {
       products[pi].lastEffectiveCost = line.effCostUnit;
     }
     save(KEYS.products, products);
 
-    logMovement('goods-in', line.sku, productName, line.qty, 'supplier', 'store',
+    logMovement(editingDeliveryId ? 'goods-in-edit' : 'goods-in', line.sku, productName, line.qty, 'supplier', 'store',
       supplier + (invoice ? ' · ' + invoice : '') + (line.remark ? ' | ' + line.remark : '') + ' [' + deliveryId + ']');
   });
 
@@ -1316,8 +1353,9 @@ function saveGoodsIn() {
   updateNavBadges();
 
   renderGoodsInHistory();
-  toast('Delivery saved — ' + validLines.length + ' item(s)');
+  toast(editingDeliveryId ? 'Delivery updated successfully.' : 'Delivery saved — ' + validLines.length + ' item(s)');
 
+  // COST PROPAGATION: Propagate newly recorded effective cost directly to sheets Products tab
   if (typeof GS !== 'undefined' && GS.isOnline()) {
     updateSyncIndicator('syncing');
     pushDeliveryToSheets().then(function() {
@@ -1405,7 +1443,10 @@ function showDeliveryReceipt(deliveryId) {
     +   '<td style="padding:8px;text-align:right;font-family:monospace;font-weight:700;color:var(--accent)">' + (totalCost>0?lkr(totalCost):'N/A') + '</td>'
     +   '<td></td>'
     + '</tr></tfoot></table>'
-    + '<button class="btn btn-ghost btn-sm" style="margin-top:10px;" onclick="this.parentElement.remove()">Close</button>'
+    + '<div style="margin-top:12px;display:flex;gap:6px;">'
+    +   '<button class="btn btn-ghost btn-sm" onclick="this.parentElement.parentElement.remove()">Close</button>'
+    +   '<button class="btn btn-primary btn-sm" onclick="loadDeliveryForEditing(\'' + deliveryId + '\')">✏ Edit delivery</button>'
+    + '</div>'
     + '</div>';
 
   const existing = document.getElementById('gi-receipt-box');
@@ -1413,6 +1454,33 @@ function showDeliveryReceipt(deliveryId) {
 
   const histCard = document.getElementById('gi-history').closest('.card');
   histCard.insertAdjacentHTML('afterend', receiptHtml);
+}
+
+function loadDeliveryForEditing(deliveryId) {
+  const items = goodsIn.filter(r => (r.deliveryId || (r.date+'|'+(r.supplier||''))) === deliveryId);
+  if (!items.length) { toast('Could not load delivery data'); return; }
+  const first = items[0];
+
+  editingDeliveryId = deliveryId;
+  document.getElementById('goodsInFormTitle').textContent = "✏ Edit delivery: " + deliveryId;
+  document.getElementById('gi-date').value = first.date;
+  document.getElementById('gi-supplier').value = first.supplier;
+  document.getElementById('gi-invoice').value = first.invoice || '';
+  document.getElementById('gi-extra-cost').value = first.extraCostTotal || '';
+  document.getElementById('gi-notes').value = first.notes || '';
+
+  giLines = items.map(r => ({
+    id: Date.now() + Math.random(),
+    sku: r.sku,
+    qty: r.qty,
+    cost: r.purchaseCost || 0,
+    remark: r.remark || '',
+    fromOrder: false
+  }));
+
+  renderGiLines();
+  toast("Loaded delivery for editing. Update fields and click Save.");
+  document.getElementById('gi-supplier').focus();
 }
 
 // ══════════════════════════════════════════════
@@ -1429,6 +1497,7 @@ function openProductModal(sku) {
     });
     document.getElementById('pm-unit').value  = '';
     document.getElementById('pm-unit2').value = '';
+    document.getElementById('pm-unit3').value = '';
     document.getElementById('pm-suggest-method').value = 'days';
   } else {
     const p = products.find(x => x.sku === sku);
@@ -1438,6 +1507,7 @@ function openProductModal(sku) {
     document.getElementById('pm-sku').value        = p.sku           || '';
     document.getElementById('pm-unit').value       = p.unit          || '';
     document.getElementById('pm-unit2').value      = p.unit2         || '';
+    document.getElementById('pm-unit3').value      = p.unit3         || '';
     document.getElementById('pm-reorder').value    = p.reorderLevel  || '';
     document.getElementById('pm-barcode').value    = p.barcode       || '';
     document.getElementById('pm-notes').value      = p.notes         || '';
@@ -1473,12 +1543,15 @@ function saveProduct() {
 
   const existingProduct = products.find(x => x.sku === sku) || {};
   const unit2 = document.getElementById('pm-unit2').value || '';
+  const unit3 = document.getElementById('pm-unit3').value || '';
 
   const product = {
     sku: sku, name: name, category: category, unit: unit,
     unit2:         unit2,
+    unit3:         unit3,
     sellingPrice:  existingProduct.sellingPrice  || 0,
     sellingPrice2: existingProduct.sellingPrice2 || 0,
+    sellingPrice3: existingProduct.sellingPrice3 || 0,
     costPrice:      existingProduct.costPrice     || 0,
     costDate:       existingProduct.costDate      || today(),
     marketPrice:    existingProduct.marketPrice   || 0,
@@ -1499,19 +1572,20 @@ function saveProduct() {
   setStock(sku, { ...s, suggestMethod: method, suggestVal: suggestVal || s.suggestVal || settings.floorDays, reorderLevel: reorderLevel || s.reorderLevel || settings.reorder });
   save(KEYS.products, products);
 
-  // Sync saved product to Sheets immediately
+  // Direct sync update product catalogs from Store App as well
   if (typeof GS !== 'undefined' && GS.isOnline()) {
     updateSyncIndicator('syncing');
     GS.upsert('Products', 'sku', {
       sku: product.sku, product_name: product.name, category: product.category,
       unit: product.unit, unit2: product.unit2||'', unit2_conv: product.unit2Conv||0,
+      unit3: product.unit3||'', unit3_conv: product.unit3Conv||0,
       barcode: product.barcode||'', reorder_level: product.reorderLevel||0,
       suggest_method: method, suggest_val: suggestVal||0,
       notes: product.notes||''
     }).then(function() {
       updateSyncIndicator('connected');
     }).catch(function(err) {
-      console.warn('Live product Sheets sync fail:', err);
+      console.warn('Store product Sheets sync fail:', err);
       updateSyncIndicator('offline');
     });
   }
@@ -1552,7 +1626,7 @@ function renderProducts() {
   const filtered = products.filter(p => !q || p.name.toLowerCase().includes(q) || (p.category||'').toLowerCase().includes(q) || p.sku.toLowerCase().includes(q));
   const tbody = document.getElementById('productsTable');
   if (!filtered.length) {
-    tbody.innerHTML = '<tr><td colspan="8" style="color:var(--text3);text-align:center;padding:24px;">No products match query</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="9" style="color:var(--text3);text-align:center;padding:24px;">No products match query</td></tr>';
     return;
   }
   tbody.innerHTML = filtered.map(p => {
@@ -1571,6 +1645,7 @@ function renderProducts() {
       + '<td><span class="badge badge-gray">' + (p.category||'—') + '</span></td>'
       + '<td><span class="badge badge-info">' + p.unit + '</span></td>'
       + '<td>' + (p.unit2 ? '<span class="badge badge-gray">' + p.unit2 + '</span>' : '<span style="color:var(--text3)">—</span>') + '</td>'
+      + '<td>' + (p.unit3 ? '<span class="badge badge-gray">' + p.unit3 + '</span>' : '<span style="color:var(--text3)">—</span>') + '</td>'
       + '<td class="mono" style="color:var(--text2)">' + num(need,0) + '</td>'
       + '<td>' + statusBadge + '</td>'
       + '<td>'
@@ -1628,19 +1703,35 @@ function renderShopFloor() {
 
   const rows = filtered.map(p => {
     const s = getStock(p.sku);
-    const suggested = getSuggestedFloor(p.sku);
-    const pct = suggested > 0 ? Math.min(100, (s.floorQty / suggested) * 100) : 100;
-    const fillClass = pct < 30 ? 'fill-danger' : pct < 70 ? 'fill-warn' : 'fill-good';
-    const statusBadge = s.floorQty === 0 ? '<span class="badge badge-danger">Out</span>'
-      : s.floorQty < suggested ? '<span class="badge badge-warn">Low</span>'
+    const suggested = getSuggestedFloor(p.sku) || 0;
+    const floorQty = s.floorQty || 0;
+    
+    // AUDIT REFACTOR: Safe and resilient status-bar color mapping logic
+    let pct = 0;
+    let fillClass = 'fill-good';
+    if (suggested > 0) {
+      pct = Math.min(100, (floorQty / suggested) * 100);
+      fillClass = pct < 30 ? 'fill-danger' : pct < 70 ? 'fill-warn' : 'fill-good';
+    } else {
+      if (floorQty === 0) {
+        pct = 0;
+        fillClass = 'fill-danger';
+      } else {
+        pct = 100;
+        fillClass = 'fill-good';
+      }
+    }
+
+    const statusBadge = floorQty === 0 ? '<span class="badge badge-danger">Out</span>'
+      : floorQty < suggested ? '<span class="badge badge-warn">Low</span>'
       : '<span class="badge badge-green">OK</span>';
-    if (s.floorQty === 0) zeroCount++;
-    else if (s.floorQty < suggested) lowCount++;
+    if (floorQty === 0) zeroCount++;
+    else if (floorQty < suggested) lowCount++;
     return `<tr>
       <td><div style="font-weight:500">${p.name}</div><div style="font-size:11px;color:var(--text3)">${p.category||''}</div></td>
       <td><span class="badge badge-info">${p.unit}</span></td>
       <td class="mono">${num(s.storeQty, 2)}</td>
-      <td class="mono" style="font-weight:500">${num(s.floorQty, 2)}</td>
+      <td class="mono" style="font-weight:500">${num(floorQty, 2)}</td>
       <td>
         <div style="display:flex;align-items:center;gap:6px;">
           <input type="number" id="override-${p.sku}" value="${s.managerOverride !== null ? s.managerOverride : num(suggested,1).replace(/,/g,'')}"
@@ -1702,18 +1793,33 @@ function renderStockView() {
       const optimInput = '<input type="number" class="no-qty-input" style="width:80px;font-size:12px;" placeholder="' + num(optim,1).replace(/,/g,'') + '" value="' + overrideVal + '" data-sku="' + p.sku + '" onchange="saveOptimOverride(this.dataset.sku, this.value)">'
         + '<div style="font-size:10px;color:var(--text3);margin-top:2px;white-space:nowrap">' + optimLabel + '</div>';
 
+      // AUDIT REFACTOR: Resolving direct price lookup from Products sheet columns (Price 1, 2, 3)
       let sellDisplay = '';
-      if (p.sellingPrice > 0) {
-        sellDisplay = '<span class="mono" style="font-size:13px;font-weight:600;color:var(--accent-dark)">' + lkr(p.sellingPrice) + '</span>'
+      if (p.lastSellingPrice && p.lastSellingPrice > 0) {
+        sellDisplay = '<span class="mono" style="font-size:13px;font-weight:600;color:var(--accent-dark)">' + lkr(p.lastSellingPrice) + '</span>'
           + '<div style="font-size:10px;color:var(--text3);margin-top:1px">per ' + p.unit + '</div>';
       } else {
         sellDisplay = '<span style="font-size:11px;color:var(--text3)">not set</span>';
+      }
+      if (p.unit2 && p.lastSellingPrice2 > 0) {
+        sellDisplay += '<div style="margin-top:5px;padding-top:5px;border-top:1px solid var(--border);">'
+          + '<span class="mono" style="font-size:12px;font-weight:600;color:var(--accent)">' + lkr(p.lastSellingPrice2) + '</span>'
+          + '<div style="font-size:10px;color:var(--text3);margin-top:1px">per ' + p.unit2 + '</div></div>';
+      }
+      if (p.unit3 && p.lastSellingPrice3 > 0) {
+        sellDisplay += '<div style="margin-top:5px;padding-top:5px;border-top:1px solid var(--border);">'
+          + '<span class="mono" style="font-size:12px;font-weight:600;color:var(--accent)">' + lkr(p.lastSellingPrice3) + '</span>'
+          + '<div style="font-size:10px;color:var(--text3);margin-top:1px">per ' + p.unit3 + '</div></div>';
       }
 
       return `<tr style="${isLow ? 'background:var(--warn-light)' : ''}">
         <td class="mono" style="font-size:12px;color:var(--text3)">${p.sku}</td>
         <td style="font-weight:500">${p.name}<div style="font-size:11px;color:var(--text3)">${p.category||''}</div></td>
-        <td><span class="badge badge-info">${p.unit}</span></td>
+        <td>
+          <span class="badge badge-info">${p.unit}</span>
+          ${p.unit2 ? `<span class="badge badge-gray" style="margin-left:2px">${p.unit2}</span>` : ''}
+          ${p.unit3 ? `<span class="badge badge-gray" style="margin-left:2px">${p.unit3}</span>` : ''}
+        </td>
         <td class="mono" style="font-weight:600">${num(totalQty,2)}</td>
         <td>${optimInput}</td>
         <td class="mono" style="color:var(--text3);font-size:12px">${avgDay > 0 ? num(avgDay,2)+'/d' : 'no sales'}</td>
@@ -2088,7 +2194,7 @@ function loadWaitingToGoodsIn() {
       sku: o.sku,
       qty: o.qtyOrdered,
       cost: o.costPerUnit || '',
-      market: '',
+      remark: '',
       fromOrder: true
     });
     added++;
@@ -2096,6 +2202,33 @@ function loadWaitingToGoodsIn() {
 
   renderGiLines();
   toast(added + ' item(s) loaded from order list');
+}
+
+function loadDeliveryForEditing(deliveryId) {
+  const items = goodsIn.filter(r => (r.deliveryId || (r.date+'|'+(r.supplier||''))) === deliveryId);
+  if (!items.length) { toast('Could not load delivery data'); return; }
+  const first = items[0];
+
+  editingDeliveryId = deliveryId;
+  document.getElementById('goodsInFormTitle').textContent = "✏ Edit delivery: " + deliveryId;
+  document.getElementById('gi-date').value = first.date;
+  document.getElementById('gi-supplier').value = first.supplier;
+  document.getElementById('gi-invoice').value = first.invoice || '';
+  document.getElementById('gi-extra-cost').value = first.extraCostTotal || '';
+  document.getElementById('gi-notes').value = first.notes || '';
+
+  giLines = items.map(r => ({
+    id: Date.now() + Math.random(),
+    sku: r.sku,
+    qty: r.qty,
+    cost: r.purchaseCost || 0,
+    remark: r.remark || '',
+    fromOrder: false
+  }));
+
+  renderGiLines();
+  toast("Loaded delivery for editing. Update fields and click Save.");
+  document.getElementById('gi-supplier').focus();
 }
 
 function clearStoreCacheAndReload() {
@@ -2164,7 +2297,6 @@ function loadSettings() {
   document.getElementById('s-reorder').value = settings.reorder || 10;
   document.getElementById('s-floordays').value = settings.floorDays || 7;
 }
-
 function saveSettings() {
   settings.shopName  = document.getElementById('s-shopname').value.trim() || 'Hardware Shop';
   settings.inflation = parseFloat(document.getElementById('s-inflation').value) || 12;
@@ -2175,7 +2307,6 @@ function saveSettings() {
   document.getElementById('shopNameDisplay').textContent = settings.shopName;
   toast('Settings saved');
 }
-
 function clearAllData() {
   if (!confirm('This will delete ALL products, stock, and records. Are you sure?')) return;
   Object.values(KEYS).forEach(function(k) { localStorage.removeItem(k); });
@@ -2246,6 +2377,8 @@ async function syncFromSheets() {
         suggestMethod: r.suggest_method||'days',
         suggestVal: parseFloat(r.suggest_val)||0,
         lastSellingPrice: parseFloat(r.last_selling_price)||0,
+        lastSellingPrice2: parseFloat(r.last_selling_price2)||0, // DUAL PRICING UPDATE
+        lastSellingPrice3: parseFloat(r.last_selling_price3)||0, // TRIPLE PRICING UPDATE
         lastEffectiveCost: parseFloat(r.last_effective_cost)||0,
         notes: r.notes||''
       }; });
@@ -2272,6 +2405,12 @@ async function syncFromSheets() {
       lots.forEach(function(r) {
         if (!stockMap[r.sku]) stockMap[r.sku] = { sku: r.sku, storeQty: 0, floorQty: 0 };
         stockMap[r.sku].storeQty += parseFloat(r.qty_remaining)||0;
+        if (!stockMap[r.sku].lastDelivery || r.goods_in_date > stockMap[r.sku].lastDelivery) {
+          stockMap[r.sku].lastDelivery  = r.goods_in_date;
+          stockMap[r.sku].lastInvoice   = r.invoice_no;
+          stockMap[r.sku].lastSupplier  = r.supplier;
+          stockMap[r.sku].lastEffectiveCost = parseFloat(r.eff_cost_unit)||0;
+        }
       });
       stock = Object.values(stockMap);
       localStorage.setItem('hs_stock', JSON.stringify(stock));
@@ -2323,7 +2462,14 @@ async function pushDeliveryToSheets() {
         remark: r.remark||'', notes: r.notes||'',
         extra_cost_total: r.extraCostTotal||0
       });
+
+      // COST PROPAGATION: When appending stock lot, write newest cost unit back to Products sheet row
+      var p = products.find(function(x) { return x.sku === r.sku; });
+      if (p) {
+        await GS.updateField('Products', 'sku', p.sku, 'last_effective_cost', r.effCostUnit);
+      }
     }
+
     await GS.append('Deliveries', {
       delivery_id: delivId, goods_in_date: latest.date||'',
       invoice_no: latest.invoice||'', supplier: latest.supplier||'',
