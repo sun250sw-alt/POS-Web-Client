@@ -244,7 +244,6 @@ tbody tr:hover { background: var(--surface2); }
       <span id="syncIndicator" style="font-size:11.5px;display:flex;align-items:center;gap:5px;margin-right:8px;"></span>
       <button onclick="openDiagModal()" title="Run Google Sheet Connection Diagnostic Checks"
         style="display:flex;align-items:center;gap:5px;padding:5px 11px;border:1px solid var(--border);border-radius:6px;background:var(--surface2);font-family:inherit;font-size:12px;color:var(--text2);cursor:pointer;margin-right:4px;">
-        <!-- 🩺 Connection Check -->
         🩺 Connection Check
       </button>
       <button onclick="refreshAdminData()" id="refreshBtn" title="Sync with Google Sheets"
@@ -276,6 +275,15 @@ tbody tr:hover { background: var(--surface2); }
 
     <!-- ══ PRODUCTS PAGE ══ -->
     <div class="page active" id="page-products">
+      
+      <!-- AUDIT REFACTOR: Added 4 live inventory KPIs at the top of products tab -->
+      <div class="kpi-grid" id="adminStockStatsGrid" style="margin-bottom: 20px;">
+        <div class="kpi" style="border-left: 4px solid var(--accent);"><div class="kpi-label">Total cost value</div><div class="kpi-value" id="asv-cost-total">LKR 0.00</div><div class="kpi-sub">At purchase price</div></div>
+        <div class="kpi warn" style="border-left: 4px solid var(--warn);"><div class="kpi-label">Inflation-adjusted value</div><div class="kpi-value" id="asv-infl-total">LKR 0.00</div><div class="kpi-sub">Current real cost</div></div>
+        <div class="kpi green" style="border-left: 4px solid var(--accent-dark);"><div class="kpi-label">Total sales value</div><div class="kpi-value" id="asv-sales-total">LKR 0.00</div><div class="kpi-sub">At selling price</div></div>
+        <div class="kpi danger" style="border-left: 4px solid var(--danger);"><div class="kpi-label">Low stock items</div><div class="kpi-value" id="asv-low-items">0</div><div class="kpi-sub">Below reorder level</div></div>
+      </div>
+
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
         <div style="display:flex;gap:8px;align-items:center;">
           <input type="text" class="form-control" id="productSearch" placeholder="Search…" style="width:180px;" oninput="renderAdminProducts()">
@@ -284,7 +292,7 @@ tbody tr:hover { background: var(--surface2); }
           </select>
         </div>
         <div style="display:flex;gap:8px;align-items:center;">
-          <span style="font-size:12px;color:var(--text3);">Prices set per delivery in Stock Lots</span>
+          <span style="font-size:12px;color:var(--text3);">Prices directly editable below. Updates immediately to Sheets.</span>
           <button class="btn btn-primary" onclick="openProductModal()">
             <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
             Add product
@@ -296,13 +304,18 @@ tbody tr:hover { background: var(--surface2); }
           <table>
             <thead>
               <tr>
-                <th>Product</th><th>Primary unit</th><th>Unit 2</th><th>Unit 3</th>
-                <th>Conv. 1→2</th><th>Conv. 1→3</th>
-                <th>Cost Price (LKR)</th><th>Selling Price 1 (LKR)</th><th>Selling Price 2 (LKR)</th><th>Selling Price 3 (LKR)</th>
-                <th>Reorder</th><th>Status</th><th>Actions</th>
+                <th>Product</th>
+                <th>Units</th>
+                <th>Cost Price (LKR)</th>
+                <th>Selling Price 1 (LKR)</th>
+                <th>Selling Price 2 (LKR)</th>
+                <th>Selling Price 3 (LKR)</th>
+                <th>Reorder</th>
+                <th>Status</th>
+                <th>Actions</th>
               </tr>
             </thead>
-            <tbody id="adminProductsTable"><tr><td colspan="13" style="text-align:center;color:var(--text3);padding:24px;">No products</td></tr></tbody>
+            <tbody id="adminProductsTable"><tr><td colspan="11" style="text-align:center;color:var(--text3);padding:24px;">No products</td></tr></tbody>
           </table>
         </div>
       </div>
@@ -604,57 +617,12 @@ tbody tr:hover { background: var(--surface2); }
       </div>
 
       <div style="font-size:12px;color:var(--text3);background:var(--surface2);border-radius:var(--radius);padding:10px 12px;margin-top:4px;">
-        Cost prices and selling prices are set per delivery in <strong>Stock Lots</strong>.
+        Cost prices and selling prices are set and updated directly in the **Admin App**.
       </div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="closeProductModal()">Cancel</button>
       <button class="btn btn-primary" onclick="saveProduct()">Save product</button>
-    </div>
-  </div>
-</div>
-
-<!-- ══ USER MODAL ══ -->
-<div class="modal-overlay" id="userModal">
-  <div class="modal">
-    <div class="modal-header"><h3 id="userModalTitle">Add user</h3><button class="btn btn-ghost btn-sm" onclick="closeUserModal()">✕</button></div>
-    <div class="modal-body">
-      <div class="form-grid-2">
-        <div class="form-group"><label class="form-label">Name *</label><input type="text" class="form-control" id="um-name" placeholder="e.g. Kasun"></div>
-        <div class="form-group"><label class="form-label">Role</label>
-          <select class="form-control" id="um-role">
-            <option value="Cashier">Cashier</option>
-            <option value="Store keeper">Store keeper</option>
-            <option value="Manager">Manager</option>
-            <option value="Admin">Admin</option>
-          </select>
-        </div>
-        <div class="form-group"><label class="form-label">PIN (4 digits)</label><input type="password" class="form-control" id="um-pin" maxlength="4" placeholder="Optional"></div>
-      </div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-ghost" onclick="closeUserModal()">Cancel</button>
-      <button class="btn btn-primary" onclick="saveUser()">Save user</button>
-    </div>
-  </div>
-</div>
-
-<!-- ══ SUPPLIER MODAL ══ -->
-<div class="modal-overlay" id="supplierModal">
-  <div class="modal">
-    <div class="modal-header"><h3 id="supplierModalTitle">Add supplier</h3><button class="btn btn-ghost btn-sm" onclick="closeSupplierModal()">✕</button></div>
-    <div class="modal-body">
-      <div class="form-grid-2">
-        <div class="form-group"><label class="form-label">Supplier name *</label><input type="text" class="form-control" id="sm-name" placeholder="e.g. Colombo Hardware Ltd"></div>
-        <div class="form-group"><label class="form-label">Contact person</label><input type="text" class="form-control" id="sm-contact" placeholder="e.g. Mr. Perera"></div>
-        <div class="form-group"><label class="form-label">Phone</label><input type="text" class="form-control" id="sm-phone" placeholder="e.g. 011 234 5678"></div>
-        <div class="form-group"><label class="form-label">Email</label><input type="email" class="form-control" id="sm-email" placeholder="supplier@email.com"></div>
-      </div>
-      <div class="form-group"><label class="form-label">Notes</label><input type="text" class="form-control" id="sm-notes" placeholder="Optional notes"></div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-ghost" onclick="closeSupplierModal()">Cancel</button>
-      <button class="btn btn-primary" onclick="saveSupplier()">Save supplier</button>
     </div>
   </div>
 </div>
@@ -710,7 +678,7 @@ const KEYS = {
   reports:   'hs_day_reports'
 };
 
-function load(key)         { try { return JSON.parse(localStorage.getItem(key) || '[]'); }    catch(e) { return []; } }
+function load(key) { try { return JSON.parse(localStorage.getItem(key) || '[]'); } catch(e) { return []; } }
 function loadObj(key, def) { try { return JSON.parse(localStorage.getItem(key) || 'null') || def; } catch(e) { return def; } }
 function save(key, val)    { localStorage.setItem(key, JSON.stringify(val)); }
 
@@ -1239,9 +1207,12 @@ function renderAdminProducts() {
 
   var tbody = document.getElementById('adminProductsTable');
   if (!filtered.length) {
-    tbody.innerHTML = '<tr><td colspan="13" style="text-align:center;color:var(--text3);padding:24px;">No products — add one above</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="12" style="text-align:center;color:var(--text3);padding:24px;">No products</td></tr>';
     return;
   }
+
+  // Update Products Stats KPIs at the top of the tab
+  calculateProductsKPIs();
 
   tbody.innerHTML = filtered.map(function(p) {
     var s     = getStock(p.sku);
@@ -1252,35 +1223,36 @@ function renderAdminProducts() {
       : isLow ? '<span class="badge badge-warn">Low</span>'
       : '<span class="badge badge-green">OK</span>';
 
-    var conv2Cell = p.unit2
-      ? '<span class="mono" style="font-size:12px">' + (p.unit2Conv||'—') + '</span>'
-        + '<div style="font-size:10px;color:var(--text3)">per ' + p.unit2 + '</div>'
-      : '<span style="color:var(--text3)">—</span>';
+    // AUDIT REFACTOR: Combine all active units into a single combined units text (e.g. PC/m/Feet)
+    var combinedUnitsText = p.unit;
+    if (p.unit2) combinedUnitsText += ' / ' + p.unit2;
+    if (p.unit3) combinedUnitsText += ' / ' + p.unit3;
 
-    var conv3Cell = p.unit3
-      ? '<span class="mono" style="font-size:12px">' + (p.unit3Conv||'—') + '</span>'
-        + '<div style="font-size:10px;color:var(--text3)">per ' + p.unit3 + '</div>'
-      : '<span style="color:var(--text3)">—</span>';
+    // AUDIT REFACTOR: Calculate inflation and conversion-adjusted prices for reference display
+    var days = daysBetween(p.lastDelivery || p.costDate);
+    var adjustedCost = (p.lastEffectiveCost || 0) * inflFactor(days);
+    var suggestedSell1 = adjustedCost * (1 + (settings.margin || 25) / 100);
+    var suggestedSell2 = (p.unit2Conv > 0) ? (suggestedSell1 / p.unit2Conv) : 0;
+    var suggestedSell3 = (p.unit3Conv > 0) ? (suggestedSell1 / p.unit3Conv) : 0;
 
-    // DIRECT PRICING COLUMN INPUTS
-    var costInput = '<input type="number" class="inline-input" style="width:100px;font-family:\'DM Mono\', monospace;text-align:right;" value="' + (p.lastEffectiveCost ? p.lastEffectiveCost : '') + '" step="any" placeholder="0.00" onchange="saveProductPrice(\'' + p.sku + '\', \'lastEffectiveCost\', this.value)">';
+    var costInput = '<input type="number" class="inline-input" style="width:100px;font-family:\'DM Mono\', monospace;text-align:right;" value="' + (p.lastEffectiveCost ? p.lastEffectiveCost : '') + '" step="any" placeholder="0.00" onchange="saveProductPrice(\'' + p.sku + '\', \'lastEffectiveCost\', this.value)">'
+      + '<div style="font-size:10px;color:var(--text3);text-align:right;margin-top:2px;">Real: LKR ' + num(adjustedCost, 1) + '</div>';
     
     var sellInput = '<input type="number" class="inline-input" style="width:100px;font-family:\'DM Mono\', monospace;text-align:right;" value="' + (p.lastSellingPrice ? p.lastSellingPrice : '') + '" step="any" placeholder="0.00" onchange="saveProductPrice(\'' + p.sku + '\', \'lastSellingPrice\', this.value)">'
-      + '<div style="font-size:10px;color:var(--text3);text-align:right;margin-top:2px;">per ' + p.unit + '</div>';
+      + '<div style="font-size:10px;color:var(--text3);text-align:right;margin-top:2px;">Sugg: LKR ' + num(suggestedSell1, 1) + '</div>';
     
     var sellInput2 = '';
     if (p.unit2) {
       sellInput2 = '<input type="number" class="inline-input" style="width:100px;font-family:\'DM Mono\', monospace;text-align:right;" value="' + (p.lastSellingPrice2 ? p.lastSellingPrice2 : '') + '" step="any" placeholder="0.00" onchange="saveProductPrice(\'' + p.sku + '\', \'lastSellingPrice2\', this.value)">'
-        + '<div style="font-size:10px;color:var(--text3);text-align:right;margin-top:2px;">per ' + p.unit2 + '</div>';
+        + '<div style="font-size:10px;color:var(--text3);text-align:right;margin-top:2px;">Sugg: LKR ' + num(suggestedSell2, 1) + '</div>';
     } else {
       sellInput2 = '<span style="color:var(--text3)">—</span>';
     }
 
-    // TRIPLE PRICING UPDATE: Rendering inline Price 3 input if Unit 3 is set for the item
     var sellInput3 = '';
     if (p.unit3) {
       sellInput3 = '<input type="number" class="inline-input" style="width:100px;font-family:\'DM Mono\', monospace;text-align:right;" value="' + (p.lastSellingPrice3 ? p.lastSellingPrice3 : '') + '" step="any" placeholder="0.00" onchange="saveProductPrice(\'' + p.sku + '\', \'lastSellingPrice3\', this.value)">'
-        + '<div style="font-size:10px;color:var(--text3);text-align:right;margin-top:2px;">per ' + p.unit3 + '</div>';
+        + '<div style="font-size:10px;color:var(--text3);text-align:right;margin-top:2px;">Sugg: LKR ' + num(suggestedSell3, 1) + '</div>';
     } else {
       sellInput3 = '<span style="color:var(--text3)">—</span>';
     }
@@ -1288,15 +1260,11 @@ function renderAdminProducts() {
     return '<tr>'
       + '<td><div style="font-weight:500">' + p.name + '</div>'
       +   '<div style="font-size:11px;color:var(--text3)">' + (p.category||'') + ' · ' + p.sku + '</div></td>'
-      + '<td><span class="badge badge-blue">' + p.unit + '</span></td>'
-      + '<td>' + (p.unit2 ? '<span class="badge badge-gray">' + p.unit2 + '</span>' : '<span style="color:var(--text3)">—</span>') + '</td>'
-      + '<td>' + (p.unit3 ? '<span class="badge badge-gray">' + p.unit3 + '</span>' : '<span style="color:var(--text3)">—</span>') + '</td>'
-      + '<td>' + conv2Cell + '</td>'
-      + '<td>' + conv3Cell + '</td>'
+      + '<td><span class="badge badge-blue">' + combinedUnitsText + '</span></td>'
       + '<td>' + costInput + '</td>'
       + '<td>' + sellInput + '</td>'
       + '<td>' + sellInput2 + '</td>'
-      + '<td>' + sellInput3 + '</td>' // Price 3 Column
+      + '<td>' + sellInput3 + '</td>'
       + '<td class="mono" style="color:var(--text2)">' + num(need,0) + '</td>'
       + '<td>' + statusBadge + '</td>'
       + '<td style="white-space:nowrap">'
@@ -1307,6 +1275,31 @@ function renderAdminProducts() {
   }).join('');
 }
 
+function calculateProductsKPIs() {
+  var costTotal = 0, inflTotal = 0, salesTotal = 0, lowItems = 0;
+  products.forEach(function(p) {
+    const s = getStock(p.sku);
+    const totalQty = (s.storeQty||0) + (s.floorQty||0);
+    const days     = daysBetween(p.lastDelivery || p.costDate);
+    const factor   = inflFactor(days);
+    
+    var costPrice  = p.lastEffectiveCost || p.costPrice || 0;
+    const cv       = costPrice * factor;
+    const suggested = cv * (1 + settings.margin / 100);
+    const selling   = (p.lastSellingPrice && p.lastSellingPrice > 0) ? p.lastSellingPrice : suggested;
+    
+    costTotal  += totalQty * costPrice;
+    inflTotal  += totalQty * cv;
+    salesTotal += totalQty * selling;
+    if (totalQty < (s.reorderLevel || settings.reorder)) lowItems++;
+  });
+
+  document.getElementById('asv-cost-total').textContent  = lkr(costTotal);
+  document.getElementById('asv-infl-total').textContent  = lkr(inflTotal);
+  document.getElementById('asv-sales-total').textContent = lkr(salesTotal);
+  document.getElementById('asv-low-items').textContent   = lowItems;
+}
+
 function saveProductPrice(sku, field, val) {
   var pi = products.findIndex(function(p) { return p.sku === sku; });
   if (pi < 0) return;
@@ -1314,6 +1307,10 @@ function saveProductPrice(sku, field, val) {
   products[pi][field] = (!val || isNaN(parsed)) ? 0 : parsed;
   save(KEYS.products, products);
   var p = products[pi];
+  
+  // Re-calculate KPIs instantly upon inline cell updates
+  calculateProductsKPIs();
+
   if (GS) {
     syncProductToSheets(p)
       .then(function() { toast('Saved to sheet — ' + p.name); })
@@ -1545,425 +1542,29 @@ function showReport(rid) {
   document.getElementById('reportDetailBody').innerHTML = html;
 }
 
-// ══════════════════════════════════════════
-// DIAGNOSTIC SYSTEM (ADMIN TAB)
-// ══════════════════════════════════════════
-var diagLog = [];
-var diagResults = {};
+function saveProductPrice(sku, field, val) {
+  var pi = products.findIndex(function(p) { return p.sku === sku; });
+  if (pi < 0) return;
+  var parsed = parseFloat(val);
+  products[pi][field] = (!val || isNaN(parsed)) ? 0 : parsed;
+  save(KEYS.products, products);
+  var p = products[pi];
+  
+  // Re-calculate KPIs instantly upon inline cell updates
+  calculateProductsKPIs();
 
-var DIAG_STEPS = [
-  { id: 'config',    label: 'App configuration',          detail: 'Checking Client ID and shop name' },
-  { id: 'network',   label: 'Internet connection',         detail: 'Verifying network is reachable' },
-  { id: 'google',    label: 'Google Identity Services',    detail: 'Checking Google login library loaded' },
-  { id: 'session',   label: 'Google session / token',      detail: 'Checking saved login token' },
-  { id: 'drive',     label: 'Google Drive access',         detail: 'Testing Drive API connection' },
-  { id: 'sheet',     label: 'Google Sheets access',        detail: 'Verifying spreadsheet exists and readable' },
-  { id: 'tabs',      label: 'Sheet tabs present',          detail: 'Checking all required tabs exist' },
-  { id: 'headers',   label: 'Sheet headers correct',       detail: 'Validating column headers match expected' },
-];
-
-function diagAddLog(level, msg) {
-  var ts = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-  diagLog.push({ level: level, msg: msg, ts: ts });
-  var el = document.getElementById('diagLogEntries');
-  if (el) {
-    var div = document.createElement('div');
-    div.className = 'log-entry ' + (level === 'error' ? 'err' : level === 'warn' ? 'warn' : level === 'ok' ? 'ok' : 'info');
-    div.textContent = '[' + ts + '] ' + (level === 'error' ? '✗' : level === 'ok' ? '✓' : level === 'warn' ? '⚠' : 'i') + ' ' + msg;
-    el.appendChild(div);
-    el.scrollTop = el.scrollHeight;
-  }
-}
-
-function setDiagStep(id, status, detail) {
-  diagResults[id] = status;
-  var iconEl   = document.getElementById('diag-icon-' + id);
-  var detailEl = document.getElementById('diag-detail-' + id);
-  if (iconEl) {
-    iconEl.className = 'diag-icon ' + status;
-    iconEl.textContent = status === 'pass' ? '✓' : status === 'fail' ? '✗' : status === 'warn' ? '!' : status === 'running' ? '…' : '·';
-  }
-  if (detailEl && detail) {
-    detailEl.textContent = detail;
-    detailEl.className = 'diag-step-detail' + (status === 'fail' ? ' error' : status === 'warn' ? ' warn' : '');
-  }
-  var done   = Object.values(diagResults).filter(function(v) { return v !== 'pending' && v !== 'running'; }).length;
-  var pct    = Math.round((done / DIAG_STEPS.length) * 100);
-  var bar    = document.getElementById('diagProgress');
-  if (bar) bar.style.width = pct + '%';
-}
-
-function renderDiagSteps() {
-  var container = document.getElementById('diagSteps');
-  container.innerHTML = DIAG_STEPS.map(function(step) {
-    return '<div class="diag-step" id="diag-step-' + step.id + '">'
-      + '<div class="diag-icon pending" id="diag-icon-' + step.id + '">·</div>'
-      + '<div class="diag-step-info">'
-      +   '<div class="diag-step-label">' + step.label + '</div>'
-      +   '<div class="diag-step-detail" id="diag-detail-' + step.id + '">' + step.detail + '</div>'
-      + '</div></div>';
-  }).join('');
-}
-
-function openDiagModal() {
-  document.getElementById('diagModal').classList.add('open');
-  document.getElementById('diagLogPanel').style.display = 'none';
-  runDiagnostics();
-}
-
-function closeDiagModal() {
-  document.getElementById('diagModal').classList.remove('open');
-}
-
-function toggleDiagLog() {
-  var panel = document.getElementById('diagLogPanel');
-  panel.style.display = (panel.style.display === 'none') ? 'block' : 'none';
-}
-
-function copyDiagLog() {
-  var text = diagLog.map(function(e) { return '[' + e.ts + '] [' + e.level.toUpperCase() + '] ' + e.msg; }).join('\n');
-  navigator.clipboard.writeText(text).then(function() { alert('Copied raw connection logs!'); });
-}
-
-async function runDiagnostics() {
-  diagLog = [];
-  diagResults = {};
-  document.getElementById('diagLogEntries').innerHTML = '';
-  document.getElementById('diagProgress').style.width = '0%';
-  renderDiagSteps();
-  diagAddLog('info', 'Starting Admin Google Connection diagnostic checks…');
-
-  var allPass = true;
-  var warnings = 0;
-
-  // 1. Config
-  setDiagStep('config', 'running', 'Checking local storage config…');
-  await sleep(150);
-  var cfg = loadObj('hs_config', {});
-  var ctx = loadObj('hs_gcontext', {});
-  if (!cfg.clientId || cfg.clientId.includes('YOUR_CLIENT_ID_HERE')) {
-    setDiagStep('config', 'fail', 'Client ID not configured properly in Welome Hub.');
-    allPass = false;
+  if (GS) {
+    syncProductToSheets(p)
+      .then(function() { toast('Saved to sheet — ' + p.name); })
+      .catch(function(e) { console.warn('saveProductPrice sync error:', e); toast('Saved locally — ' + p.name); });
   } else {
-    setDiagStep('config', 'pass', 'Client ID & Metadata configured');
-    diagAddLog('ok', 'Local configuration evaluated successfully.');
+    toast('Saved — ' + p.name);
   }
-
-  // 2. Network
-  setDiagStep('network', 'running', 'Testing Google API reachability…');
-  try {
-    var netTest = await fetch('https://www.googleapis.com/discovery/v1/apis?fields=kind', { signal: AbortSignal.timeout(5000) });
-    if (netTest.ok) {
-      setDiagStep('network', 'pass', 'Google API network route active');
-    } else {
-      setDiagStep('network', 'warn', 'APIs active but returned status ' + netTest.status);
-      warnings++;
-    }
-  } catch(e) {
-    setDiagStep('network', 'fail', 'Failed to reach Google. Check internet connection: ' + e.message);
-    allPass = false;
-  }
-
-  // 3. GIS library
-  setDiagStep('google', 'running', 'Checking GSI Library…');
-  if (typeof google !== 'undefined' && google.accounts) {
-    setDiagStep('google', 'pass', 'Google libraries mapped');
-  } else {
-    setDiagStep('google', 'fail', 'GSI libraries absent. Origin mapping blocked or offline.');
-    allPass = false;
-  }
-
-  // 4. Token Check
-  setDiagStep('session', 'running', 'Checking Access Token validity…');
-  if (!ctx.token) {
-    setDiagStep('session', 'fail', 'No active login session token found. Open Hub to log in.');
-    allPass = false;
-  } else if (ctx.tokenExpires <= Date.now()) {
-    setDiagStep('session', 'fail', 'Google session token is expired. Reconnect on Welcome Hub.');
-    allPass = false;
-  } else {
-    var expSec = Math.round((ctx.tokenExpires - Date.now()) / 1000);
-    setDiagStep('session', 'pass', 'Token active. Expires in ' + Math.round(expSec/60) + ' minutes.');
-  }
-
-  // Fetch only if token ok
-  var hasToken = ctx.token && ctx.tokenExpires > Date.now();
-
-  // 5. Drive Access
-  setDiagStep('drive', 'running', 'Testing Google Drive…');
-  if (!hasToken) {
-    setDiagStep('drive', 'warn', 'Skipped — token invalid');
-    warnings++;
-  } else {
-    try {
-      var driveTest = await fetch('https://www.googleapis.com/drive/v3/about?fields=user', {
-        headers: { 'Authorization': 'Bearer ' + ctx.token },
-        signal: AbortSignal.timeout(5000)
-      });
-      var driveData = await driveTest.json();
-      if (driveData.user) {
-        setDiagStep('drive', 'pass', 'Drive Access Granted: ' + driveData.user.emailAddress);
-      } else {
-        setDiagStep('drive', 'fail', 'Drive API returned error code');
-        allPass = false;
-      }
-    } catch(e) {
-      setDiagStep('drive', 'fail', e.message);
-      allPass = false;
-    }
-  }
-
-  // 6. Spreadsheet Access
-  setDiagStep('sheet', 'running', 'Querying sheet metadata…');
-  if (!hasToken || !ctx.spreadsheetId) {
-    setDiagStep('sheet', 'warn', 'Spreadsheet metadata missing.');
-    setDiagStep('tabs', 'warn', 'Skipped');
-    setDiagStep('headers', 'warn', 'Skipped');
-    warnings += 3;
-  } else {
-    try {
-      var sheetTest = await fetch(
-        'https://sheets.googleapis.com/v4/spreadsheets/' + ctx.spreadsheetId + '?fields=spreadsheetId,properties.title,sheets.properties.title',
-        { headers: { 'Authorization': 'Bearer ' + ctx.token }, signal: AbortSignal.timeout(5000) }
-      );
-      var sheetData = await sheetTest.json();
-      if (sheetData.spreadsheetId) {
-        setDiagStep('sheet', 'pass', 'Spreadsheet accessed: "' + sheetData.properties.title + '"');
-
-        // 7. Tabs Check
-        setDiagStep('tabs', 'running', 'Validating Sheet worksheets…');
-        var REQUIRED_TABS = ['Products','Stock_Lots','Deliveries','Sales','Sale_Items','Stock_Movements','Users','Suppliers','Settings','Day_End_Reports'];
-        var existingTabs  = (sheetData.sheets || []).map(function(s) { return s.properties.title; });
-        var missingTabs   = REQUIRED_TABS.filter(function(t) { return !existingTabs.includes(t); });
-        if (missingTabs.length > 0) {
-          setDiagStep('tabs', 'fail', 'Missing structural tabs: ' + missingTabs.join(', '));
-          allPass = false;
-        } else {
-          setDiagStep('tabs', 'pass', 'All 10 structural worksheets verified.');
-        }
-
-        // 8. Headers Verification
-        setDiagStep('headers', 'running', 'Verifying column header alignment…');
-        var uHeadersRes = await fetch(
-          'https://sheets.googleapis.com/v4/spreadsheets/' + ctx.spreadsheetId + '/values/Users!1:1',
-          { headers: { 'Authorization': 'Bearer ' + ctx.token }, signal: AbortSignal.timeout(5000) }
-        );
-        var uHeadersData = await uHeadersRes.json();
-        var uCols = uHeadersData.values ? uHeadersData.values[0] : [];
-        if (!uCols.includes('id') || !uCols.includes('name')) {
-          setDiagStep('headers', 'warn', 'Users worksheet missing proper header columns on Row 1.');
-          warnings++;
-        } else {
-          setDiagStep('headers', 'pass', 'Spreadsheet column headers evaluated OK.');
-        }
-
-      } else {
-        setDiagStep('sheet', 'fail', 'Sheets API returned empty metadata payload.');
-        allPass = false;
-      }
-    } catch(e) {
-      setDiagStep('sheet', 'fail', e.message);
-      allPass = false;
-    }
-  }
-
-  diagAddLog('info', 'Checks complete.');
 }
-
-function sleep(ms) { return new Promise(function(r) { setTimeout(r, ms); }); }
-
 
 // ══════════════════════════════════════════
 // INIT
 // ══════════════════════════════════════════
-function updateSyncIndicator(state) {
-  var el = document.getElementById('syncIndicator');
-  if (!el) return;
-  var dot   = state === 'connected' ? '#2d6a4f' : state === 'syncing' ? '#1e3a8a' : '#9e9b94';
-  var label = state === 'connected' ? 'Synced' : state === 'syncing' ? 'Syncing…' : 'Offline';
-  el.innerHTML = '<span style="width:7px;height:7px;border-radius:50%;background:' + dot + ';display:inline-block;"></span><span style="color:' + dot + '">' + label + '</span>';
-}
-
-async function initGS() {
-  if (typeof GS === 'undefined') return;
-  var connected = await GS.init();
-  updateSyncIndicator(connected ? 'syncing' : 'offline');
-  if (!connected) return;
-
-  try {
-    var prods = await GS.read('Products');
-    if (prods.length) {
-      products = prods.map(function(r) { return {
-        sku: r.sku, name: (r.product_name || r.name || ''), category: (r.category || ''),
-        unit: r.unit, unit2: r.unit2||'', unit2Conv: parseFloat(r.unit2_conv)||0,
-        unit3: r.unit3||'', unit3Conv: parseFloat(r.unit3_conv)||0,
-        barcode: r.barcode||'', reorderLevel: parseFloat(r.reorder_level)||0,
-        suggestMethod: r.suggest_method||'days', suggestVal: parseFloat(r.suggest_val)||0,
-        lastSellingPrice: parseFloat(r.last_selling_price)||0,
-        lastSellingPrice2: parseFloat(r.last_selling_price2)||0, // DUAL PRICING UPDATE
-        lastSellingPrice3: parseFloat(r.last_selling_price3)||0, // TRIPLE PRICING UPDATE
-        lastEffectiveCost: parseFloat(r.last_effective_cost)||0,
-        notes: r.notes||''
-      }; });
-      localStorage.setItem('hs_products', JSON.stringify(products));
-    }
-
-    // AUDIT CORRECTION: Load Stock Lots to rebuild "hs_stock" for dashboard metrics
-    var lots = await GS.read('Stock_Lots');
-    if (lots.length) {
-      localStorage.setItem('hs_goodsin', JSON.stringify(lots.map(function(r) { return {
-        lotId: r.lot_id, deliveryId: r.delivery_id, date: r.goods_in_date,
-        sku: r.sku, productName: (r.product_name || ''), unit: r.unit,
-        qty: parseFloat(r.qty_received)||0,
-        qtyRemaining: parseFloat(r.qty_remaining)||0,
-        purchaseCost: parseFloat(r.purchase_cost)||0,
-        effCostUnit: parseFloat(r.eff_cost_unit)||0,
-        sellingPrice: parseFloat(r.selling_price)||0,
-        sellingPrice2: parseFloat(r.selling_price2)||0
-      }; })));
-
-      var stockMap = {};
-      lots.forEach(function(r) {
-        if (!stockMap[r.sku]) stockMap[r.sku] = { sku: r.sku, storeQty: 0, floorQty: 0, reorderLevel: 0 };
-        stockMap[r.sku].storeQty += parseFloat(r.qty_remaining)||0;
-        if (!stockMap[r.sku].lastDelivery || r.goods_in_date > stockMap[r.sku].lastDelivery) {
-          stockMap[r.sku].lastDelivery = r.goods_in_date;
-          stockMap[r.sku].lastEffectiveCost = parseFloat(r.eff_cost_unit)||0;
-        }
-      });
-      stock = Object.values(stockMap);
-      localStorage.setItem('hs_stock', JSON.stringify(stock));
-    }
-
-    var usersData = await GS.read('Users');
-    if (usersData.length) {
-      users = usersData.map(function(r) { return { id:(r.id||''), name:(r.name||''), role:(r.role||'Cashier'), pin:(r.pin||'')||'' }; });
-      localStorage.setItem('hs_users', JSON.stringify(users));
-    }
-
-    var suppData = await GS.read('Suppliers');
-    if (suppData.length) {
-      suppliers = suppData.map(function(r) { return { id:r.id, name:r.name, contact:r.contact||'', phone:r.phone||'', email:r.email||'', notes:r.notes||'' }; });
-      localStorage.setItem('hs_suppliers', JSON.stringify(suppliers));
-    }
-
-    var sRows = await GS.readSettings();
-    if (sRows.shop_name) {
-      settings = {
-        shopName: sRows.shop_name||'Hardware Shop',
-        inflation: parseFloat(sRows.inflation)||12,
-        margin: parseFloat(sRows.margin)||25,
-        reorder: parseFloat(sRows.reorder)||10,
-        floorDays: parseFloat(sRows.floor_days)||7,
-        targetDays: parseFloat(sRows.target_days)||30,
-        leadTime: parseFloat(sRows.lead_time)||7,
-      };
-      localStorage.setItem('hs_settings', JSON.stringify(settings));
-      document.getElementById('shopNameDisplay').textContent = settings.shopName;
-    }
-
-    if (sRows.admin_key) {
-      var cfg = JSON.parse(localStorage.getItem('hs_config')||'{}');
-      cfg.adminKey = sRows.admin_key;
-      localStorage.setItem('hs_config', JSON.stringify(cfg));
-    }
-
-    var salesData = await GS.read('Sales');
-    if (salesData.length) {
-      var itemsData = await GS.read('Sale_Items');
-      var itemsBySale = {};
-      itemsData.forEach(function(r) {
-        if (!itemsBySale[r.sale_id]) itemsBySale[r.sale_id] = [];
-        itemsBySale[r.sale_id].push({
-          sku: r.sku, name: r.product_name, unit: r.unit,
-          qty: parseFloat(r.qty)||0, price: parseFloat(r.price)||0,
-          lineTotal: parseFloat(r.line_total)||0
-        });
-      });
-      sales = salesData.map(function(r) { return {
-        id: r.sale_id, date: r.date, time: r.time,
-        subtotal: parseFloat(r.subtotal)||0,
-        discount: parseFloat(r.discount)||0,
-        total: parseFloat(r.total)||0,
-        payment: r.payment,
-        cashReceived: parseFloat(r.cash_received)||0,
-        change: parseFloat(r.change)||0,
-        refunded: r.refunded === 'true' || r.refunded === 'TRUE',
-        items: itemsBySale[r.sale_id] || []
-      }; });
-      localStorage.setItem('hs_sales', JSON.stringify(sales));
-    }
-
-    var rptData = await GS.read('Day_End_Reports');
-    if (rptData.length) {
-      reports = rptData.map(function(r) { return {
-        id: r.id, date: r.date, time: r.time, shopName: r.shop_name,
-        billCount: parseInt(r.bill_count)||0,
-        totalSales: parseFloat(r.total_sales)||0,
-        cashSales: parseFloat(r.cash_sales)||0,
-        cardSales: parseFloat(r.card_sales)||0,
-        creditSales: parseFloat(r.credit_sales)||0,
-        discounts: parseFloat(r.discounts)||0,
-        refundAmt: parseFloat(r.refund_amt)||0,
-        refundCount: parseInt(r.refund_count)||0,
-        openFloat: parseFloat(r.open_float)||0,
-        changeGiven: parseFloat(r.change_given)||0,
-        expectedCash: parseFloat(r.expected_cash)||0,
-        actualCash: parseFloat(r.actual_cash)||0,
-        variance: parseFloat(r.variance)||0,
-        notes: r.notes||''
-      }; });
-      localStorage.setItem('hs_day_reports', JSON.stringify(reports));
-    }
-
-    updateSyncIndicator('connected');
-    reloadAll();
-    renderDashboard();
-
-  } catch(e) {
-    console.warn('Admin GS init error:', e);
-    updateSyncIndicator('offline');
-  }
-}
-
-function syncProductToSheets(p) {
-  if (!GS) return Promise.resolve();
-  return GS.upsert('Products', 'sku', {
-    sku: p.sku, product_name: p.name, category: p.category,
-    unit: p.unit, unit2: p.unit2||'', unit2_conv: p.unit2Conv||0,
-    unit3: p.unit3||'', unit3_conv: p.unit3Conv||0,
-    barcode: p.barcode||'', reorder_level: p.reorderLevel||0,
-    suggest_method: p.suggestMethod||'days', suggest_val: p.suggestVal||0,
-    last_selling_price: p.lastSellingPrice||0,
-    last_selling_price2: p.lastSellingPrice2||0, // DUAL PRICING UPDATE
-    last_selling_price3: p.lastSellingPrice3||0, // TRIPLE PRICING UPDATE
-    last_effective_cost: p.lastEffectiveCost||0,
-    notes: p.notes||''
-  });
-}
-
-function syncUserToSheets(u) {
-  if (!GS) return Promise.resolve();
-  return GS.upsert('Users', 'id', {
-    id: u.id, name: u.name, role: u.role, pin: u.pin||''
-  });
-}
-
-function syncSupplierToSheets(s) {
-  if (!GS) return Promise.resolve();
-  return GS.upsert('Suppliers', 'id', {
-    id: s.id, name: s.name, contact: s.contact||'',
-    phone: s.phone||'', email: s.email||'', notes: s.notes||''
-  });
-}
-
-function saveAdminKeyToSheets(key) {
-  var cfg = JSON.parse(localStorage.getItem('hs_config')||'{}');
-  cfg.adminKey = key;
-  localStorage.setItem('hs_config', JSON.stringify(cfg));
-  if (GS) GS.writeSetting('admin_key', key);
-}
-
 function clearCacheAndReload() {
   if (!confirm('Clear local cache and reload all data from Google Sheets?')) return;
   if (GS) GS.clearCache();
