@@ -521,8 +521,8 @@ async function ensureSpreadsheet() {
 
 async function writeSheetHeaders() {
   var headers = {
-    // DUAL PRICING UPDATE: Added 'last_selling_price2' to Products sheet header
-    Products:         [['sku','product_name','category','unit','unit2','unit2_conv','unit3','unit3_conv','barcode','reorder_level','suggest_method','suggest_val','last_selling_price','last_selling_price2','last_effective_cost','notes']],
+    // TRIPLE PRICING UPDATE: Added 'last_selling_price3' right after 'last_selling_price2'
+    Products:         [['sku','product_name','category','unit','unit2','unit2_conv','unit3','unit3_conv','barcode','reorder_level','suggest_method','suggest_val','last_selling_price','last_selling_price2','last_selling_price3','last_effective_cost','notes']],
     Stock_Lots:       [['lot_id','delivery_id','goods_in_date','sku','product_name','category','invoice_no','supplier','unit','qty_received','qty_remaining','purchase_cost','extra_share','eff_cost_unit','selling_price','selling_price2','selling_price3','remark','notes','extra_cost_total']],
     Deliveries:       [['delivery_id','goods_in_date','invoice_no','supplier','extra_cost','notes','total_items','total_cost']],
     Sales:            [['sale_id','date','time','cashier','subtotal','discount','total','payment','cash_received','change','refunded','refund_reason','refund_date']],
@@ -644,13 +644,13 @@ async function verifyKey() {
 
 async function writeSampleData() {
   var sampleProducts = [
-    ['SKU-CEM01','Cement','Building','bag','kg','50','','0','','10','days','30','1450.00','29.00','50kg per bag'],
-    ['SKU-SAND01','River Sand','Building','kg','','0','','0','','50','days','14','65.00','',''],
-    ['SKU-PIPE01','4 inch PVC Pipe','Plumbing','length','m','3','feet','9.84','','5','days','14','1200.00','400.00','3m per length'],
-    ['SKU-NAIL01','3 inch Nail','Fasteners','kg','','0','','0','','5','days','7','420.00','',''],
-    ['SKU-WIRE01','Binding Wire Roll','Building','roll','m','50','','0','','3','days','14','2500.00','','50m per roll'],
+    ['SKU-CEM01','Cement','Building','bag','kg','50','','0','','10','days','30','1450.00','29.00','','1100.00','50kg per bag'],
+    ['SKU-SAND01','River Sand','Building','kg','','0','','0','','50','days','14','65.00','','','42.00',''],
+    ['SKU-PIPE01','4 inch PVC Pipe','Plumbing','length','m','3','feet','9.84','','5','days','14','1200.00','400.00','135.00','820.00','3m per length'],
+    ['SKU-NAIL01','3 inch Nail','Fasteners','kg','','0','','0','','5','days','7','420.00','','','280.00',''],
+    ['SKU-WIRE01','Binding Wire Roll','Building','roll','m','50','','0','','3','days','14','2500.00','','','1850.00','50m per roll'],
   ];
-  var range = 'Products!A2:P' + (sampleProducts.length + 1);
+  var range = 'Products!A2:Q' + (sampleProducts.length + 1);
   await gFetch(
     'https://sheets.googleapis.com/v4/spreadsheets/' + cfg.spreadsheetId
     + '/values/' + encodeURIComponent(range) + '?valueInputOption=RAW',
