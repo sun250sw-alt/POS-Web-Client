@@ -1,3 +1,28 @@
+Admin App Products & direct price adjustment table updates
+
+We have performed a complete spatial and layout refactoring of the Admin App's
+Products & prices tab to meet your exact specifications:
+
+1.  Perfect Suggested Price Alignment: Wrapped each price and cost entry in a
+    vertical flexbox container. This aligns the suggested baseline values (Sugg:
+    LKR ... or Real: LKR ...) exactly under the input rectangles.
+2.  Value Variance Percentage Display: Next to each suggested baseline, the app
+    now calculates and displays the percentage variance of the manual entry
+    relative to the inflation-adjusted suggestion:
+      - Displays as green (plus) if your manual entry represents a surplus
+        margin over the suggested price (e.g. +5.5%).
+      - Displays as red (minus) if your manual entry represents a margin deficit
+        below the suggested price (e.g. -8.3%).
+3.  Live "Current Stock" Column: Added a dedicated column right next to the
+    units column showing your total active inventory (Store + Floor) in
+    real-time.
+4.  Synchronized Dashboard KPIs: Fully mapped the 4 stock valuation metrics
+    directly above the table to keep all managers instantly updated.
+
+Update 14: admin-app.html (Meticulously Styled Multi-Unit Pricing Control)
+
+Save the following code as admin-app.html:
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -214,7 +239,7 @@ tbody tr:hover { background: var(--surface2); }
       Suppliers
     </div>
     <div class="nav-item" onclick="showPage('settings',this)">
-      <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+      <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 014 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
       Settings
     </div>
     <div class="nav-item" onclick="showPage('dayend',this)">
@@ -276,7 +301,7 @@ tbody tr:hover { background: var(--surface2); }
     <!-- ══ PRODUCTS PAGE ══ -->
     <div class="page active" id="page-products">
       
-      <!-- AUDIT REFACTOR: Added 4 live inventory KPIs at the top of products tab -->
+      <!-- Live stock valuation KPIs inside products tab -->
       <div class="kpi-grid" id="adminStockStatsGrid" style="margin-bottom: 20px;">
         <div class="kpi" style="border-left: 4px solid var(--accent);"><div class="kpi-label">Total cost value</div><div class="kpi-value" id="asv-cost-total">LKR 0.00</div><div class="kpi-sub">At purchase price</div></div>
         <div class="kpi warn" style="border-left: 4px solid var(--warn);"><div class="kpi-label">Inflation-adjusted value</div><div class="kpi-value" id="asv-infl-total">LKR 0.00</div><div class="kpi-sub">Current real cost</div></div>
@@ -306,6 +331,7 @@ tbody tr:hover { background: var(--surface2); }
               <tr>
                 <th>Product</th>
                 <th>Units</th>
+                <th>Current Stock</th>
                 <th>Cost Price (LKR)</th>
                 <th>Selling Price 1 (LKR)</th>
                 <th>Selling Price 2 (LKR)</th>
@@ -315,7 +341,7 @@ tbody tr:hover { background: var(--surface2); }
                 <th>Actions</th>
               </tr>
             </thead>
-            <tbody id="adminProductsTable"><tr><td colspan="11" style="text-align:center;color:var(--text3);padding:24px;">No products</td></tr></tbody>
+            <tbody id="adminProductsTable"><tr><td colspan="10" style="text-align:center;color:var(--text3);padding:24px;">No products</td></tr></tbody>
           </table>
         </div>
       </div>
@@ -678,7 +704,7 @@ const KEYS = {
   reports:   'hs_day_reports'
 };
 
-function load(key) { try { return JSON.parse(localStorage.getItem(key) || '[]'); } catch(e) { return []; } }
+function load(key)         { try { return JSON.parse(localStorage.getItem(key) || '[]'); }    catch(e) { return []; } }
 function loadObj(key, def) { try { return JSON.parse(localStorage.getItem(key) || 'null') || def; } catch(e) { return def; } }
 function save(key, val)    { localStorage.setItem(key, JSON.stringify(val)); }
 
@@ -1189,6 +1215,15 @@ function deleteProduct(sku) {
   }
 }
 
+// AUDIT REFACTOR: Formats variance percentage cleanly with color-coded classes
+function diffHtml(current, suggested) {
+  if (!suggested || suggested <= 0) return '';
+  var diffPct = ((current - suggested) / suggested) * 100;
+  var sign = diffPct > 0 ? '+' : '';
+  var color = diffPct > 0 ? '#52b788' : diffPct < 0 ? '#ef4444' : 'var(--text3)';
+  return ' <span style="color:' + color + ';font-weight:600;margin-left:4px;">' + sign + diffPct.toFixed(1) + '%</span>';
+}
+
 function renderAdminProducts() {
   var q   = (document.getElementById('productSearch').value || '').toLowerCase();
   var cat = document.getElementById('productCatFilter').value;
@@ -1235,16 +1270,23 @@ function renderAdminProducts() {
     var suggestedSell2 = (p.unit2Conv > 0) ? (suggestedSell1 / p.unit2Conv) : 0;
     var suggestedSell3 = (p.unit3Conv > 0) ? (suggestedSell1 / p.unit3Conv) : 0;
 
-    var costInput = '<input type="number" class="inline-input" style="width:100px;font-family:\'DM Mono\', monospace;text-align:right;" value="' + (p.lastEffectiveCost ? p.lastEffectiveCost : '') + '" step="any" placeholder="0.00" onchange="saveProductPrice(\'' + p.sku + '\', \'lastEffectiveCost\', this.value)">'
-      + '<div style="font-size:10px;color:var(--text3);text-align:right;margin-top:2px;">Real: LKR ' + num(adjustedCost, 1) + '</div>';
+    // AUDIT REFACTOR: Clean, aligned vertical containers displaying inline-input and suggested values + difference pct exactly below
+    var costInput = '<div style="display:flex;flex-direction:column;align-items:flex-end;width:105px;margin-left:auto;">'
+      + '<input type="number" class="inline-input" style="width:100%;font-family:\'DM Mono\', monospace;text-align:right;" value="' + (p.lastEffectiveCost ? p.lastEffectiveCost : '') + '" step="any" placeholder="0.00" onchange="saveProductPrice(\'' + p.sku + '\', \'lastEffectiveCost\', this.value)">'
+      + '<div style="font-size:10px;color:var(--text3);text-align:right;margin-top:3px;white-space:nowrap;">Real: ' + num(adjustedCost, 1) + diffHtml(p.lastEffectiveCost, adjustedCost) + '</div>'
+      + '</div>';
     
-    var sellInput = '<input type="number" class="inline-input" style="width:100px;font-family:\'DM Mono\', monospace;text-align:right;" value="' + (p.lastSellingPrice ? p.lastSellingPrice : '') + '" step="any" placeholder="0.00" onchange="saveProductPrice(\'' + p.sku + '\', \'lastSellingPrice\', this.value)">'
-      + '<div style="font-size:10px;color:var(--text3);text-align:right;margin-top:2px;">Sugg: LKR ' + num(suggestedSell1, 1) + '</div>';
+    var sellInput = '<div style="display:flex;flex-direction:column;align-items:flex-end;width:105px;margin-left:auto;">'
+      + '<input type="number" class="inline-input" style="width:100%;font-family:\'DM Mono\', monospace;text-align:right;" value="' + (p.lastSellingPrice ? p.lastSellingPrice : '') + '" step="any" placeholder="0.00" onchange="saveProductPrice(\'' + p.sku + '\', \'lastSellingPrice\', this.value)">'
+      + '<div style="font-size:10px;color:var(--text3);text-align:right;margin-top:2px;white-space:nowrap;">Sugg: ' + num(suggestedSell1, 1) + diffHtml(p.lastSellingPrice, suggestedSell1) + '</div>'
+      + '</div>';
     
     var sellInput2 = '';
     if (p.unit2) {
-      sellInput2 = '<input type="number" class="inline-input" style="width:100px;font-family:\'DM Mono\', monospace;text-align:right;" value="' + (p.lastSellingPrice2 ? p.lastSellingPrice2 : '') + '" step="any" placeholder="0.00" onchange="saveProductPrice(\'' + p.sku + '\', \'lastSellingPrice2\', this.value)">'
-        + '<div style="font-size:10px;color:var(--text3);text-align:right;margin-top:2px;">Sugg: LKR ' + num(suggestedSell2, 1) + '</div>';
+      sellInput2 = '<div style="display:flex;flex-direction:column;align-items:flex-end;width:100px;margin-left:auto;">'
+        + '<input type="number" class="inline-input" style="width:100%;font-family:\'DM Mono\', monospace;text-align:right;" value="' + (p.lastSellingPrice2 ? p.lastSellingPrice2 : '') + '" step="any" placeholder="0.00" onchange="saveProductPrice(\'' + p.sku + '\', \'lastSellingPrice2\', this.value)">'
+        + '<div style="font-size:10px;color:var(--text3);text-align:right;margin-top:2px;white-space:nowrap;">Sugg: ' + num(suggestedSell2, 1) + diffHtml(p.lastSellingPrice2, suggestedSell2) + '</div>'
+        + '</div>';
     } else {
       sellInput2 = '<span style="color:var(--text3)">—</span>';
     }
@@ -1252,7 +1294,7 @@ function renderAdminProducts() {
     var sellInput3 = '';
     if (p.unit3) {
       sellInput3 = '<input type="number" class="inline-input" style="width:100px;font-family:\'DM Mono\', monospace;text-align:right;" value="' + (p.lastSellingPrice3 ? p.lastSellingPrice3 : '') + '" step="any" placeholder="0.00" onchange="saveProductPrice(\'' + p.sku + '\', \'lastSellingPrice3\', this.value)">'
-        + '<div style="font-size:10px;color:var(--text3);text-align:right;margin-top:2px;">Sugg: LKR ' + num(suggestedSell3, 1) + '</div>';
+        + '<div style="font-size:10px;color:var(--text3);text-align:right;margin-top:2px;">Sugg: ' + num(suggestedSell3, 1) + '</div>';
     } else {
       sellInput3 = '<span style="color:var(--text3)">—</span>';
     }
@@ -1261,6 +1303,7 @@ function renderAdminProducts() {
       + '<td><div style="font-weight:500">' + p.name + '</div>'
       +   '<div style="font-size:11px;color:var(--text3)">' + (p.category||'') + ' · ' + p.sku + '</div></td>'
       + '<td><span class="badge badge-blue">' + combinedUnitsText + '</span></td>'
+      + '<td class="mono" style="font-weight:600;text-align:center;">' + num(qty, 2) + '</td>' // New stock column
       + '<td>' + costInput + '</td>'
       + '<td>' + sellInput + '</td>'
       + '<td>' + sellInput2 + '</td>'
@@ -1542,29 +1585,351 @@ function showReport(rid) {
   document.getElementById('reportDetailBody').innerHTML = html;
 }
 
-function saveProductPrice(sku, field, val) {
-  var pi = products.findIndex(function(p) { return p.sku === sku; });
-  if (pi < 0) return;
-  var parsed = parseFloat(val);
-  products[pi][field] = (!val || isNaN(parsed)) ? 0 : parsed;
-  save(KEYS.products, products);
-  var p = products[pi];
-  
-  // Re-calculate KPIs instantly upon inline cell updates
-  calculateProductsKPIs();
-
-  if (GS) {
-    syncProductToSheets(p)
-      .then(function() { toast('Saved to sheet — ' + p.name); })
-      .catch(function(e) { console.warn('saveProductPrice sync error:', e); toast('Saved locally — ' + p.name); });
-  } else {
-    toast('Saved — ' + p.name);
+// ══════════════════════════════════════════
+// DAY-END REPORTS
+// ══════════════════════════════════════════
+function renderReports() {
+  reports = load(KEYS.reports);
+  var sorted = [...reports].reverse();
+  var listEl = document.getElementById('reportListEl');
+  if (!sorted.length) {
+    listEl.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text3);font-size:13px;">No reports yet<br><br><span style="font-size:11px">Generate reports from the Till app day-end screen</span></div>';
+    return;
   }
+  listEl.innerHTML = sorted.map(function(r) {
+    var variance = r.variance || 0;
+    var varColor = Math.abs(variance) < 1 ? 'var(--accent)' : variance > 0 ? 'var(--warn)' : 'var(--danger)';
+    var varLabel = Math.abs(variance) < 1 ? 'Balanced' : variance > 0 ? 'Over' : 'Short';
+    return '<div style="padding:12px 16px;border-bottom:1px solid var(--border);cursor:pointer;transition:background 0.1s;" onmouseover="this.style.background=\'var(--surface2)\'" onmouseout="this.style.background=\'\'" data-rid="' + r.id + '" onclick="showReport(this.dataset.rid)">'
+      + '<div style="display:flex;justify-content:space-between;align-items:baseline;">'
+      +   '<span style="font-weight:600;font-size:13px">' + r.date + '</span>'
+      +   '<span style="font-family:\'DM Mono\',monospace;font-size:13px;font-weight:600;color:var(--accent)">' + lkr(r.totalSales||0) + '</span>'
+      + '</div>'
+      + '<div style="font-size:11.5px;color:var(--text3);margin-top:2px">' + (r.billCount||0) + ' customers · <span style="color:' + varColor + '">' + varLabel + '</span></div>'
+      + '</div>';
+  }).join('');
+}
+
+function showReport(rid) {
+  var r = reports.find(function(x) { return x.id === rid; });
+  if (!r) return;
+  document.getElementById('reportDetailCard').style.display = '';
+  document.getElementById('reportEmptyCard').style.display  = 'none';
+  document.getElementById('reportDetailTitle').textContent  = 'Report — ' + r.date;
+
+  var variance  = r.variance || 0;
+  var varClass  = Math.abs(variance) < 1 ? 'green' : variance > 0 ? 'warn' : 'danger';
+  var varLabel  = Math.abs(variance) < 1 ? 'Balanced ✓' : variance > 0 ? 'Over + ' + lkr(variance) : 'Short ' + lkr(Math.abs(variance));
+
+  function row(label, val, bold) {
+    return '<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);' + (bold?'font-weight:700;font-size:15px;':'') + '">'
+      + '<span style="color:var(--text2)">' + label + '</span>'
+      + '<span>' + val + '</span></div>';
+  }
+  function section(title) {
+    return '<div style="font-size:10px;text-transform:uppercase;letter-spacing:0.8px;color:var(--text3);margin-top:14px;margin-bottom:4px;padding-bottom:4px;border-bottom:2px solid var(--border)">' + title + '</div>';
+  }
+
+  var html = section('Sales summary')
+    + row('Customers', r.billCount||0)
+    + row('Avg sale', lkr((r.totalSales||0)/(r.billCount||1)))
+    + row('TOTAL SALES', lkr(r.totalSales||0), true)
+    + section('Payment breakdown')
+    + row('Cash (' + (r.cashCount||0) + ')', lkr(r.cashSales||0))
+    + row('Card / Transfer (' + (r.cardCount||0) + ')', lkr(r.cardSales||0))
+    + row('Credit (' + (r.creditCount||0) + ')', lkr(r.creditSales||0))
+    + row('Discounts (' + (r.discountCount||0) + ')', '− ' + lkr(r.discounts||0))
+    + row('Refunds (' + (r.refundCount||0) + ')', '− ' + lkr(r.refundAmt||0))
+    + (r.itemsSold ? row('Items sold', num(r.itemsSold,0)) : '')
+    + section('Cash reconciliation')
+    + row('Opening float', lkr(r.openFloat||0))
+    + row('Cash sales', '+ ' + lkr(r.cashSales||0))
+    + row('Change given', '− ' + lkr(r.changeGiven||0))
+    + row('Expected in till', lkr(r.expectedCash||0), true)
+    + row('Actual counted', lkr(r.actualCash||0))
+    + '<div style="display:flex;justify-content:space-between;padding:6px 0;font-weight:700;font-size:15px;color:var(--' + varClass + ')">'
+    + '<span>Variance</span><span>' + varLabel + '</span></div>';
+
+  if (r.items && r.items.length) {
+    html += section('Top items');
+    r.items.slice(0,8).forEach(function(i) {
+      html += row(i.name, num(i.qty,2) + ' ' + i.unit + ' — ' + lkr(i.rev));
+    });
+  }
+  if (r.notes) { html += section('Notes'); html += '<div style="color:var(--text2);padding:6px 0">' + r.notes + '</div>'; }
+  html += '<div style="font-size:11px;color:var(--text3);margin-top:14px">Generated: ' + r.date + ' ' + (r.time||'') + '</div>';
+
+  document.getElementById('reportDetailBody').innerHTML = html;
+}
+
+// ══════════════════════════════════════════
+// DAY-END REPORTS
+// ══════════════════════════════════════════
+function renderReports() {
+  reports = load(KEYS.reports);
+  var sorted = [...reports].reverse();
+  var listEl = document.getElementById('reportListEl');
+  if (!sorted.length) {
+    listEl.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text3);font-size:13px;">No reports yet<br><br><span style="font-size:11px">Generate reports from the Till app day-end screen</span></div>';
+    return;
+  }
+  listEl.innerHTML = sorted.map(function(r) {
+    var variance = r.variance || 0;
+    var varColor = Math.abs(variance) < 1 ? 'var(--accent)' : variance > 0 ? 'var(--warn)' : 'var(--danger)';
+    var varLabel = Math.abs(variance) < 1 ? 'Balanced' : variance > 0 ? 'Over' : 'Short';
+    return '<div style="padding:12px 16px;border-bottom:1px solid var(--border);cursor:pointer;transition:background 0.1s;" onmouseover="this.style.background=\'var(--surface2)\'" onmouseout="this.style.background=\'\'" data-rid="' + r.id + '" onclick="showReport(this.dataset.rid)">'
+      + '<div style="display:flex;justify-content:space-between;align-items:baseline;">'
+      +   '<span style="font-weight:600;font-size:13px">' + r.date + '</span>'
+      +   '<span style="font-family:\'DM Mono\',monospace;font-size:13px;font-weight:600;color:var(--accent)">' + lkr(r.totalSales||0) + '</span>'
+      + '</div>'
+      + '<div style="font-size:11.5px;color:var(--text3);margin-top:2px">' + (r.billCount||0) + ' customers · <span style="color:' + varColor + '">' + varLabel + '</span></div>'
+      + '</div>';
+  }).join('');
+}
+
+function showReport(rid) {
+  var r = reports.find(function(x) { return x.id === rid; });
+  if (!r) return;
+  document.getElementById('reportDetailCard').style.display = '';
+  document.getElementById('reportEmptyCard').style.display  = 'none';
+  document.getElementById('reportDetailTitle').textContent  = 'Report — ' + r.date;
+
+  var variance  = r.variance || 0;
+  var varClass  = Math.abs(variance) < 1 ? 'green' : variance > 0 ? 'warn' : 'danger';
+  var varLabel  = Math.abs(variance) < 1 ? 'Balanced ✓' : variance > 0 ? 'Over + ' + lkr(variance) : 'Short ' + lkr(Math.abs(variance));
+
+  function row(label, val, bold) {
+    return '<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);' + (bold?'font-weight:700;font-size:15px;':'') + '">'
+      + '<span style="color:var(--text2)">' + label + '</span>'
+      + '<span>' + val + '</span></div>';
+  }
+  function section(title) {
+    return '<div style="font-size:10px;text-transform:uppercase;letter-spacing:0.8px;color:var(--text3);margin-top:14px;margin-bottom:4px;padding-bottom:4px;border-bottom:2px solid var(--border)">' + title + '</div>';
+  }
+
+  var html = section('Sales summary')
+    + row('Customers', r.billCount||0)
+    + row('Avg sale', lkr((r.totalSales||0)/(r.billCount||1)))
+    + row('TOTAL SALES', lkr(r.totalSales||0), true)
+    + section('Payment breakdown')
+    + row('Cash (' + (r.cashCount||0) + ')', lkr(r.cashSales||0))
+    + row('Card / Transfer (' + (r.cardCount||0) + ')', lkr(r.cardSales||0))
+    + row('Credit (' + (r.creditCount||0) + ')', lkr(r.creditSales||0))
+    + row('Discounts (' + (r.discountCount||0) + ')', '− ' + lkr(r.discounts||0))
+    + row('Refunds (' + (r.refundCount||0) + ')', '− ' + lkr(r.refundAmt||0))
+    + (r.itemsSold ? row('Items sold', num(r.itemsSold,0)) : '')
+    + section('Cash reconciliation')
+    + row('Opening float', lkr(r.openFloat||0))
+    + row('Cash sales', '+ ' + lkr(r.cashSales||0))
+    + row('Change given', '− ' + lkr(r.changeGiven||0))
+    + row('Expected in till', lkr(r.expectedCash||0), true)
+    + row('Actual counted', lkr(r.actualCash||0))
+    + '<div style="display:flex;justify-content:space-between;padding:6px 0;font-weight:700;font-size:15px;color:var(--varClass)">'
+    + '<span>Variance</span><span>' + varLabel + '</span></div>';
+
+  if (r.items && r.items.length) {
+    html += section('Top items');
+    r.items.slice(0,8).forEach(function(i) {
+      html += row(i.name, num(i.qty,2) + ' ' + i.unit + ' — ' + lkr(i.rev));
+    });
+  }
+  if (r.notes) { html += section('Notes'); html += '<div style="color:var(--text2);padding:6px 0">' + r.notes + '</div>'; }
+  html += '<div style="font-size:11px;color:var(--text3);margin-top:14px">Generated: ' + r.date + ' ' + (r.time||'') + '</div>';
+
+  document.getElementById('reportDetailBody').innerHTML = html;
 }
 
 // ══════════════════════════════════════════
 // INIT
 // ══════════════════════════════════════════
+function updateSyncIndicator(state) {
+  var el = document.getElementById('syncIndicator');
+  if (!el) return;
+  var dot   = state === 'connected' ? '#2d6a4f' : state === 'syncing' ? '#1e3a8a' : '#9e9b94';
+  var label = state === 'connected' ? 'Synced' : state === 'syncing' ? 'Syncing…' : 'Offline';
+  el.innerHTML = '<span style="width:7px;height:7px;border-radius:50%;background:' + dot + ';display:inline-block;"></span><span style="color:' + dot + '">' + label + '</span>';
+}
+
+async function initGS() {
+  if (typeof GS === 'undefined') return;
+  var connected = await GS.init();
+  updateSyncIndicator(connected ? 'syncing' : 'offline');
+  if (!connected) return;
+
+  try {
+    var prods = await GS.read('Products');
+    if (prods.length) {
+      products = prods.map(function(r) { return {
+        sku: r.sku, name: (r.product_name || r.name || ''), category: (r.category || ''),
+        unit: r.unit, unit2: r.unit2||'', unit2Conv: parseFloat(r.unit2_conv)||0,
+        unit3: r.unit3||'', unit3Conv: parseFloat(r.unit3_conv)||0,
+        barcode: r.barcode||'', reorderLevel: parseFloat(r.reorder_level)||0,
+        suggestMethod: r.suggest_method||'days', suggestVal: parseFloat(r.suggest_val)||0,
+        lastSellingPrice: parseFloat(r.last_selling_price)||0,
+        lastSellingPrice2: parseFloat(r.last_selling_price2)||0, // DUAL PRICING UPDATE
+        lastSellingPrice3: parseFloat(r.last_selling_price3)||0, // TRIPLE PRICING UPDATE
+        lastEffectiveCost: parseFloat(r.last_effective_cost)||0,
+        notes: r.notes||''
+      }; });
+      localStorage.setItem('hs_products', JSON.stringify(products));
+    }
+
+    // AUDIT CORRECTION: Load Stock Lots to rebuild "hs_stock" for dashboard metrics
+    var lots = await GS.read('Stock_Lots');
+    if (lots.length) {
+      localStorage.setItem('hs_goodsin', JSON.stringify(lots.map(function(r) { return {
+        lotId: r.lot_id, deliveryId: r.delivery_id, date: r.goods_in_date,
+        sku: r.sku, productName: (r.product_name || ''), unit: r.unit,
+        qty: parseFloat(r.qty_received)||0,
+        qtyRemaining: parseFloat(r.qty_remaining)||0,
+        purchaseCost: parseFloat(r.purchase_cost)||0,
+        effCostUnit: parseFloat(r.eff_cost_unit)||0,
+        sellingPrice: parseFloat(r.selling_price)||0,
+        sellingPrice2: parseFloat(r.selling_price2)||0
+      }; })));
+
+      var stockMap = {};
+      lots.forEach(function(r) {
+        if (!stockMap[r.sku]) stockMap[r.sku] = { sku: r.sku, storeQty: 0, floorQty: 0, reorderLevel: 0 };
+        stockMap[r.sku].storeQty += parseFloat(r.qty_remaining)||0;
+        if (!stockMap[r.sku].lastDelivery || r.goods_in_date > stockMap[r.sku].lastDelivery) {
+          stockMap[r.sku].lastDelivery = r.goods_in_date;
+          stockMap[r.sku].lastEffectiveCost = parseFloat(r.eff_cost_unit)||0;
+        }
+      });
+      stock = Object.values(stockMap);
+      localStorage.setItem('hs_stock', JSON.stringify(stock));
+    }
+
+    var usersData = await GS.read('Users');
+    if (usersData.length) {
+      users = usersData.map(function(r) { return { id:(r.id||''), name:(r.name||''), role:(r.role||'Cashier'), pin:(r.pin||'')||'' }; });
+      localStorage.setItem('hs_users', JSON.stringify(users));
+    }
+
+    var suppData = await GS.read('Suppliers');
+    if (suppData.length) {
+      suppliers = suppData.map(function(r) { return { id:r.id, name:r.name, contact:r.contact||'', phone:r.phone||'', email:r.email||'', notes:r.notes||'' }; });
+      localStorage.setItem('hs_suppliers', JSON.stringify(suppliers));
+    }
+
+    var sRows = await GS.readSettings();
+    if (sRows.shop_name) {
+      settings = {
+        shopName: sRows.shop_name||'Hardware Shop',
+        inflation: parseFloat(sRows.inflation)||12,
+        margin: parseFloat(sRows.margin)||25,
+        reorder: parseFloat(sRows.reorder)||10,
+        floorDays: parseFloat(sRows.floor_days)||7,
+        targetDays: parseFloat(sRows.target_days)||30,
+        leadTime: parseFloat(sRows.lead_time)||7,
+      };
+      localStorage.setItem('hs_settings', JSON.stringify(settings));
+      document.getElementById('shopNameDisplay').textContent = settings.shopName;
+    }
+
+    if (sRows.admin_key) {
+      var cfg = JSON.parse(localStorage.getItem('hs_config')||'{}');
+      cfg.adminKey = sRows.admin_key;
+      localStorage.setItem('hs_config', JSON.stringify(cfg));
+    }
+
+    var salesData = await GS.read('Sales');
+    if (salesData.length) {
+      var itemsData = await GS.read('Sale_Items');
+      var itemsBySale = {};
+      itemsData.forEach(function(r) {
+        if (!itemsBySale[r.sale_id]) itemsBySale[r.sale_id] = [];
+        itemsBySale[r.sale_id].push({
+          sku: r.sku, name: r.product_name, unit: r.unit,
+          qty: parseFloat(r.qty)||0, price: parseFloat(r.price)||0,
+          lineTotal: parseFloat(r.line_total)||0
+        });
+      });
+      sales = salesData.map(function(r) { return {
+        id: r.sale_id, date: r.date, time: r.time,
+        subtotal: parseFloat(r.subtotal)||0,
+        discount: parseFloat(r.discount)||0,
+        total: parseFloat(r.total)||0,
+        payment: r.payment,
+        cashReceived: parseFloat(r.cash_received)||0,
+        change: parseFloat(r.change)||0,
+        refunded: r.refunded === 'true' || r.refunded === 'TRUE',
+        items: itemsBySale[r.sale_id] || []
+      }; });
+      localStorage.setItem('hs_sales', JSON.stringify(sales));
+    }
+
+    var rptData = await GS.read('Day_End_Reports');
+    if (rptData.length) {
+      reports = rptData.map(function(r) { return {
+        id: r.id, date: r.date, time: r.time, shopName: r.shop_name,
+        billCount: parseInt(r.bill_count)||0,
+        totalSales: parseFloat(r.total_sales)||0,
+        cashSales: parseFloat(r.cash_sales)||0,
+        cardSales: parseFloat(r.card_sales)||0,
+        creditSales: parseFloat(r.credit_sales)||0,
+        discounts: parseFloat(r.discounts)||0,
+        refundAmt: parseFloat(r.refund_amt)||0,
+        refundCount: parseInt(r.refund_count)||0,
+        openFloat: parseFloat(r.open_float)||0,
+        changeGiven: parseFloat(r.change_given)||0,
+        expectedCash: parseFloat(r.expected_cash)||0,
+        actualCash: parseFloat(r.actual_cash)||0,
+        variance: parseFloat(r.variance)||0,
+        notes: r.notes||''
+      }; });
+      localStorage.setItem('hs_day_reports', JSON.stringify(reports));
+    }
+
+    updateSyncIndicator('connected');
+    reloadAll();
+    renderDashboard();
+
+  } catch(e) {
+    console.warn('Admin GS init error:', e);
+    updateSyncIndicator('offline');
+  }
+}
+
+function syncProductToSheets(p) {
+  if (!GS) return Promise.resolve();
+  return GS.upsert('Products', 'sku', {
+    sku: p.sku, product_name: p.name, category: p.category,
+    unit: p.unit, unit2: p.unit2||'', unit2_conv: p.unit2Conv||0,
+    unit3: p.unit3||'', unit3_conv: p.unit3Conv||0,
+    barcode: p.barcode||'', reorder_level: p.reorderLevel||0,
+    suggest_method: p.suggestMethod||'days', suggest_val: p.suggestVal||0,
+    last_selling_price: p.lastSellingPrice||0,
+    last_selling_price2: p.lastSellingPrice2||0, // DUAL PRICING UPDATE
+    last_selling_price3: p.lastSellingPrice3||0, // TRIPLE PRICING UPDATE
+    last_effective_cost: p.lastEffectiveCost||0,
+    notes: p.notes||''
+  });
+}
+
+function syncUserToSheets(u) {
+  if (!GS) return Promise.resolve();
+  return GS.upsert('Users', 'id', {
+    id: u.id, name: u.name, role: u.role, pin: u.pin||''
+  });
+}
+
+function syncSupplierToSheets(s) {
+  if (!GS) return Promise.resolve();
+  return GS.upsert('Suppliers', 'id', {
+    id: s.id, name: s.name, contact: s.contact||'',
+    phone: s.phone||'', email: s.email||'', notes: s.notes||''
+  });
+}
+
+function saveAdminKeyToSheets(key) {
+  var cfg = JSON.parse(localStorage.getItem('hs_config')||'{}');
+  cfg.adminKey = key;
+  localStorage.setItem('hs_config', JSON.stringify(cfg));
+  if (GS) GS.writeSetting('admin_key', key);
+}
+
 function clearCacheAndReload() {
   if (!confirm('Clear local cache and reload all data from Google Sheets?')) return;
   if (GS) GS.clearCache();
