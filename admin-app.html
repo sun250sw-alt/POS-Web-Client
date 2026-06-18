@@ -196,7 +196,7 @@ tbody tr:hover { background: var(--surface2); }
   </div>
   <nav class="nav">
     <div class="nav-section">Dashboard</div>
-    <div class="nav-item active" onclick="showPage('dashboard',this)">
+    <div class="nav-item" onclick="showPage('dashboard',this)">
       <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
       Overview
     </div>
@@ -205,7 +205,7 @@ tbody tr:hover { background: var(--surface2); }
       <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
       Users
     </div>
-    <div class="nav-item" onclick="showPage('products',this)">
+    <div class="nav-item active" onclick="showPage('products',this)">
       <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M4 6h16M4 10h16M4 14h10M4 18h6"/></svg>
       Products &amp; prices
     </div>
@@ -239,7 +239,7 @@ tbody tr:hover { background: var(--surface2); }
 <!-- ── MAIN ── -->
 <div class="main">
   <div class="topbar">
-    <div class="topbar-title" id="pageTitle">Dashboard</div>
+    <div class="topbar-title" id="pageTitle">Products &amp; prices</div>
     <div class="topbar-right">
       <span id="syncIndicator" style="font-size:11.5px;display:flex;align-items:center;gap:5px;margin-right:8px;"></span>
       <button onclick="openDiagModal()" title="Run Google Sheet Connection Diagnostic Checks"
@@ -273,8 +273,42 @@ tbody tr:hover { background: var(--surface2); }
 
   <div class="content">
 
+    <!-- ══ PRODUCTS PAGE ══ -->
+    <div class="page active" id="page-products">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
+        <div style="display:flex;gap:8px;align-items:center;">
+          <input type="text" class="form-control" id="productSearch" placeholder="Search…" style="width:180px;" oninput="renderAdminProducts()">
+          <select class="form-control" id="productCatFilter" style="width:150px;" onchange="renderAdminProducts()">
+            <option value="">All categories</option>
+          </select>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <span style="font-size:12px;color:var(--text3);">Prices set per delivery in Stock Lots</span>
+          <button class="btn btn-primary" onclick="openProductModal()">
+            <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Add product
+          </button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Product</th><th>Primary unit</th><th>Unit 2</th><th>Unit 3</th>
+                <th>Conv. 1→2</th><th>Conv. 1→3</th>
+                <th>Cost Price (LKR)</th><th>Selling Price 1 (LKR)</th><th>Selling Price 2 (LKR)</th>
+                <th>Reorder</th><th>Status</th><th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="adminProductsTable"><tr><td colspan="12" style="text-align:center;color:var(--text3);padding:24px;">No products</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
     <!-- ══ DASHBOARD PAGE ══ -->
-    <div class="page active" id="page-dashboard">
+    <div class="page" id="page-dashboard">
       <div class="period-bar">
         <button class="period-btn active" onclick="setPeriod('today',this)">Today</button>
         <button class="period-btn" onclick="setPeriod('7',this)">7 days</button>
@@ -360,40 +394,6 @@ tbody tr:hover { background: var(--surface2); }
           <table>
             <thead><tr><th>Name</th><th>Role</th><th>PIN</th><th>Actions</th></tr></thead>
             <tbody id="usersTable"><tr><td colspan="4" style="text-align:center;color:var(--text3);padding:24px;">No users yet</td></tr></tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-
-    <!-- ══ PRODUCTS PAGE ══ -->
-    <div class="page" id="page-products">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
-        <div style="display:flex;gap:8px;align-items:center;">
-          <input type="text" class="form-control" id="productSearch" placeholder="Search…" style="width:180px;" oninput="renderAdminProducts()">
-          <select class="form-control" id="productCatFilter" style="width:150px;" onchange="renderAdminProducts()">
-            <option value="">All categories</option>
-          </select>
-        </div>
-        <div style="display:flex;gap:8px;align-items:center;">
-          <span style="font-size:12px;color:var(--text3);">Prices set per delivery in Stock Lots</span>
-          <button class="btn btn-primary" onclick="openProductModal()">
-            <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            Add product
-          </button>
-        </div>
-      </div>
-      <div class="card">
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Product</th><th>Primary unit</th><th>Unit 2</th><th>Unit 3</th>
-                <th>Conv. 1→2</th><th>Conv. 1→3</th>
-                <th>Cost Price (LKR)</th><th>Selling Price (LKR)</th>
-                <th>Reorder</th><th>Status</th><th>Actions</th>
-              </tr>
-            </thead>
-            <tbody id="adminProductsTable"><tr><td colspan="11" style="text-align:center;color:var(--text3);padding:24px;">No products</td></tr></tbody>
           </table>
         </div>
       </div>
@@ -685,7 +685,7 @@ tbody tr:hover { background: var(--surface2); }
           Raw Console output
           <button class="log-copy-btn" onclick="copyDiagLog()" style="background: #2e2c29; border: none; border-radius: 4px; color: #a09d96; font-size: 10px; padding: 2px 8px; cursor: pointer;">Copy</button>
         </div>
-        <div class="log-entries" id="diagLogEntries" style="font-family: 'DM Mono', monospace; font-size: 11.5px; color: #a09d96; max-height: 180px; overflow-y: auto; line-height: 1.6;"></div>
+        <div class="log-entries" id="diagLogEntries" style="font-family: 'DM Mono', monospace; font-size: 11.5px; color: #a09d96; max-height: 180,px; overflow-y: auto; line-height: 1.6;"></div>
       </div>
     </div>
   </div>
@@ -1167,6 +1167,7 @@ function saveProduct() {
     barcode:       document.getElementById('pm-barcode').value.trim(),
     notes:         document.getElementById('pm-notes').value.trim(),
     lastSellingPrice:  existing.lastSellingPrice  || 0,
+    lastSellingPrice2: existing.lastSellingPrice2 || 0, // DUAL PRICING UPDATE
     lastEffectiveCost: existing.lastEffectiveCost || 0,
   };
 
@@ -1236,7 +1237,7 @@ function renderAdminProducts() {
 
   var tbody = document.getElementById('adminProductsTable');
   if (!filtered.length) {
-    tbody.innerHTML = '<tr><td colspan="11" style="text-align:center;color:var(--text3);padding:24px;">No products — add one above</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="12" style="text-align:center;color:var(--text3);padding:24px;">No products — add one above</td></tr>';
     return;
   }
 
@@ -1259,9 +1260,19 @@ function renderAdminProducts() {
         + '<div style="font-size:10px;color:var(--text3)">per ' + p.unit3 + '</div>'
       : '<span style="color:var(--text3)">—</span>';
 
-    // AUDIT REFACTOR: Added direct editable inputs for Cost Price and Selling Price
+    // DUAL PRICING UPDATE: Displaying inline inputs for Price 1 and Price 2 columns
     var costInput = '<input type="number" class="inline-input" style="width:100px;font-family:\'DM Mono\', monospace;text-align:right;" value="' + (p.lastEffectiveCost ? p.lastEffectiveCost : '') + '" step="any" placeholder="0.00" onchange="saveProductPrice(\'' + p.sku + '\', \'lastEffectiveCost\', this.value)">';
-    var sellInput = '<input type="number" class="inline-input" style="width:100px;font-family:\'DM Mono\', monospace;text-align:right;" value="' + (p.lastSellingPrice ? p.lastSellingPrice : '') + '" step="any" placeholder="0.00" onchange="saveProductPrice(\'' + p.sku + '\', \'lastSellingPrice\', this.value)">';
+    
+    var sellInput = '<input type="number" class="inline-input" style="width:100px;font-family:\'DM Mono\', monospace;text-align:right;" value="' + (p.lastSellingPrice ? p.lastSellingPrice : '') + '" step="any" placeholder="0.00" onchange="saveProductPrice(\'' + p.sku + '\', \'lastSellingPrice\', this.value)">'
+      + '<div style="font-size:10px;color:var(--text3);text-align:right;margin-top:2px;">per ' + p.unit + '</div>';
+    
+    var sellInput2 = '';
+    if (p.unit2) {
+      sellInput2 = '<input type="number" class="inline-input" style="width:100px;font-family:\'DM Mono\', monospace;text-align:right;" value="' + (p.lastSellingPrice2 ? p.lastSellingPrice2 : '') + '" step="any" placeholder="0.00" onchange="saveProductPrice(\'' + p.sku + '\', \'lastSellingPrice2\', this.value)">'
+        + '<div style="font-size:10px;color:var(--text3);text-align:right;margin-top:2px;">per ' + p.unit2 + '</div>';
+    } else {
+      sellInput2 = '<span style="color:var(--text3)">—</span>';
+    }
 
     return '<tr>'
       + '<td><div style="font-weight:500">' + p.name + '</div>'
@@ -1273,6 +1284,7 @@ function renderAdminProducts() {
       + '<td>' + conv3Cell + '</td>'
       + '<td>' + costInput + '</td>'
       + '<td>' + sellInput + '</td>'
+      + '<td>' + sellInput2 + '</td>'
       + '<td class="mono" style="color:var(--text2)">' + num(need,0) + '</td>'
       + '<td>' + statusBadge + '</td>'
       + '<td style="white-space:nowrap">'
@@ -1776,6 +1788,7 @@ async function initGS() {
         barcode: r.barcode||'', reorderLevel: parseFloat(r.reorder_level)||0,
         suggestMethod: r.suggest_method||'days', suggestVal: parseFloat(r.suggest_val)||0,
         lastSellingPrice: parseFloat(r.last_selling_price)||0,
+        lastSellingPrice2: parseFloat(r.last_selling_price2)||0, // DUAL PRICING UPDATE
         lastEffectiveCost: parseFloat(r.last_effective_cost)||0,
         notes: r.notes||''
       }; });
@@ -1909,6 +1922,7 @@ function syncProductToSheets(p) {
     barcode: p.barcode||'', reorder_level: p.reorderLevel||0,
     suggest_method: p.suggestMethod||'days', suggest_val: p.suggestVal||0,
     last_selling_price: p.lastSellingPrice||0,
+    last_selling_price2: p.lastSellingPrice2||0, // DUAL PRICING UPDATE
     last_effective_cost: p.lastEffectiveCost||0,
     notes: p.notes||''
   });
@@ -2039,6 +2053,3 @@ init();
 </script>
 </body>
 </html>
-
-Let me know if you would like to run another diagnostic check or explore further
-updates!
